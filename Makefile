@@ -1,25 +1,21 @@
-BASE=petrboot
-BINARY_SUFFIX=bin
-IMAGE_SUFFIX=img
-SOURCE_SUFFIX=asm
-
-BINARY=$(BASE).$(BINARY_SUFFIX)
-IMAGE=$(BASE).$(IMAGE_SUFFIX)
-SOURCE=$(BASE).$(SOURCE_SUFFIX)
-
-all: $(IMAGE)
+all: petrichr.img
 
 clean:
-	rm -rf $(BINARY)
+	rm -rf petrboot.bin stage2.bin
 
 distclean: clean
-	rm -rf $(IMAGE)
+	rm -rf petrichr.img
 
-$(IMAGE): $(BINARY)
-	dd of=$(IMAGE) if=$(BINARY) bs=512        count=1
-	dd of=$(IMAGE) if=/dev/zero bs=512 seek=1 count=2879
+petrichr.img: petrboot.bin stage2.bin
+	dd of=petrichr.img if=petrboot.bin bs=512        count=1
+	dd of=petrichr.img if=stage2.bin   bs=512 seek=1 count=1
+	dd of=petrichr.img if=/dev/zero    bs=512 seek=2 count=2878
 
-$(BINARY): $(SOURCE)
-	nasm $(SOURCE) -f bin -o $(BINARY)
+petrboot.bin: petrboot.asm
+	nasm petrboot.asm -f bin -o petrboot.bin
+
+stage2.bin: stage2.asm
+	nasm stage2.asm -f bin -o stage2.bin
+
 
 .PHONY: all clean distclean

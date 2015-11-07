@@ -1,4 +1,4 @@
-; Petrboot.asm: Boot sector startup program
+; stage2.asm: Second-stage startup program
 ;
 ; Copyright 2015, Vincent Damewood
 ; All rights reserved.
@@ -27,52 +27,20 @@
 ; OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 [BITS 16]
-[ORG 0x7C00]
+[ORG 0x7E00]
 
-exe_end     equ 446 ; End of space for executable code and data
-ptbl_size   equ  64 ; size of a partition table
 cmdbuf      equ  0x500
-cmdbuf_size equ  72 ; size of the input buffer
+cmdbuf_size equ  24
 stack       equ  0x7BFF
-stage2      equ  0x7E00
 
-
-; === FAT DATA ===
-
-	jmp start
-	nop
-fat_bios_parameter_block:
-	db 'MSWIN4.1' ; OEM ID
-	dw 512        ; bytes per sector
-	db 1          ; sectors per cluster
-	dw 2          ; Number of reserved clusters
-	db 2          ; Number of file-allocation tables
-	dw 224        ; Number of root entires
-	dw 2880       ; Number of sectors
-	db 0xF0       ; Media descriptor
-	dw 9          ; Sectors per file-allocation table
-	dw 18         ; Sectors per track (cylinder)
-	dw 2          ; Number of heads/sides
-	dd 0          ; Hidden sectors
-	dd 0          ; Number of sectors (if > 2^16-1)
-fat_extended_boot_record:
-	db 0x00          ; Drive number
-	db 0x00          ; Reserved (NT Flags)
-	db 0x28          ; Signature (0x28 or 0x29)
-	dd 0x00000000    ; Volume ID
-	db 'BOOTSECTORX' ; Volume label
-	db 'FAT12   '    ; System ID; Unreliable.
-
-start:
-	; Setup segments
-	mov ax, 0
-	mov ds, ax
-	mov es, ax
-
-	; Setup stack
+stage2:
+	; Setup stack. This was probably done
+	; in the boot sector but this will
+	; reset it.
 	mov ax, stack
 	mov sp, ax
 	mov bp, ax
+
 
 	; Display start-up message
 	push msg_start
@@ -176,10 +144,8 @@ get:
 	ret
 
 ; === Non-executable Data ===
-msg_start:  db 'Starting System...', 0x0D, 0x0A, 0
+msg_start:  db 'Second stage loaded...', 0x0D, 0x0A, 0
 msg_prompt: db '?> ', 0
 msg_resp:   db '!: ', 0
 newline:    db 0x0D, 0x0A, 0
-pad:        times exe_end-($-$$) db 0
-ptable:     times ptbl_size db 0
-bootsig:    dw 0xAA55
+pad:        times 512-($-$$)-1 db 0
