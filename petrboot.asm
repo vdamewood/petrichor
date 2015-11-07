@@ -31,7 +31,10 @@
 
 exe_end     equ 446 ; End of space for executable code and data
 ptbl_size   equ  64 ; size of a partition table
-cmdbuf_size equ  24 ; size of the input buffer
+cmdbuf      equ  0x500
+cmdbuf_size equ  72 ; size of the input buffer
+stack       equ  0x7BFF
+
 
 ; === FAT DATA ===
 
@@ -66,8 +69,6 @@ start:
 	mov es, ax
 
 	; Setup stack
-	; FIXME: There's plenty of free memory for the
-	; stack. Move it.
 	mov ax, stack
 	mov sp, ax
 	mov bp, ax
@@ -174,12 +175,10 @@ get:
 	ret
 
 ; === Non-executable Data ===
-cmdbuf:    times cmdbuf_size db 0xFE
 msg_start:  db 'Starting System...', 0x0D, 0x0A, 0
 msg_prompt: db '?> ', 0
 msg_resp:   db '!: ', 0
 newline:    db 0x0D, 0x0A, 0
-pad:        times exe_end-($-$$)-1 db 0
-stack:      db 0
+pad:        times exe_end-($-$$) db 0
 ptable:     times ptbl_size db 0
 bootsig:    dw 0xAA55
