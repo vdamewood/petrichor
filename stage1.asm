@@ -57,10 +57,10 @@ fat_bios_parameter_block:
 	dd 0          ; Number of sectors (if > 2^16-1)
 fat_extended_boot_record:
 	db 0x00          ; Drive number
-	db 0x00          ; Reserved (NT Flags)
+	db 0x00          ; Current Head (Unused)
 	db 0x28          ; Signature (0x28 or 0x29)
-	dd 0x00000000    ; Volume ID
-	db 'BOOTSECTORX' ; Volume label
+	dd 0xBAADBEEF    ; Volume ID
+	db 'BOOTDISK   ' ; Volume label
 	db 'FAT12   '    ; System ID; Unreliable.
 
 start:
