@@ -79,6 +79,20 @@ start:
 	call print
 	add esp, 2
 
+	mov ah, 2 ; Read sectors
+	mov al, 1 ; Number of sectors
+	mov ch, 0 ; low 'half' of cylinder
+	mov cl, 2 ; sector number (high 2 bits for cylinder)
+	mov dh, 0 ; head
+	mov dl, 0 ; drive
+	mov bx, stage2 ; buffer
+	int 0x13 ; due to ah = 0x02, Read sectors into memory
+	jnc stage2 ; If it worked (carry cleared), jump to code.
+
+	push msg_error ; else show an error message.
+	call print
+	add sp, 2
+
 .cmdloop:
 	push msg_prompt
 	call print
@@ -177,6 +191,7 @@ get:
 
 ; === Non-executable Data ===
 msg_start:  db 'Starting System...', 0x0D, 0x0A, 0
+msg_error:  db 'Load failed!', 0x0D, 0x0A, 0
 msg_prompt: db '?> ', 0
 msg_resp:   db '!: ', 0
 newline:    db 0x0D, 0x0A, 0
