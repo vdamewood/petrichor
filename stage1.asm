@@ -1,4 +1,4 @@
-; Petrboot.asm: Boot sector startup program
+; stage1.asm: Boot sector startup program
 ;
 ; Copyright 2015, Vincent Damewood
 ; All rights reserved.
