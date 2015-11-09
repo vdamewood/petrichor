@@ -29,13 +29,14 @@
 [BITS 16]
 [ORG 0x7C00]
 
-exe_end     equ 446 ; End of space for executable code and data
-ptbl_size   equ  64 ; size of a partition table
-cmdbuf      equ  0x500
-cmdbuf_size equ  72 ; size of the input buffer
-stack       equ  0x7BFF
-stage2      equ  0x7E00
+mem_start   equ  0x000500
+st1_start   equ  0x007C00
+st2_start   equ  0x007E00
+past_end    equ  0x080000
 
+input_buffer       equ  mem_start
+input_buffer_size  equ  72
+stack              equ  (st1_start - 2)
 
 ; === FAT DATA ===
 
@@ -63,6 +64,7 @@ fat_extended_boot_record:
 	db 'BOOTDISK   ' ; Volume label
 	db 'FAT12   '    ; System ID; Unreliable.
 
+; === BOOT LOADER ===
 start:
 	; Setup segments
 	mov ax, 0
@@ -85,14 +87,14 @@ start:
 	mov cl, 16 ; sector number (high 2 bits for cylinder)
 	mov dh, 1 ; head
 	mov dl, 0 ; drive
-	mov bx, stage2 ; buffer
+	mov bx, st2_start ; buffer
 	int 0x13 ; due to ah = 0x02, Read sectors into memory
 	jc .loaderr ; If it worked (carry cleared)
 .loadsuccess:
 	push msg_success
 	call print
 	add sp, 2
-	jmp stage2 ; jump to code.
+	jmp st2_start ; jump to code.
 .loaderr:
 	push msg_error ; else show an error message.
 	call print
@@ -146,7 +148,7 @@ get:
 	mov bp, sp
 	push di
 .fbody:
-	mov cx, cmdbuf
+	mov cx, input_buffer
 	mov di, cx
 .loop:
 	mov ah, 0
@@ -179,7 +181,7 @@ get:
 .else:
 	mov dx, di
 	sub dx, cx
-	cmp dx, (cmdbuf_size-1) ; if buffer is full
+	cmp dx, (input_buffer_size-1) ; if buffer is full
 	je .loop ; ignore keypress
 
 	mov ah, 0x0E
@@ -187,7 +189,7 @@ get:
 	stosb
 	jmp .loop
 .return:
-	mov ax, cmdbuf
+	mov ax, input_buffer
 	pop di
 	mov sp, bp
 	pop bp
@@ -200,6 +202,8 @@ msg_error:  db 'Load failed!', 0x0D, 0x0A, 0
 msg_prompt: db '?> ', 0
 msg_resp:   db '!: ', 0
 newline:    db 0x0D, 0x0A, 0
-pad:        times exe_end-($-$$) db 0
-ptable:     times ptbl_size db 0
+st2_file:   db 'STAGE2  BIN'
+
+pad:        times 446-($-$$) db 0
+ptable:     times 64 db 0
 bootsig:    dw 0xAA55
