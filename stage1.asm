@@ -34,9 +34,7 @@ st1_start   equ  0x007C00
 st2_start   equ  0x007E00
 past_end    equ  0x080000
 
-input_buffer       equ  mem_start
-input_buffer_size  equ  72
-stack              equ  (st1_start - 2)
+stack       equ  (st1_start - 2)
 
 ; === FAT DATA ===
 
@@ -51,6 +49,7 @@ fat_bios_parameter_block:
 	dw 224        ; Number of root entires
 	dw 2880       ; Number of sectors
 	db 0xF0       ; Media descriptor
+
 	dw 9          ; Sectors per file-allocation table
 	dw 18         ; Sectors per track (cylinder)
 	dw 2          ; Number of heads/sides
@@ -81,43 +80,25 @@ start:
 	call print
 	add esp, 2
 
-	mov ah, 2 ; Read sectors
-	mov al, 1 ; Number of sectors
-	mov ch, 0 ; low 'half' of cylinder
-	mov cl, 16 ; sector number (high 2 bits for cylinder)
-	mov dh, 1 ; head
-	mov dl, 0 ; drive
-	mov bx, st2_start ; buffer
-	int 0x13 ; due to ah = 0x02, Read sectors into memory
-	jc .loaderr ; If it worked (carry cleared)
+	; TODO: Find file and get cluster number
+	mov ax, 2
+
+	push st2_start
+	push ax
+	call loadsector
+	add sp, 4
+	or ax, ax
+	jz .loaderr
+
 .loadsuccess:
-	push msg_success
-	call print
-	add sp, 2
-	jmp st2_start ; jump to code.
+	jmp st2_start
 .loaderr:
-	push msg_error ; else show an error message.
+	push msg_error
 	call print
 	add sp, 2
-.cmdloop:
-	push msg_prompt
-	call print
-	add sp, 2
-
-	call get
-	mov bx, ax
-	push msg_resp
-	call print
-	add sp, 2
-
-	push bx
-	call print
-	add sp, 2
-
-	push newline
-	call print
-	add sp, 2
-	jmp .cmdloop
+.freeze:
+	hlt
+	jmp .freeze
 
 ; === FUNCTIONS ===
 
@@ -142,66 +123,91 @@ print:
 	pop bp
 	ret
 
-get:
+loadsector:
+; bp+4: FAT Cluster to load
+; bp+6: Destination Address
 .fpreamb:
 	push bp
 	mov bp, sp
-	push di
+	push cx
+	push dx
+	push bx
 .fbody:
-	mov cx, input_buffer
-	mov di, cx
-.loop:
-	mov ah, 0
-	int 0x16
-.ifbksp:
-	cmp al, 0x08 ; Backspace
-	jne .ifentr
-.bksp:
-	cmp di, cx ; if at the beginning of the buffer
-	je .loop   ; ignore
+	mov ax, [bp+4]
 
-	mov ah, 0x0E
-	int 0x10
-	mov al, ' '
-	int 0x10
-	mov al, 0x08
-	int 0x10
-	dec di
-	jmp .loop
-.ifentr:
-	cmp al, 0x0D ; Enter
-	jne .else
-.entr:
-	mov al, 0
-	stosb
-	push newline
-	call print
-	add sp, 2
-	jmp .return
-.else:
-	mov dx, di
-	sub dx, cx
-	cmp dx, (input_buffer_size-1) ; if buffer is full
-	je .loop ; ignore keypress
+; Step 1: Convert Cluster number to sector number
+	add ax, 31 ; 33 is the first data sector. 2 is the first FAT Cluster
 
+; Step 2: Convert sector number to CHS
+	mov bl, 36 ; AL has cyl, AH has remainder
+	idiv bl ; AL has cyl, AH has remainder
+
+	mov ch, al ; Set CH = Cylinder
+	mov al, ah
+	xor ah, ah
+
+	mov bl, 18 ; AL has head, AH has sector
+	idiv bl
+
+	mov dh, al
+
+	inc ah ; Sectors are 1-based
+	mov cl, ah
+
+; Step 3: Profit!
+	mov al, 1 ; Number of sectors
+	mov dl, 0 ; drive
+
+	mov bx, [bp+6] ; buffer
+	mov ah, 2 ; Read sectors
+	int 0x13 ; due to ah = 0x02, Read sectors into memory
+
+	jc .fail
+	mov ax, 0xFFFF
+	jmp .freturn
+.fail:
+	mov ax, 0x0000
+.freturn:
+	pop bx
+	pop dx
+	pop cx
+	mov sp, bp
+	pop bp
+	ret
+
+; === Debuging Functions; Remove from Final Sector ===
+print_byte:
+.fpreamb:
+	push bp
+	mov bp, sp
+.fbody:
 	mov ah, 0x0E
+
+	mov al, [bp+4]
+	shr al, 4
+	add al, 0x30
+	cmp al, 0x39
+	jle .skip1
+	add al, 7
+.skip1:
 	int 0x10
-	stosb
-	jmp .loop
-.return:
-	mov ax, input_buffer
-	pop di
+
+	mov al, [bp+4]
+	and al, 0x0F
+	add al, 0x30
+	cmp al, 0x39
+	jle .skip2
+	add al, 7
+.skip2:
+	int 0x10
+.freturn:
 	mov sp, bp
 	pop bp
 	ret
 
 ; === Non-executable Data ===
-msg_start:  db 'Starting System...', 0x0D, 0x0A, 0
-msg_success: db 'Load success...', 0x0D, 0x0A, 0
-msg_error:  db 'Load failed!', 0x0D, 0x0A, 0
-msg_prompt: db '?> ', 0
-msg_resp:   db '!: ', 0
-newline:    db 0x0D, 0x0A, 0
+msg_start:   db "Boot Sector", 0x0D, 0x0A, 0
+msg_error:   db "Error", 0x0D, 0x0A, 0
 st2_file:   db 'STAGE2  BIN'
 
 pad:        times 446-($-$$) db 0
