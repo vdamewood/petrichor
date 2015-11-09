@@ -8,8 +8,8 @@ dw 0x0000     ; Creation Time
 dw 0x0000     ; Creation Date
 dw 0x0000     ; Last Access Data
 dw 0x0000     ; FAT32 Upper Half
-dw 0x0000     ; Last Write Time
-dw 0x0000     ; Last Write Date
+dw 0x8000     ; Last Write Time
+dw 0x475F     ; Last Write Date
 dw 0x0000     ; Starting Cluster
 dd 0x00000000 ; File Size
 
@@ -23,9 +23,9 @@ dw 0x0000     ; Creation Time
 dw 0x0000     ; Creation Date
 dw 0x0000     ; Last Access Data
 dw 0x0000     ; FAT32 Upper Half
-dw 0x0000     ; Last Write Time
-dw 0x0000     ; Last Write Date
-dw 0x0002     ; Starting Cluster
+dw 0x8000     ; Last Write Time
+dw 0x475F     ; Last Write Date
+dw 0x0000     ; Starting Cluster
 dd 0x00000200 ; File Size
 
 pad: times (14*512)-($-$$) db 0
