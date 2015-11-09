@@ -45,7 +45,7 @@ fat_bios_parameter_block:
 	db 'MSWIN4.1' ; OEM ID
 	dw 512        ; bytes per sector
 	db 1          ; sectors per cluster
-	dw 2          ; Number of reserved clusters
+	dw 1          ; Number of reserved clusters
 	db 2          ; Number of file-allocation tables
 	dw 224        ; Number of root entires
 	dw 2880       ; Number of sectors
@@ -82,17 +82,21 @@ start:
 	mov ah, 2 ; Read sectors
 	mov al, 1 ; Number of sectors
 	mov ch, 0 ; low 'half' of cylinder
-	mov cl, 2 ; sector number (high 2 bits for cylinder)
-	mov dh, 0 ; head
+	mov cl, 16 ; sector number (high 2 bits for cylinder)
+	mov dh, 1 ; head
 	mov dl, 0 ; drive
 	mov bx, stage2 ; buffer
 	int 0x13 ; due to ah = 0x02, Read sectors into memory
-	jnc stage2 ; If it worked (carry cleared), jump to code.
-
+	jc .loaderr ; If it worked (carry cleared)
+.loadsuccess:
+	push msg_success
+	call print
+	add sp, 2
+	jmp stage2 ; jump to code.
+.loaderr:
 	push msg_error ; else show an error message.
 	call print
 	add sp, 2
-
 .cmdloop:
 	push msg_prompt
 	call print
@@ -191,6 +195,7 @@ get:
 
 ; === Non-executable Data ===
 msg_start:  db 'Starting System...', 0x0D, 0x0A, 0
+msg_success: db 'Load success...', 0x0D, 0x0A, 0
 msg_error:  db 'Load failed!', 0x0D, 0x0A, 0
 msg_prompt: db '?> ', 0
 msg_resp:   db '!: ', 0

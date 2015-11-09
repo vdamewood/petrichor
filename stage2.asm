@@ -148,4 +148,4 @@ msg_start:  db 'Second stage loaded...', 0x0D, 0x0A, 0
 msg_prompt: db '?> ', 0
 msg_resp:   db '!: ', 0
 newline:    db 0x0D, 0x0A, 0
-pad:        times 512-($-$$)-1 db 0
+pad:        times 512-($-$$) db 0
