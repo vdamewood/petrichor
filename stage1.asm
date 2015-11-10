@@ -80,13 +80,18 @@ start:
 	call print
 	add esp, 2
 
-	; TODO: Find file and get cluster number
-	mov ax, 2
-
 	push st2_start
+
+	; TODO: Read FS and get correct first cluster.
+	push 2
+	call fat_sector
+	add sp, 2
+
 	push ax
 	call loadsector
 	add sp, 4
+
+	; TODO: Check for additional clusters, and load them.
 	or ax, ax
 	jz .loaderr
 
@@ -123,8 +128,21 @@ print:
 	pop bp
 	ret
 
+fat_sector:
+; bp+4: FAT Cluster
+.fpreamb:
+	push bp
+	mov bp, sp
+.fbody:
+	mov ax, [bp+4]
+	add ax, 31
+.freturn:
+	mov sp, bp
+	pop bp
+	ret
+
 loadsector:
-; bp+4: FAT Cluster to load
+; bp+4: Sector to load
 ; bp+6: Destination Address
 .fpreamb:
 	push bp
@@ -135,10 +153,7 @@ loadsector:
 .fbody:
 	mov ax, [bp+4]
 
-; Step 1: Convert Cluster number to sector number
-	add ax, 31 ; 33 is the first data sector. 2 is the first FAT Cluster
-
-; Step 2: Convert sector number to CHS
+; Step 1: Convert sector number to CHS
 	mov bl, 36 ; AL has cyl, AH has remainder
 	idiv bl ; AL has cyl, AH has remainder
 
@@ -154,7 +169,7 @@ loadsector:
 	inc ah ; Sectors are 1-based
 	mov cl, ah
 
-; Step 3: Profit!
+; Step 2: Profit!
 	mov al, 1 ; Number of sectors
 	mov dl, 0 ; drive
 
