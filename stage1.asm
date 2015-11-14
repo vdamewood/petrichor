@@ -33,6 +33,8 @@ mem_start   equ  0x000500
 st1_start   equ  0x007C00
 st2_start   equ  0x007E00
 past_end    equ  0x080000
+true        equ  0xFFFF
+false       equ  0x0000
 
 stack       equ  (st1_start - 2)
 
@@ -44,12 +46,14 @@ fat_bios_parameter_block:
 	db 'MSWIN4.1' ; OEM ID
 	dw 512        ; bytes per sector
 	db 1          ; sectors per cluster
+reserved:
 	dw 1          ; Number of reserved clusters
+fatcount:
 	db 2          ; Number of file-allocation tables
 	dw 224        ; Number of root entires
 	dw 2880       ; Number of sectors
 	db 0xF0       ; Media descriptor
-
+fatsize:
 	dw 9          ; Sectors per file-allocation table
 	dw 18         ; Sectors per track (cylinder)
 	dw 2          ; Number of heads/sides
@@ -80,6 +84,33 @@ start:
 	call print
 	add esp, 2
 
+	; Calculate Where root Directory is. (Sector # fatcount*fatsize+reserved)
+	mov al, [fatcount]
+	and ax, 0x00FF
+	imul ax, [fatsize]
+	add ax, [reserved]
+	mov bx, ax
+
+	mov dx, bx
+	mov cx, 14 ; Size of root directory.
+
+.load:
+	mov ax, dx
+	sub ax, bx
+	imul ax, 512
+	add ax, mem_start
+
+	push ax
+	push dx
+	call loadsector
+	add sp, 4
+
+	inc dx
+	add sp, 2
+	loop .load
+
+	; FIXME: Calculate end of root directory. and Save memory address.
+
 	push st2_start
 
 	; TODO: Read FS and get correct first cluster.
@@ -106,6 +137,13 @@ start:
 	jmp .freeze
 
 ; === FUNCTIONS ===
+
+; For loading File info
+; File entries are 32 bytes.
+; #00, to #07:     File name
+; #08, to #10:     File Extention
+; #26, to #27:     First Cluster
+; #28, to #31:     File Size
 
 ; Print a string
 print:
