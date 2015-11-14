@@ -30,7 +30,7 @@
 [ORG 0x7E00]
 
 cmdbuf      equ  0x500
-cmdbuf_size equ  24
+cmdbuf_size equ  20
 stack       equ  0x7BFF
 
 stage2:
@@ -40,7 +40,6 @@ stage2:
 	mov ax, stack
 	mov sp, ax
 	mov bp, ax
-
 
 	; Display start-up message
 	push msg_start
@@ -53,21 +52,98 @@ stage2:
 	add sp, 2
 
 	call get
-	mov bx, ax
-	push msg_resp
-	call print
-	add sp, 2
-
-	push bx
-	call print
-	add sp, 2
-
-	push newline
+	push str_hi
+	push ax
+	call match
+	add sp, 4
+	cmp ax, 0x0000
+	je .nomatch
+	push msg_hello
+	jmp .endmatch
+.nomatch:
+	push msg_sayhi
+.endmatch:
 	call print
 	add sp, 2
 	jmp .cmdloop
 
 ; === FUNCTIONS ===
+
+; Match a filename
+match_file:
+.fpreamb:
+	push bp
+	mov bp, sp
+	push si
+	push di
+	push cx
+	push dx
+	push bx
+.fbody:
+	mov si, [bp+4]
+	mov di, [bp+6]
+	mov cx, 11
+.loop:
+	mov al, [di]
+	mov dl, [si]
+	cmp al, dl
+	jne .nomatch
+	dec cx
+	jcxz .match
+	inc di
+	inc si
+	jmp .loop
+.match:
+	mov ax, 0xFFFF
+	jmp .freturn
+.nomatch:
+	mov ax, 0x0000
+.freturn:
+	pop cx
+	pop dx
+	pop bx
+	pop di
+	pop si
+	mov sp, bp
+	pop bp
+	ret
+
+
+; Compare Zero-Terminated Strings
+match:
+.fpreamb:
+	push bp
+	mov bp, sp
+	push si
+	push di
+	push dx
+.fbody:
+	mov si, [bp+4]
+	mov di, [bp+6]
+.loop:
+	mov al, [di]
+	mov dl, [si]
+
+	cmp al, dl
+	jne .nomatch
+
+	cmp al, 0
+	jz .match
+	inc di
+	inc si
+	jmp .loop
+.match:
+	mov ax, 0xFFFF
+	jmp .freturn
+.nomatch:
+	mov ax, 0x0000
+.freturn:
+	pop dx
+	pop di
+	pop si
+	mov sp, bp
+	pop bp
+	ret
 
 ; Print a string
 print:
@@ -143,9 +219,41 @@ get:
 	pop bp
 	ret
 
+; === Debuging Functions ===
+print_byte:
+.fpreamb:
+	push bp
+	mov bp, sp
+.fbody:
+	mov ah, 0x0E
+
+	mov al, [bp+4]
+	shr al, 4
+	add al, 0x30
+	cmp al, 0x39
+	jle .skip1
+	add al, 7
+.skip1:
+	int 0x10
+
+	mov al, [bp+4]
+	and al, 0x0F
+	add al, 0x30
+	cmp al, 0x39
+	jle .skip2
+	add al, 7
+.skip2:
+	int 0x10
+.freturn:
+	mov sp, bp
+	pop bp
+	ret
+
 ; === Non-executable Data ===
-msg_start:  db 'Second stage loaded...', 0x0D, 0x0A, 0
-msg_prompt: db '?> ', 0
-msg_resp:   db '!: ', 0
-newline:    db 0x0D, 0x0A, 0
-pad:        times 512-($-$$) db 0
+msg_start:   db 'Second stage loaded. Say Hi.', 0x0D, 0x0A, 0
+msg_prompt:  db '?> ', 0
+str_hi:      db 'Hi', 0
+msg_sayhi:   db 'Say Hi.', 0x0D, 0x0A, 0
+msg_hello:   db 'Hello.', 0x0D, 0x0A, 0
+newline:     db 0x0D, 0x0A, 0
+pad:         times 512-($-$$) db 0
