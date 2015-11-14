@@ -30,13 +30,16 @@
 [ORG 0x7C00]
 
 mem_start   equ  0x000500
+load_start  equ  0x000600
 st1_start   equ  0x007C00
 st2_start   equ  0x007E00
 past_end    equ  0x080000
 true        equ  0xFFFF
 false       equ  0x0000
 
-stack       equ  (st1_start - 2)
+stack       equ  st1_start
+;load_at     equ  mem_start
+fat_at      equ  mem_start + 2
 
 ; === FAT DATA ===
 
@@ -84,7 +87,6 @@ start:
 	call print
 	add esp, 2
 
-
 .load_dir:
 	; Calculate Where root Directory is. (Sector # = fatcount * fatsize + reserved)
 	xor ah, ah
@@ -96,6 +98,9 @@ start:
 	call load_chunk
 	add sp, 4
 
+	mov ax, [load_at]
+	mov [fat_at], ax
+
 .load_fat:
 	mov ax, [reserved]
 	mov cx, [fatsize]
@@ -103,6 +108,42 @@ start:
 	push cx
 	call load_chunk
 	add sp, 4
+
+	mov ax, 0x500
+.readdir:
+	push ax
+	push st2_file
+	call match_file
+	add sp, 2
+	pop bx
+	cmp ax, 0xFFFF
+	je .found
+	mov ax, bx
+	add ax, 32
+
+	cmp ax, [fat_at]
+	je .notfound
+	jmp .readdir
+.found:
+	mov ax, bx
+	push ax
+	call print
+	pop ax
+
+	mov al, ah
+	push ax
+	call print_byte
+	add sp, 2
+	call print_byte
+	pop ax
+
+	push ax
+	push msg_start
+	call print
+	mov sp, 2
+	pop ax
+
+	; ax now has address of matching file
 
 	; TODO: Scan directory
 
@@ -125,6 +166,11 @@ start:
 
 .loadsuccess:
 	jmp st2_start
+.notfound:
+	push msg_notfound
+	call print
+	add sp, 2
+	jmp .freeze
 .loaderr:
 	push msg_error
 	call print
@@ -325,11 +371,13 @@ print_byte:
 
 ; === Non-executable Data ===
 load_at:      dw mem_start
+;fat_at:       dw 0x0000
 
-msg_start: db "Boot Sector", 0x0D, 0x0A, 0
+msg_start: db "BootSec", 0x0D, 0x0A, 0
 msg_error: db "Error", 0x0D, 0x0A, 0
+msg_notfound: db "Not found", 0x0D, 0x0A, 0
 st2_file:  db 'STAGE2  BIN'
 
-pad:        times 446-($-$$) db 0
-ptable:     times 64 db 0
+pad:        times 510-($-$$) db 0
+;ptable:     times 64 db 0
 bootsig:    dw 0xAA55
