@@ -84,32 +84,29 @@ start:
 	call print
 	add esp, 2
 
-	; Calculate Where root Directory is. (Sector # fatcount*fatsize+reserved)
+
+.load_dir:
+	; Calculate Where root Directory is. (Sector # = fatcount * fatsize + reserved)
+	xor ah, ah
 	mov al, [fatcount]
-	and ax, 0x00FF
 	imul ax, [fatsize]
 	add ax, [reserved]
-	mov bx, ax
-
-	mov dx, bx
-	mov cx, 14 ; Size of root directory.
-
-.load:
-	mov ax, dx
-	sub ax, bx
-	imul ax, 512
-	add ax, mem_start
-
 	push ax
-	push dx
-	call loadsector
+	push 14
+	call load_chunk
 	add sp, 4
 
-	inc dx
-	add sp, 2
-	loop .load
+.load_fat:
+	mov ax, [reserved]
+	mov cx, [fatsize]
+	push ax
+	push cx
+	call load_chunk
+	add sp, 4
 
-	; FIXME: Calculate end of root directory. and Save memory address.
+	; TODO: Scan directory
+
+	; TODO: Load sectors of found file
 
 	push st2_start
 
@@ -144,6 +141,35 @@ start:
 ; #08, to #10:     File Extention
 ; #26, to #27:     First Cluster
 ; #28, to #31:     File Size
+
+load_chunk:
+.fpreamb:
+	push bp
+	mov bp, sp
+	push cx
+	push dx
+.fbody:
+	mov cx, [bp+4] ; Count
+	mov dx, [bp+6] ; Sector #
+	mov ax, [load_at]
+.loop:
+	push ax
+	push dx
+	call loadsector
+	add sp, 4
+
+	mov ax, [load_at]
+	add ax, 512
+	mov [load_at], ax
+
+	inc dx
+	loop .loop
+.freturn:
+	pop dx
+	pop cx
+	mov sp, bp
+	pop bp
+	ret
 
 ; Print a string
 print:
@@ -298,9 +324,11 @@ print_byte:
 	ret
 
 ; === Non-executable Data ===
-msg_start:   db "Boot Sector", 0x0D, 0x0A, 0
-msg_error:   db "Error", 0x0D, 0x0A, 0
-st2_file:   db 'STAGE2  BIN'
+load_at:      dw mem_start
+
+msg_start: db "Boot Sector", 0x0D, 0x0A, 0
+msg_error: db "Error", 0x0D, 0x0A, 0
+st2_file:  db 'STAGE2  BIN'
 
 pad:        times 446-($-$$) db 0
 ptable:     times 64 db 0
