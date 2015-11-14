@@ -128,6 +128,45 @@ print:
 	pop bp
 	ret
 
+; Match a filename
+match_file:
+.fpreamb:
+	push bp
+	mov bp, sp
+	push si
+	push di
+	push cx
+	push dx
+	push bx
+.fbody:
+	mov si, [bp+4]
+	mov di, [bp+6]
+	mov cx, 11
+.loop:
+	mov al, [di]
+	mov dl, [si]
+	cmp al, dl
+	jne .nomatch
+	dec cx
+	jcxz .match
+	inc di
+	inc si
+	jmp .loop
+.match:
+	mov ax, 0xFFFF
+	jmp .freturn
+.nomatch:
+	mov ax, 0x0000
+.freturn:
+	pop cx
+	pop dx
+	pop bx
+	pop di
+	pop si
+	mov sp, bp
+	pop bp
+	ret
+
 fat_sector:
 ; bp+4: FAT Cluster
 .fpreamb:
