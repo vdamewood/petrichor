@@ -89,7 +89,7 @@ start:
 
 .load_dir:
 	; Calculate Where root Directory is. (Sector # = fatcount * fatsize + reserved)
-	xor ah, ah
+	mov ah, 0
 	mov al, [fatcount]
 	imul ax, [fatsize]
 	add ax, [reserved]
@@ -308,7 +308,7 @@ loadsector:
 
 	mov ch, al ; Set CH = Cylinder
 	mov al, ah
-	xor ah, ah
+	mov ah, 0
 
 	mov bl, 18 ; AL has head, AH has sector
 	idiv bl
