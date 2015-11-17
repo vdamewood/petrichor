@@ -29,11 +29,11 @@
 [BITS 16]
 [ORG 0x7C00]
 
-mem_start   equ  0x000500
-load_start  equ  0x000600
-st1_start   equ  0x007C00
-st2_start   equ  0x008000
-past_end    equ  0x080000
+mem_start   equ  0x0500
+load_start  equ  0x0600
+st1_start   equ  0x7C00
+st2_start   equ  0x8000
+;past_end    equ  0x080000
 true        equ  0xFFFF
 false       equ  0x0000
 
@@ -50,7 +50,7 @@ fat_bios_parameter_block:
 	dw 512        ; bytes per sector
 	db 1          ; sectors per cluster
 reserved:
-	dw 1          ; Number of reserved clusters
+	dw 2          ; Number of reserved clusters
 fatcount:
 	db 2          ; Number of file-allocation tables
 	dw 224        ; Number of root entires
@@ -82,6 +82,12 @@ start:
 	mov sp, ax
 	mov bp, ax
 
+	; Load debugging/development code
+	push 0x7E00
+	push 1
+	call loadsector
+	add sp, 4
+
 	; Display start-up message
 	push msg_start
 	call print
@@ -103,9 +109,9 @@ start:
 
 .load_fat:
 	mov ax, [reserved]
-	mov cx, [fatsize]
 	push ax
-	push cx
+	mov ax, [fatsize]
+	push ax
 	call load_chunk
 	add sp, 4
 
@@ -128,6 +134,9 @@ start:
 	mov ax, bx
 	push ax
 	call print
+	push msg_linebreak
+	call print
+	add sp, 2
 	pop ax
 
 	mov al, ah
@@ -145,7 +154,7 @@ start:
 
 	; ax now has address of matching file
 
-	; TODO: Scan directory
+
 
 	; TODO: Load sectors of found file
 
@@ -217,27 +226,6 @@ load_chunk:
 	pop bp
 	ret
 
-; Print a string
-print:
-.fpreamb:
-	push bp
-	mov bp, sp
-	push si
-.fbody:
-	mov si, [bp+4]
-	mov ah, 0x0E ; Causes the BIOS interrupt to print a character
-.loop:
-	lodsb        ; Fetch next byte in string, ...
-	or al, al    ; ... test if it's 0x00, ...
-	jz .freturn  ; ... and, if so, were'd done
-	int 0x10     ; Due to ah = 0x0E, prints character
-	jmp .loop
-.freturn:
-	pop si
-	mov sp, bp
-	pop bp
-	ret
-
 ; Match a filename
 match_file:
 .fpreamb:
@@ -283,8 +271,9 @@ fat_sector:
 	push bp
 	mov bp, sp
 .fbody:
+	; The real location of cluster n is sector (reserved + fat_size * fat_count + 14)
 	mov ax, [bp+4]
-	add ax, 31
+	add ax, 32
 .freturn:
 	mov sp, bp
 	pop bp
@@ -339,12 +328,49 @@ loadsector:
 	pop bp
 	ret
 
+; === Non-executable Data ===
+load_at:      dw mem_start
+;fat_at:       dw 0x0000
+
+st2_file:  db 'STAGE2  BIN'
+
+pad:        times 446-($-$$) db 0
+ptable:     times 64 db 0
+bootsig:    dw 0xAA55
+
+; === Functions to be removed from complete version ===
+
+; Print a string
+print:
+.fpreamb:
+	push bp
+	mov bp, sp
+	push si
+.fbody:
+	mov si, [bp+4]
+	mov ah, 0x0E ; Causes the BIOS interrupt to print a character
+.loop:
+	lodsb        ; Fetch next byte in string, ...
+	or al, al    ; ... test if it's 0x00, ...
+	jz .freturn  ; ... and, if so, were'd done
+	int 0x10     ; Due to ah = 0x0E, prints character
+	jmp .loop
+.freturn:
+	pop si
+	mov sp, bp
+	pop bp
+	ret
+
 ; === Debuging Functions; Remove from Final Sector ===
 print_byte:
 .fpreamb:
 	push bp
 	mov bp, sp
 .fbody:
+	push msg_byte
+	call print
+	add sp, 2
+
 	mov ah, 0x0E
 
 	mov al, [bp+4]
@@ -364,20 +390,17 @@ print_byte:
 	add al, 7
 .skip2:
 	int 0x10
+	push msg_linebreak
+	call print
+	add sp, 2
 .freturn:
 	mov sp, bp
 	pop bp
 	ret
 
-; === Non-executable Data ===
-load_at:      dw mem_start
-;fat_at:       dw 0x0000
-
+msg_byte: db 'Byte:', 0
 msg_start: db "BootSec", 0x0D, 0x0A, 0
 msg_error: db "Error", 0x0D, 0x0A, 0
 msg_notfound: db "Not found", 0x0D, 0x0A, 0
-st2_file:  db 'STAGE2  BIN'
-
-pad:        times 510-($-$$) db 0
-;ptable:     times 64 db 0
-bootsig:    dw 0xAA55
+msg_linebreak: db 0x0D, 0x0A, 0
+pad2:        times 1024-($-$$) db 0
