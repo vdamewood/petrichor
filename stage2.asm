@@ -27,7 +27,7 @@
 ; OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 [BITS 16]
-[ORG 0x7E00]
+[ORG 0x8000]
 
 cmdbuf      equ  0x500
 cmdbuf_size equ  20
