@@ -91,6 +91,7 @@ start:
 	push msg_start
 	call print
 	add sp, 2
+
 .load_dir:
 	; Calculate Where root Directory is. (Sector # = fatcount * fatsize + reserved)
 	mov ah, 0
@@ -316,8 +317,6 @@ pad:        times 446-($-$$) db 0
 ptable:     times 64 db 0
 bootsig:    dw 0xAA55
 
-; === Functions to be removed from complete version ===
-
 ; Print a string
 print:
 .fpreamb:
@@ -339,51 +338,7 @@ print:
 	pop bp
 	ret
 
-; === Debuging Functions; Remove from Final Sector ===
-debug_word:
-.fpreamb:
-	push bp
-	mov bp, sp
-.fbody:
-	push msg_word
-	call print
-
-	mov ax, [bp+4]
-	shr ax, 8
-	push ax
-	call raw_print_byte
-
-	mov ax, [bp+4]
-	push ax
-	call raw_print_byte
-
-	push msg_term
-	call print
-.freturn:
-	mov sp, bp
-	pop bp
-	ret
-
-debug_byte:
-.fpreamb:
-	push bp
-	mov bp, sp
-.fbody:
-	push msg_byte
-	call print
-
-	mov ax, [bp+4]
-	push ax
-	call raw_print_byte
-
-	push msg_term
-	call print
-.freturn:
-	mov sp, bp
-	pop bp
-	ret
-
-raw_print_byte:
+print_byte:
 .fpreamb:
 	push bp
 	mov bp, sp
@@ -411,9 +366,52 @@ raw_print_byte:
 	pop bp
 	ret
 
-msg_byte: db 'BYTE(', 0
-msg_word: db 'WORD(', 0
-msg_term: db ')'
+debug_word:
+.fpreamb:
+	push bp
+	mov bp, sp
+.fbody:
+	push msg_debug_word
+	call print
+
+	mov ax, [bp+4]
+	shr ax, 8
+	push ax
+	call print_byte
+
+	mov ax, [bp+4]
+	push ax
+	call print_byte
+
+	push msg_debug_end
+	call print
+.freturn:
+	mov sp, bp
+	pop bp
+	ret
+
+debug_byte:
+.fpreamb:
+	push bp
+	mov bp, sp
+.fbody:
+	push msg_debug_byte
+	call print
+
+	mov ax, [bp+4]
+	push ax
+	call print_byte
+
+	push msg_debug_end
+	call print
+.freturn:
+	mov sp, bp
+	pop bp
+	ret
+
+msg_debug_byte: db 'BYTE(', 0
+msg_debug_word: db 'WORD(', 0
+msg_debug_end: db ')'
 msg_linebreak: db 0x0D, 0x0A, 0
 msg_start: db "Welcome to the bootloader.", 0x0D, 0x0A, 0
 msg_error: db "Error", 0x0D, 0x0A, 0
