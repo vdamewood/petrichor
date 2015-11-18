@@ -78,9 +78,8 @@ start:
 	mov es, ax
 
 	; Setup stack
-	mov ax, stack
-	mov sp, ax
-	mov bp, ax
+	mov sp, stack
+	mov bp, stack
 
 	; Load debugging/development code
 	push 0x7E00
