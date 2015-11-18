@@ -133,8 +133,6 @@ start:
 	mov ax, bx
 	; ax now has address of matching file
 
-
-
 	; TODO: Load sectors of found file
 
 	push st2_start
@@ -213,22 +211,15 @@ match_file:
 	push si
 	push di
 	push cx
-	push dx
-	push bx
 .fbody:
 	mov si, [bp+4]
 	mov di, [bp+6]
 	mov cx, 11
 .loop:
-	mov al, [di]
-	mov dl, [si]
-	cmp al, dl
+	lodsb
+	scasb
 	jne .nomatch
-	dec cx
-	jcxz .match
-	inc di
-	inc si
-	jmp .loop
+	loop .loop
 .match:
 	mov ax, 0xFFFF
 	jmp .freturn
@@ -236,8 +227,6 @@ match_file:
 	mov ax, 0x0000
 .freturn:
 	pop cx
-	pop dx
-	pop bx
 	pop di
 	pop si
 	mov sp, bp
