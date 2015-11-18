@@ -114,34 +114,27 @@ start:
 	call load_chunk
 	add sp, 4
 
-	mov ax, 0x500
+	mov bx, 0x500
 .readdir:
-	push ax
 	push st2_file
+	push bx
 	call match_file
-	add sp, 2
-	pop bx
+	add sp, 4
+
 	cmp ax, 0xFFFF
 	je .found
-	mov ax, bx
-	add ax, 32
+	add bx, 32
 
-	cmp ax, [fat_at]
+	cmp bx, [fat_at]
 	je .notfound
 	jmp .readdir
 .found:
-	mov ax, bx
-	; ax now has address of matching file
-
-	; TODO: Load sectors of found file
-
-	push st2_start
-
-	; TODO: Read FS and get correct first cluster.
-	push 2
+	; bx now has address of matching file
+	push word[bx+26]
 	call fat_sector
 	add sp, 2
 
+	push st2_start
 	push ax
 	call loadsector
 	add sp, 4
@@ -149,9 +142,9 @@ start:
 	; TODO: Check for additional clusters, and load them.
 	or ax, ax
 	jz .loaderr
-
 .loadsuccess:
 	jmp st2_start
+
 .notfound:
 	push msg_notfound
 	call print
