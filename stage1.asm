@@ -129,7 +129,7 @@ start:
 	je .notfound
 	jmp .readdir
 .found:
-	; bx now has address of matching file
+	; bx now has cluster of matching file
 	push word[bx+26]
 	call fat_sector
 	add sp, 2
@@ -207,6 +207,11 @@ match_file:
 .fbody:
 	mov si, [bp+4]
 	mov di, [bp+6]
+
+	mov ax, [si+0x0B] ; Ignore directories and the volume label
+	and ax, 0x18
+	jnz .nomatch
+
 	mov cx, 11
 .loop:
 	lodsb
