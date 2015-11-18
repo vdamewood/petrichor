@@ -90,8 +90,7 @@ start:
 	; Display start-up message
 	push msg_start
 	call print
-	add esp, 2
-
+	add sp, 2
 .load_dir:
 	; Calculate Where root Directory is. (Sector # = fatcount * fatsize + reserved)
 	mov ah, 0
@@ -131,26 +130,6 @@ start:
 	jmp .readdir
 .found:
 	mov ax, bx
-	push ax
-	call print
-	push msg_linebreak
-	call print
-	add sp, 2
-	pop ax
-
-	mov al, ah
-	push ax
-	call print_byte
-	add sp, 2
-	call print_byte
-	pop ax
-
-	push ax
-	push msg_start
-	call print
-	mov sp, 2
-	pop ax
-
 	; ax now has address of matching file
 
 
@@ -361,17 +340,55 @@ print:
 	ret
 
 ; === Debuging Functions; Remove from Final Sector ===
-print_byte:
+debug_word:
+.fpreamb:
+	push bp
+	mov bp, sp
+.fbody:
+	push msg_word
+	call print
+
+	mov ax, [bp+4]
+	shr ax, 8
+	push ax
+	call raw_print_byte
+
+	mov ax, [bp+4]
+	push ax
+	call raw_print_byte
+
+	push msg_term
+	call print
+.freturn:
+	mov sp, bp
+	pop bp
+	ret
+
+debug_byte:
 .fpreamb:
 	push bp
 	mov bp, sp
 .fbody:
 	push msg_byte
 	call print
-	add sp, 2
 
+	mov ax, [bp+4]
+	push ax
+	call raw_print_byte
+
+	push msg_term
+	call print
+.freturn:
+	mov sp, bp
+	pop bp
+	ret
+
+raw_print_byte:
+.fpreamb:
+	push bp
+	mov bp, sp
+.fbody:
 	mov ah, 0x0E
-
 	mov al, [bp+4]
 	shr al, 4
 	add al, 0x30
@@ -389,17 +406,16 @@ print_byte:
 	add al, 7
 .skip2:
 	int 0x10
-	push msg_linebreak
-	call print
-	add sp, 2
 .freturn:
 	mov sp, bp
 	pop bp
 	ret
 
-msg_byte: db 'Byte:', 0
-msg_start: db "BootSec", 0x0D, 0x0A, 0
+msg_byte: db 'BYTE(', 0
+msg_word: db 'WORD(', 0
+msg_term: db ')'
+msg_linebreak: db 0x0D, 0x0A, 0
+msg_start: db "Welcome to the bootloader.", 0x0D, 0x0A, 0
 msg_error: db "Error", 0x0D, 0x0A, 0
 msg_notfound: db "Not found", 0x0D, 0x0A, 0
-msg_linebreak: db 0x0D, 0x0A, 0
 pad2:        times 1024-($-$$) db 0
