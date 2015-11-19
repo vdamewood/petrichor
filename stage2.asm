@@ -51,7 +51,7 @@ stage2:
 	mov bp, stack
 
 	; Display start-up message
-	push msg_start
+	push msg_next
 	call print
 	add esp, 2
 
@@ -265,4 +265,6 @@ str_hi:      db 'Hi', 0
 msg_sayhi:   db 'Say Hi.', 0x0D, 0x0A, 0
 msg_hello:   db 'Hello.', 0x0D, 0x0A, 0
 newline:     db 0x0D, 0x0A, 0
-pad:         times 512-($-$$) db 0
+pad:         times 516-($-$$) db 0
+
+msg_next: db "This is the next cluster!", 0x0D, 0x0A, 0

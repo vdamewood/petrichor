@@ -140,6 +140,7 @@ start:
 .loadnext:
 	; CX has cluster to load
 	; BX has memory address to load to
+
 	push cx
 	call fat_sector
 	add sp, 2
@@ -151,11 +152,35 @@ start:
 	or ax, ax
 	jz .loaderr
 
-	; TODO: Check for additional clusters, and load them.
+	; [bp-2] Beginning of FAT
+	; [bp-4] End of FAT
 
-	; As this point the first value popped will have the end
-	; of the FAT. The next value popped will have the beginning.
+	push bx
+	mov ax, cx
+	mov bx, 3
+	mul bx
+	mov bx, 2
+	div bx
+	add ax, [bp-2]
+	pop bx
 
+	mov di, ax
+	mov ax, [di]
+
+	or dx, 0x0000
+	jz .even
+	shr ax, 4
+	jmp .endoddeven
+.even:
+	and ax, 0x0FFF
+.endoddeven:
+	; At this point ax has the next cluster
+	cmp ax, 0xFF8
+	jge .loadsuccess
+
+	mov cx, ax
+	add bx, 512
+	jmp .loadnext
 .loadsuccess:
 	jmp stage2_start
 .notfound:
@@ -418,6 +443,7 @@ debug_byte:
 	pop bp
 	ret
 
+msg_next: db 'NEXT', 0
 msg_debug_byte: db 'BYTE(', 0
 msg_debug_word: db 'WORD(', 0
 msg_debug_end: db ')'
