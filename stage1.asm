@@ -129,22 +129,33 @@ start:
 	je .notfound
 	jmp .readdir
 .found:
-	; bx now has cluster of matching file
-	push word[bx+26]
+	; bx now has directory entry of matching file
+	; If I ever decide to keep track of file size,
+	; this would be the place to save it. It's at
+	; dword[bx+28].
+
+	mov cx, word[bx+26]
+	mov bx, st2_start
+.loadnext:
+	; CX has cluster to load
+	; BX has memory address to load to
+	push cx
 	call fat_sector
 	add sp, 2
 
-	push st2_start
+	push bx
 	push ax
 	call loadsector
 	add sp, 4
-
-	; TODO: Check for additional clusters, and load them.
 	or ax, ax
 	jz .loaderr
+
+	; TODO: Check for additional clusters, and load them.
+
+
+
 .loadsuccess:
 	jmp st2_start
-
 .notfound:
 	push msg_notfound
 	call print
