@@ -39,7 +39,6 @@ stage1_start   equ  0x7C00 ; The beginning of where the boot sector
                            ; is loaded. This is used to setup the
 stage2_start   equ  0x8000 ; Where to load the second-stage image.
 stack_base     equ  stage1_start
-fat_at         equ  memory_start
 
 ; === FAT DATA ===
 
@@ -105,16 +104,16 @@ start:
 	call load_chunk
 	add sp, 6
 
-	mov [fat_at], ax
-	push ax
-
 .load_fat:
+	push ax ; ax holds the location to which the FAT will be loaded.
 	mov ax, [reserved]
 	push ax
 	mov ax, [fatsize]
 	push ax
 	call load_chunk
-	add sp, 4
+	add sp, 4 ; We pushed 3 values to stack, but only pop 2.
+	          ; The remaining value will be poped later.
+	push ax   ; We'll also save the end of the FAT.
 
 	mov bx, data_start
 	mov cx, [entries]
@@ -154,7 +153,8 @@ start:
 
 	; TODO: Check for additional clusters, and load them.
 
-
+	; As this point the first value popped will have the end
+	; of the FAT. The next value popped will have the beginning.
 
 .loadsuccess:
 	jmp stage2_start
