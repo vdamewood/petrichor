@@ -53,6 +53,7 @@ reserved:
 	dw 2          ; Number of reserved clusters
 fatcount:
 	db 2          ; Number of file-allocation tables
+entries:
 	dw 224        ; Number of root entires
 	dw 2880       ; Number of sectors
 	db 0xF0       ; Media descriptor
@@ -115,7 +116,8 @@ start:
 	call load_chunk
 	add sp, 4
 
-	mov bx, 0x500
+	mov bx, data_start
+	mov cx, [entries]
 .readdir:
 	push st2_file
 	push bx
@@ -126,9 +128,8 @@ start:
 	je .found
 	add bx, 32
 
-	cmp bx, [fat_at]
-	je .notfound
-	jmp .readdir
+	loop .readdir
+	jmp .notfound
 .found:
 	; bx now has directory entry of matching file
 	; If I ever decide to keep track of file size,
