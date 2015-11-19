@@ -309,6 +309,7 @@ print:
 .fpreamb:
 	push bp
 	mov bp, sp
+	push ax
 	push si
 .fbody:
 	mov si, [bp+4]
@@ -321,6 +322,7 @@ print:
 	jmp .loop
 .freturn:
 	pop si
+	pop ax
 	mov sp, bp
 	pop bp
 	ret
@@ -329,6 +331,7 @@ print_byte:
 .fpreamb:
 	push bp
 	mov bp, sp
+	push ax
 .fbody:
 	mov ah, 0x0E
 	mov al, [bp+4]
@@ -349,6 +352,7 @@ print_byte:
 .skip2:
 	int 0x10
 .freturn:
+	pop ax
 	mov sp, bp
 	pop bp
 	ret
@@ -357,6 +361,7 @@ debug_word:
 .fpreamb:
 	push bp
 	mov bp, sp
+	push ax
 .fbody:
 	push msg_debug_word
 	call print
@@ -372,7 +377,9 @@ debug_word:
 
 	push msg_debug_end
 	call print
+	add sp, 8
 .freturn:
+	pop ax
 	mov sp, bp
 	pop bp
 	ret
@@ -381,6 +388,7 @@ debug_byte:
 .fpreamb:
 	push bp
 	mov bp, sp
+	push ax
 .fbody:
 	push msg_debug_byte
 	call print
@@ -391,7 +399,9 @@ debug_byte:
 
 	push msg_debug_end
 	call print
+	add sp, 6
 .freturn:
+	pop ax
 	mov sp, bp
 	pop bp
 	ret
