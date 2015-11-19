@@ -333,7 +333,9 @@ loadsector:
 
 ; === Non-executable Data ===
 st2_file:  db 'STAGE2  BIN'
-pad:        times 446-($-$$) db 0
+pad:        times 444-($-$$) db 0
+marker:     dw 0xFFFE ; This is so that I can see how much space
+                      ; is available in the binary.
 ptable:     times 64 db 0
 bootsig:    dw 0xAA55
 
