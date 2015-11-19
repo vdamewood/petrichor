@@ -29,17 +29,17 @@
 [BITS 16]
 [ORG 0x7C00]
 
-mem_start   equ  0x0500
-load_start  equ  0x0600
-st1_start   equ  0x7C00
-st2_start   equ  0x8000
-;past_end    equ  0x080000
-true        equ  0xFFFF
-false       equ  0x0000
-
-stack       equ  st1_start
-;load_at     equ  mem_start
-fat_at      equ  mem_start + 2
+memory_start   equ  0x0500 ; Beginning of free memory. 256 bytes
+                           ; are reserved (by me) for variables
+                           ; and state. But I'm only using 2 bytes.
+data_start     equ  0x0600 ; Begining of memory where we'll load
+                           ; data: the root directory and
+                           ; file allocation tables.
+stage1_start   equ  0x7C00 ; The beginning of where the boot sector
+                           ; is loaded. This is used to setup the
+stage2_start   equ  0x8000 ; Where to load the second-stage image.
+stack_base     equ  stage1_start
+fat_at         equ  memory_start
 
 ; === FAT DATA ===
 
@@ -77,8 +77,8 @@ start:
 	mov ds, ax
 	mov es, ax
 	mov ss, ax
-	mov sp, stack
-	mov bp, stack
+	mov sp, stack_base
+	mov bp, stack_base
 
 	; Load debugging/development code
 	push 0x7E00
@@ -97,13 +97,15 @@ start:
 	mov al, [fatcount]
 	imul ax, [fatsize]
 	add ax, [reserved]
+
+	push data_start
 	push ax
 	push 14
 	call load_chunk
-	add sp, 4
+	add sp, 6
 
-	mov ax, [load_at]
 	mov [fat_at], ax
+	push ax
 
 .load_fat:
 	mov ax, [reserved]
@@ -134,7 +136,7 @@ start:
 	; dword[bx+28].
 
 	mov cx, word[bx+26]
-	mov bx, st2_start
+	mov bx, stage2_start
 .loadnext:
 	; CX has cluster to load
 	; BX has memory address to load to
@@ -154,7 +156,7 @@ start:
 
 
 .loadsuccess:
-	jmp st2_start
+	jmp stage2_start
 .notfound:
 	push msg_notfound
 	call print
@@ -186,16 +188,15 @@ load_chunk:
 .fbody:
 	mov cx, [bp+4] ; Count
 	mov dx, [bp+6] ; Sector #
-	mov ax, [load_at]
+	mov ax, [bp+8]
 .loop:
 	push ax
 	push dx
 	call loadsector
-	add sp, 4
+	add sp, 2
+	pop ax
 
-	mov ax, [load_at]
 	add ax, 512
-	mov [load_at], ax
 
 	inc dx
 	loop .loop
@@ -305,14 +306,14 @@ loadsector:
 	ret
 
 ; === Non-executable Data ===
-load_at:      dw mem_start
-;fat_at:       dw 0x0000
-
 st2_file:  db 'STAGE2  BIN'
-
 pad:        times 446-($-$$) db 0
 ptable:     times 64 db 0
 bootsig:    dw 0xAA55
+
+; === End of first sector ===
+; All code below this point is for debugging and should be
+; removed after the bootsector is complete.
 
 ; Print a string
 print:
