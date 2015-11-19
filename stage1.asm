@@ -72,12 +72,11 @@ fat_extended_boot_record:
 
 ; === BOOT LOADER ===
 start:
-	; Setup segments
+	; Setup segments and stack
 	mov ax, 0
 	mov ds, ax
 	mov es, ax
-
-	; Setup stack
+	mov ss, ax
 	mov sp, stack
 	mov bp, stack
 
