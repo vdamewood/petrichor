@@ -1,31 +1,24 @@
 # Petrichor
 
 Petrichor is the code name for my hobby OS-development project. At the moment
-the project includes a boot sector written in 16-bit x86 assembly. The program
-in the boot sector waits for the user to type something, then echos the text
-back at the user.
+the project includes a bootable floppy with a boot sector written in 16-bit
+x86 assembly. The program in the boot sector loads and runs a file named
+STAGE2.BIN from the floppy disk. A version of STAGE2.BIN is included, also
+written in 16-bit x86 assembly. It is a simple, toy program that demonstrates
+that the first stage has completed.
 
-# Future Goals
+## Future Development
 
-In the near future it's hoped that Petricor loads a second-stage image, and
-include some demonstration tasks. After the second-stage image is complete,
-development will focus on a third-stage image that will eventually become
-the kernel of the Petrichor operating system.
-
-## The Second-Stage Image
-
-At first, the second-stage image will run a simple command-line interface
-and perform demonstation tasks. After these tasks are complete, a demonstration
-task to load the third-stage image (future kernel) will be made. With a workable
-third-stage image, the other demonstration tasks will be moved into the
-third-stage image and the second-stage loader will focus on setting up the machine state to run a proper kernel.
+Hopefully I can get the second-stage image to configure the system into a
+modern working state. Once that's complete, the second stage image will
+load a proper kernel.
 
 ## The Kernel
 
-The Kernel will start out as just a simple third-stage image with commands
-taken from the early second-stage image. These commands will be moved into
-separate executables and the third-stage image will be modified to load these
-demonstration tools from separate executables.
+The Kernel will start out as just a simple third-stage image with some simple
+commands. These commands will be moved into separate executables and the
+third-stage image will be modified to load these demonstration tools from
+separate executables.
 
 ## Eventual Goals
 
