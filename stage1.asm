@@ -83,8 +83,9 @@ start:
 	; Load debugging/development code
 	push 0x7E00
 	push 1
-	call loadsector
-	add sp, 4
+	push 1
+	call load
+	add sp, 6
 
 	; Display start-up message
 	push msg_start
@@ -98,17 +99,17 @@ start:
 	imul ax, [fatsize]
 	add ax, [reserved]
 
-	push data_start
-	push ax
-	push 14
-	call load_chunk
+	push data_start ; Destination
+	push ax ; Source
+	push 14 ; Count
+	call load
 	add sp, 6
 
 .load_fat:
 	push ax ; ax holds the location to which the FAT will be loaded.
-	push word[reserved]
-	push word[fatsize]
-	call load_chunk
+	push word[reserved] ; Source
+	push word[fatsize] ; Count
+	call load
 	add sp, 4 ; We pushed 3 values to stack, but only pop 2.
 	          ; The remaining value will be poped later.
 	push ax   ; We'll also save the end of the FAT.
@@ -162,7 +163,8 @@ start:
 
 	push bx
 	push ax
-	call loadsector
+	push 1 ; FIXME: Change to cluster size.
+	call load
 	add sp, 4
 	or ax, ax
 	jz .loaderr
@@ -213,44 +215,12 @@ start:
 
 ; === FUNCTIONS ===
 
-; For loading File info
-; File entries are 32 bytes.
-; #00, to #07:     File name
-; #08, to #10:     File Extention
-; #26, to #27:     First Cluster
-; #28, to #31:     File Size
-
-load_chunk:
-.fpreamb:
-	push bp
-	mov bp, sp
-	push cx
-	push dx
-.fbody:
-	mov cx, [bp+4] ; Count
-	mov dx, [bp+6] ; Sector #
-	mov ax, [bp+8]
-.loop:
-	push ax
-	push dx
-	call loadsector
-	add sp, 2
-	pop ax
-
-	add ax, 512
-
-	inc dx
-	loop .loop
-.freturn:
-	pop dx
-	pop cx
-	mov sp, bp
-	pop bp
-	ret
-
-loadsector:
-; bp+4: Sector to load
-; bp+6: Destination Address
+load:
+;[bp+4]: Number of sectors to load
+;[bp+6]: First sector to load
+;[bp+8]: Destination starting memory address
+; returns ax: Memory address that's one past
+;        the end of the loaded section
 .fpreamb:
 	push bp
 	mov bp, sp
@@ -258,37 +228,38 @@ loadsector:
 	push dx
 	push bx
 .fbody:
-	mov ax, [bp+4]
 
 ; Step 1: Convert sector number to CHS
-	mov bl, 36 ; AL has cyl, AH has remainder
-	idiv bl ; AL has cyl, AH has remainder
+	mov ax, [bp+6]
+	mov bl, 36
+	div bl ; AL has cyl, AH has remainder
 
 	mov ch, al ; Set CH = Cylinder
 	mov al, ah
 	mov ah, 0
 
 	mov bl, 18 ; AL has head, AH has sector
-	idiv bl
+	div bl
 
 	mov dh, al
 
 	inc ah ; Sectors are 1-based
 	mov cl, ah
 
-; Step 2: Profit!
-	mov al, 1 ; Number of sectors
+; Step 2: Make the actual copy to memory
+	mov al, [bp+4] ; Number of sectors
 	mov dl, 0 ; drive
 
-	mov bx, [bp+6] ; buffer
-	mov ah, 2 ; Read sectors
+	mov bx, [bp+8] ; destination
+	mov ah, 2
 	int 0x13 ; due to ah = 0x02, Read sectors into memory
+	; FIXME: Carry flag set on failure. Do something.
 
-	jc .fail
-	mov ax, 0xFFFF
-	jmp .freturn
-.fail:
-	mov ax, 0x0000
+; Step 3: Find and return the end of the load
+	mov ax, 512
+	mov bx, [bp+6]
+	mul bx
+	add ax, [bp+8]
 .freturn:
 	pop bx
 	pop dx
