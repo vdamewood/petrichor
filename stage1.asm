@@ -106,10 +106,8 @@ start:
 
 .load_fat:
 	push ax ; ax holds the location to which the FAT will be loaded.
-	mov ax, [reserved]
-	push ax
-	mov ax, [fatsize]
-	push ax
+	push word[reserved]
+	push word[fatsize]
 	call load_chunk
 	add sp, 4 ; We pushed 3 values to stack, but only pop 2.
 	          ; The remaining value will be poped later.
