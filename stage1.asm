@@ -14,7 +14,7 @@
 ; notice, this list of conditions and the following disclaimer in the
 ; documentation and/or other materials provided with the distribution.
 ;
-; THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+; THIS SOFTWARE IS PROVI DED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 ; "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 ; LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
 ; A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
@@ -115,21 +115,38 @@ start:
 	          ; The remaining value will be poped later.
 	push ax   ; We'll also save the end of the FAT.
 
+
+
 	mov bx, data_start
 	mov cx, [entries]
-.readdir:
-	push st2_file
-	push bx
-	call match_file
-	add sp, 4
 
-	cmp ax, 0xFFFF
-	je .found
+.filematch:
+	mov si, st2_file
+	mov di, bx
+
+	mov ax, [di+0x0B] ; Ignore directories and the volume label
+	and ax, 0x18
+	jnz .filematch_badattr
+
+	push cx ; Inner Loop
+	mov cx, 11
+.filematch_loop:
+	lodsb
+	scasb
+	jne .filematch_nomatch
+	loop .filematch_loop
+.filematch_positive:
+	add sp, 2 ; Escaping inner loop
+	jmp .filematch_found
+.filematch_nomatch:
+	pop cx ; For Inner loop
+
+.filematch_badattr:
 	add bx, 32
+	loop .filematch
+	jmp .error_missing_stage2
 
-	loop .readdir
-	jmp .notfound
-.found:
+.filematch_found:
 	; bx now has directory entry of matching file
 	; If I ever decide to keep track of file size,
 	; this would be the place to save it. It's at
@@ -141,9 +158,9 @@ start:
 	; CX has cluster to load
 	; BX has memory address to load to
 
-	push cx
-	call fat_sector
-	add sp, 2
+	; The real location of cluster n is sector (reserved + fat_size * fat_count + 14)
+	mov ax, cx
+	add ax, 32
 
 	push bx
 	push ax
@@ -183,7 +200,7 @@ start:
 	jmp .loadnext
 .loadsuccess:
 	jmp stage2_start
-.notfound:
+.error_missing_stage2:
 	push msg_notfound
 	call print
 	add sp, 2
@@ -229,55 +246,6 @@ load_chunk:
 .freturn:
 	pop dx
 	pop cx
-	mov sp, bp
-	pop bp
-	ret
-
-; Match a filename
-match_file:
-.fpreamb:
-	push bp
-	mov bp, sp
-	push si
-	push di
-	push cx
-.fbody:
-	mov si, [bp+4]
-	mov di, [bp+6]
-
-	mov ax, [si+0x0B] ; Ignore directories and the volume label
-	and ax, 0x18
-	jnz .nomatch
-
-	mov cx, 11
-.loop:
-	lodsb
-	scasb
-	jne .nomatch
-	loop .loop
-.match:
-	mov ax, 0xFFFF
-	jmp .freturn
-.nomatch:
-	mov ax, 0x0000
-.freturn:
-	pop cx
-	pop di
-	pop si
-	mov sp, bp
-	pop bp
-	ret
-
-fat_sector:
-; bp+4: FAT Cluster
-.fpreamb:
-	push bp
-	mov bp, sp
-.fbody:
-	; The real location of cluster n is sector (reserved + fat_size * fat_count + 14)
-	mov ax, [bp+4]
-	add ax, 32
-.freturn:
 	mov sp, bp
 	pop bp
 	ret
