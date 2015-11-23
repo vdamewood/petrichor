@@ -47,6 +47,7 @@ stack_base     equ  stage1_start
 fat_bios_parameter_block:
 	db 'MSWIN4.1' ; OEM ID
 	dw 512        ; bytes per sector
+cluster:
 	db 1          ; sectors per cluster
 reserved:
 	dw 2          ; Number of reserved clusters
@@ -157,13 +158,21 @@ start:
 	; CX has cluster to load
 	; BX has memory address to load to
 
-	; The real location of cluster n is sector (reserved + fat_size * fat_count + 14)
-	mov ax, cx
-	add ax, 32
+	; The location of cluster n is sector (reserved + fat_size * fat_count + 12) + n
+	; Where the 12 represents the size of the root directory (12 sectors) - 2 for
+	; FAT clusters starting at 2.
+	mov dx, [fatsize]
+	mov ah, 0
+	mov al, [fatcount]
+	mul dx
+	add ax, [reserved]
+	add ax, 12
+	add ax, cx
 
 	push bx
 	push ax
-	push 1 ; FIXME: Change to cluster size.
+	mov al, [cluster]
+	push ax
 	call load
 	add sp, 4
 	or ax, ax
