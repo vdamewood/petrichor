@@ -51,7 +51,7 @@ stage2:
 	mov bp, stack
 
 	; Display start-up message
-	push msg_next
+	push msg_start
 	call print
 	add esp, 2
 
@@ -259,12 +259,9 @@ print_byte:
 	ret
 
 ; === Non-executable Data ===
-msg_start:   db 'Second stage loaded. Say Hi.', 0x0D, 0x0A, 0
+msg_start:   db 'Second stage loaded. '
+msg_sayhi:   db 'Say Hi.'
+newline:     db 0x0D, 0x0A, 0
 msg_prompt:  db '?> ', 0
 str_hi:      db 'Hi', 0
-msg_sayhi:   db 'Say Hi.', 0x0D, 0x0A, 0
 msg_hello:   db 'Hello.', 0x0D, 0x0A, 0
-newline:     db 0x0D, 0x0A, 0
-pad:         times 516-($-$$) db 0
-
-msg_next: db "This is the next cluster!", 0x0D, 0x0A, 0
