@@ -1,3 +1,9 @@
+ifdef DEBUG
+	DDEBUG="-DDEBUG"
+else
+	DDEBUG=""
+endif
+
 all: bootdisk.img
 
 clean:
@@ -12,6 +18,6 @@ bootdisk.img: stage1.bin stage2.bin fat.bin rootdir.bin
 	mcopy -i bootdisk.img stage2.bin ::/STAGE2.BIN
 
 %.bin: %.asm
-	nasm $< -f bin -o $@
+	nasm $(DDEBUG) $< -f bin -o $@
 
 .PHONY: all clean distclean

@@ -50,7 +50,11 @@ fat_bios_parameter_block:
 cluster:
 	db 1          ; sectors per cluster
 reserved:
+%ifdef DEBUG
 	dw 2          ; Number of reserved clusters
+%else ; not DEBUG
+	dw 1          ; Number of reserved clusters
+%endif
 fatcount:
 	db 2          ; Number of file-allocation tables
 entries:
@@ -81,6 +85,7 @@ start:
 	mov sp, stack_base
 	mov bp, stack_base
 
+%ifdef DEBUG
 	; Load debugging/development code
 	push 0x7E00
 	push 1
@@ -92,6 +97,7 @@ start:
 	push msg_start
 	call print
 	add sp, 2
+%endif ; DEBUG
 
 .load_dir:
 	; Calculate Where root Directory is. (Sector # = fatcount * fatsize + reserved)
@@ -210,14 +216,18 @@ start:
 .loadsuccess:
 	jmp stage2_start
 .error_missing_stage2:
+%ifdef DEBUG
 	push msg_notfound
 	call print
 	add sp, 2
+%endif ; DEBUG
 	jmp .freeze
 .loaderr:
+%ifdef DEBUG
 	push msg_error
 	call print
 	add sp, 2
+%endif ; DEBUG
 .freeze:
 	hlt
 	jmp .freeze
@@ -289,6 +299,7 @@ bootsig:    dw 0xAA55
 ; All code below this point is for debugging and should be
 ; removed after the bootsector is complete.
 
+%ifdef DEBUG
 ; Print a string
 print:
 .fpreamb:
@@ -400,3 +411,5 @@ msg_error: db "Error", 0x0D, 0x0A, 0
 msg_notfound: db "Not found", 0x0D, 0x0A, 0
 
 pad2:        times 1024-($-$$) db 0
+%endif
+
