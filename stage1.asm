@@ -391,12 +391,12 @@ debug_byte:
 	pop bp
 	ret
 
-msg_next: db 'NEXT', 0
 msg_debug_byte: db 'BYTE(', 0
 msg_debug_word: db 'WORD(', 0
 msg_debug_end: db ')'
-msg_linebreak: db 0x0D, 0x0A, 0
+
 msg_start: db "Welcome to the bootloader.", 0x0D, 0x0A, 0
 msg_error: db "Error", 0x0D, 0x0A, 0
 msg_notfound: db "Not found", 0x0D, 0x0A, 0
+
 pad2:        times 1024-($-$$) db 0
