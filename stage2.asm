@@ -46,7 +46,6 @@ stage2:
 	; Setup stack. This was probably done
 	; in the boot sector but this will
 	; reset it.
-	mov ax, stack
 	mov sp, stack
 	mov bp, stack
 
