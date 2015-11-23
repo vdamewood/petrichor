@@ -150,7 +150,7 @@ start:
 .filematch_badattr:
 	add bx, 32
 	loop .filematch
-	jmp .error_missing_stage2
+	jmp .error
 
 .filematch_found:
 	; bx now has directory entry of matching file
@@ -182,7 +182,7 @@ start:
 	call load
 	add sp, 4
 	or ax, ax
-	jz .loaderr
+	jz .error
 
 	; [bp-2] Beginning of FAT
 	; [bp-4] End of FAT
@@ -207,27 +207,16 @@ start:
 	and ax, 0x0FFF
 .endoddeven:
 	; At this point ax has the next cluster
-	cmp ax, 0xFF8
-	jge .loadsuccess
+	cmp ax, 0xFF8 ; If the next cluster is an EOF marker...
+	jge stage2_start ; We're done loading, jmp to the next stage.
 
+	; Otherwise, setup to load the next cluster.
 	mov cx, ax
 	add bx, 512
 	jmp .loadnext
-.loadsuccess:
-	jmp stage2_start
-.error_missing_stage2:
-%ifdef DEBUG
-	push msg_notfound
-	call print
-	add sp, 2
-%endif ; DEBUG
-	jmp .freeze
-.loaderr:
-%ifdef DEBUG
-	push msg_error
-	call print
-	add sp, 2
-%endif ; DEBUG
+.error:
+	mov ax, 0x0E13
+	int 0x10
 .freeze:
 	hlt
 	jmp .freeze
@@ -406,9 +395,8 @@ msg_debug_byte: db 'BYTE(', 0
 msg_debug_word: db 'WORD(', 0
 msg_debug_end: db ')'
 
-msg_start: db "Welcome to the bootloader.", 0x0D, 0x0A, 0
-msg_error: db "Error", 0x0D, 0x0A, 0
-msg_notfound: db "Not found", 0x0D, 0x0A, 0
+msg_error: db "Failed to load FS information", 0x0D, 0x0A, 0
+msg_notfound: db "Stage-2 image not found", 0x0D, 0x0A, 0
 
 pad2:        times 1024-($-$$) db 0
 %endif
