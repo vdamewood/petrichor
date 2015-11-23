@@ -126,33 +126,26 @@ start:
 	mov bx, data_start
 	mov cx, [entries]
 
-.filematch:
-	mov si, st2_file
-	mov di, bx
-
-	mov ax, [di+0x0B] ; Ignore directories and the volume label
+.nextfile:
+	mov ax, [bx+0x0B] ; Ignore directories and the volume label
 	and ax, 0x18
-	jnz .filematch_badattr
+	jnz .file_nomatch
 
 	push cx ; Inner Loop
+	mov si, st2_file
+	mov di, bx
 	mov cx, 11
-.filematch_loop:
-	lodsb
-	scasb
-	jne .filematch_nomatch
-	loop .filematch_loop
-.filematch_positive:
-	add sp, 2 ; Escaping inner loop
-	jmp .filematch_found
-.filematch_nomatch:
-	pop cx ; For Inner loop
+	repe cmpsb
+	pop cx
+	jne .file_nomatch
+	jmp .file_found
 
-.filematch_badattr:
+.file_nomatch:
 	add bx, 32
-	loop .filematch
+	loop .nextfile
 	jmp .error
 
-.filematch_found:
+.file_found:
 	; bx now has directory entry of matching file
 	; If I ever decide to keep track of file size,
 	; this would be the place to save it. It's at
