@@ -39,6 +39,7 @@ stage1_start   equ  0x7C00 ; The beginning of where the boot sector
                            ; is loaded. This is used to setup the
 stage2_start   equ  0x8000 ; Where to load the second-stage image.
 stack_base     equ  stage1_start
+rootsize       equ  14     ; Number of sectors in root directory.
 
 ; === FAT DATA ===
 
@@ -105,12 +106,14 @@ start:
 	; Calculate Where root Directory is.
 	; (Sector # = fatcount * fatsize + reserved)
 	mov al, [fatcount]
-	imul ax, [fatsize]
+	imul ax, [fatsize] ; This will be wrong if fatcount*fatsize > 32767
+	                   ; Maximum is 2880 for floppies.
 	add ax, [reserved]
+	push ax
 
 	push data_start ; Destination
-	push ax ; Source
-	push 14 ; Count
+	push ax         ; Source
+	push rootsize   ; Count
 	call load
 	add sp, 6
 
@@ -158,17 +161,12 @@ start:
 	; CX has cluster to load
 	; BX has memory address to load to
 
-	; The location of cluster n is sector
-	; (reserved + fat_size * fat_count + 12) + n
-	; Where the 12 represents the size of the root
-	; directory (14) minus 2 because FAT clusters
-	; start at 2.
-	mov dx, [fatsize]
-	mov ah, 0
-	mov al, [fatcount]
-	mul dx
-	add ax, [reserved]
-	add ax, 12
+	; The location of cluster n is sector (rootdir + 12) + n. The 12
+	; represents the size of the root directory (14) minus 2 because FAT
+	; clusters start at 2.
+
+	mov ax, [bp-2] ; fatcount*fatsize + reserved
+	add ax, rootsize-2
 	add ax, cx
 
 	push bx
@@ -180,16 +178,16 @@ start:
 	or ax, ax
 	jz .error
 
-	; [bp-2] Beginning of FAT
-	; [bp-4] End of FAT
+	; [bp-4] Beginning of FAT
+	; [bp-2] End of FAT
 
 	; The following bit of magic takes the value of cx, multiplies it by
 	; 1.5 and notes if it was odd or even before the process.
 	mov ax, cx
 	shr ax, 1       ; ax = floor(cx/2)
-	sbb dx, dx      ; dx = (cx mod 2) ? -1 : 0
+	sbb dx, dx      ; dx = (cx mod 2) == 0 ? 0 : -1
 	add cx, ax      ; cx = 1.5*cx
-	add cx, [bp-2]
+	add cx, [bp-4]
 
 	mov di, cx
 	mov cx, [di]
@@ -233,6 +231,7 @@ load:
 
 ; Step 1: Convert sector number to CHS
 	mov ax, [bp+6]
+	; FIXME: Technically, I'm hard-coding values here I can't rely on.
 	mov bl, 36
 	div bl ; AL has cyl, AH has remainder
 
@@ -240,6 +239,7 @@ load:
 	mov al, ah
 	mov ah, 0
 
+	; This is another hard-coded value.
 	mov bl, 18 ; AL has head, AH has sector
 	div bl
 
