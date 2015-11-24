@@ -30,7 +30,7 @@
 mem_start   equ  0x0500
 load_start  equ  0x0600
 st1_start   equ  0x7C00
-st2_start   equ  0x8000
+st2_start   equ  0x7E00
 ;past_end    equ  0x080000
 true        equ  0xFFFF
 false       equ  0x0000

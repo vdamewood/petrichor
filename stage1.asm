@@ -29,15 +29,13 @@
 [BITS 16]
 [ORG 0x7C00]
 
-memory_start   equ  0x0500 ; Beginning of free memory. 256 bytes
-                           ; are reserved (by me) for variables
-                           ; and state. But I'm only using 2 bytes.
-data_start     equ  0x0600 ; Begining of memory where we'll load
+memory_start   equ  0x0500 ; Beginning of free memory.
+data_start     equ  0x0500 ; Begining of memory where we'll load
                            ; data: the root directory and
                            ; file allocation tables.
 stage1_start   equ  0x7C00 ; The beginning of where the boot sector
-                           ; is loaded. This is used to setup the
-stage2_start   equ  0x8000 ; Where to load the second-stage image.
+                           ; is loaded.
+stage2_start   equ  0x7E00 ; Where to load the second-stage image.
 stack_base     equ  stage1_start
 rootsize       equ  14     ; Number of sectors in root directory.
 
@@ -79,7 +77,7 @@ fat_extended_boot_record:
 ; === BOOT LOADER ===
 start:
 	; Setup segments and stack
-	mov ax, 0
+	xor ax, ax
 	mov ds, ax
 	mov es, ax
 	mov ss, ax
@@ -141,8 +139,7 @@ start:
 	mov cx, 11
 	repe cmpsb
 	pop cx
-	jne .file_nomatch
-	jmp .file_found
+	je .file_found
 
 .file_nomatch:
 	add bx, 32 ; Directory entries are 32 bytes
