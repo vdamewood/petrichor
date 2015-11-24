@@ -102,7 +102,8 @@ start:
 %endif ; DEBUG
 
 .load_dir:
-	; Calculate Where root Directory is. (Sector # = fatcount * fatsize + reserved)
+	; Calculate Where root Directory is.
+	; (Sector # = fatcount * fatsize + reserved)
 	mov al, [fatcount]
 	imul ax, [fatsize]
 	add ax, [reserved]
