@@ -86,6 +86,7 @@ start:
 	mov bp, stack_base
 
 %ifdef DEBUG
+	push ax
 	; Load debugging/development code
 	push 0x7E00
 	push 1
@@ -97,11 +98,11 @@ start:
 	push msg_start
 	call print
 	add sp, 2
+	pop ax
 %endif ; DEBUG
 
 .load_dir:
 	; Calculate Where root Directory is. (Sector # = fatcount * fatsize + reserved)
-	mov ah, 0
 	mov al, [fatcount]
 	imul ax, [fatsize]
 	add ax, [reserved]
@@ -118,10 +119,9 @@ start:
 	push word[fatsize] ; Count
 	call load
 	add sp, 4 ; We pushed 3 values to stack, but only pop 2.
-	          ; The remaining value will be poped later.
+	          ; The remaining value (the beginning of the FAT in
+	          ; memory) will be used later.
 	push ax   ; We'll also save the end of the FAT.
-
-
 
 	mov bx, data_start
 	mov cx, [entries]
@@ -141,9 +141,9 @@ start:
 	jmp .file_found
 
 .file_nomatch:
-	add bx, 32
+	add bx, 32 ; Directory entries are 32 bytes
 	loop .nextfile
-	jmp .error
+	jmp .error ; We've exhausted all entries. Quit.
 
 .file_found:
 	; bx now has directory entry of matching file
@@ -157,9 +157,11 @@ start:
 	; CX has cluster to load
 	; BX has memory address to load to
 
-	; The location of cluster n is sector (reserved + fat_size * fat_count + 12) + n
-	; Where the 12 represents the size of the root directory (12 sectors) - 2 for
-	; FAT clusters starting at 2.
+	; The location of cluster n is sector
+	; (reserved + fat_size * fat_count + 12) + n
+	; Where the 12 represents the size of the root
+	; directory (14) minus 2 because FAT clusters
+	; start at 2.
 	mov dx, [fatsize]
 	mov ah, 0
 	mov al, [fatcount]
@@ -180,31 +182,29 @@ start:
 	; [bp-2] Beginning of FAT
 	; [bp-4] End of FAT
 
-	push bx
+	; The following bit of magic takes the value of cx, multiplies it by
+	; 1.5 and notes if it was odd or even before the process.
 	mov ax, cx
-	mov bx, 3
-	mul bx
-	mov bx, 2
-	div bx
-	add ax, [bp-2]
-	pop bx
+	shr ax, 1       ; ax = floor(cx/2)
+	sbb dx, dx      ; dx = (cx mod 2) ? -1 : 0
+	add cx, ax      ; cx = 1.5*cx
+	add cx, [bp-2]
 
-	mov di, ax
-	mov ax, [di]
+	mov di, cx
+	mov cx, [di]
 
-	or dx, 0x0000
-	jz .even
-	shr ax, 4
-	jmp .endoddeven
-.even:
-	and ax, 0x0FFF
-.endoddeven:
-	; At this point ax has the next cluster
-	cmp ax, 0xFF8 ; If the next cluster is an EOF marker...
+	or dx, dx           ; At this point cx contains a value with four garbage
+	jz .fat_align_even  ; bits. So we check if the cluster number was odd/even.
+	shr cx, 4           ; If odd, garbage bits are the low-order bits. Shift.
+	jmp .fat_align_end
+.fat_align_even:
+	and cx, 0x0FFF      ; If even, garbage bits are the high-order bits. Zero.
+.fat_align_end:
+	; At this point cx has the next cluster
+	cmp cx, 0xFF8    ; If the next cluster is an EOF marker...
 	jge stage2_start ; We're done loading, jmp to the next stage.
 
 	; Otherwise, setup to load the next cluster.
-	mov cx, ax
 	add bx, 512
 	jmp .loadnext
 .error:
@@ -384,13 +384,10 @@ debug_byte:
 	pop bp
 	ret
 
+msg_start:      db 'Boot sector loaded.', 0x0D, 0x0A, 0
 msg_debug_byte: db 'BYTE(', 0
 msg_debug_word: db 'WORD(', 0
-msg_debug_end: db ')'
-
-msg_error: db "Failed to load FS information", 0x0D, 0x0A, 0
-msg_notfound: db "Stage-2 image not found", 0x0D, 0x0A, 0
+msg_debug_end:  db ')'
 
 pad2:        times 1024-($-$$) db 0
 %endif
-
