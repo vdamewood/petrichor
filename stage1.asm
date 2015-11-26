@@ -175,23 +175,25 @@ start:
 	mov al, [cluster]
 	push ax
 	call load
-	add sp, 4
+	add sp, 6
 	or ax, ax
 	jz error.loads2sec
 
 	; [bp-4] Beginning of FAT
 	; [bp-2] End of FAT
 
+.find_next_sector:
 	; The following bit of magic takes the value of cx, multiplies it by
-	; 1.5 and notes if it was odd or even before the process.
-	mov ax, cx
-	shr ax, 1       ; ax = floor(cx/2)
+	; 1.5 and notes if it was odd or even before the process. This gives
+	; us the memory offset from the beginning of the FAT for the FAT
+	; entry of cluster cx.
+	mov si, cx
+	shr si, 1       ; si = floor(cx/2)
 	sbb dx, dx      ; dx = (cx mod 2) == 0 ? 0 : -1
-	add cx, ax      ; cx = 1.5*cx
-	add cx, [bp-4]
+	add si, cx      ; si = 1.5*cx
+	add si, [bp-4]  ; si = location in fat for cx
 
-	mov di, cx
-	mov cx, [di]
+	mov cx, [si]    ; load cx from new location
 
 	or dx, dx           ; At this point cx contains a value with four garbage
 	jz .fat_align_even  ; bits. So we check if the cluster number was odd/even.
