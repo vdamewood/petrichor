@@ -118,24 +118,23 @@ start:
 	push rootsize   ; Count
 	call load
 	add sp, 6
-	;or bx, bx
-	;jz error.loaddir
+	or bx, bx
+	jz error.loaddir
+	push bx ; bx holds the location to which the FAT will be loaded.
 
 .load_fat:
-	push bx ; bx holds the location to which the FAT will be loaded.
 	push word[reserved] ; Source
 	push word[fatsize] ; Count
 	call load
 	add sp, 4 ; We pushed 3 values to stack, but only pop 2.
 	          ; The remaining value (the beginning of the FAT in
 	          ; memory) will be used later.
-	;or bx, bx
-	;jz error.loadfat
+	or bx, bx
+	jz error.loadfat
 	push bx   ; We'll also save the end of the FAT.
 
 	mov bx, data_start
 	mov cx, [entries]
-
 .nextfile:
 	mov ax, [bx+0x0B] ; Ignore directories and the volume label
 	and ax, 0x18
@@ -266,9 +265,11 @@ load:
 	mov bx, [bp+8] ; destination
 	mov ah, 2
 	int 0x13 ; due to ah = 0x02, Read sectors into memory
-	; FIXME: Carry flag set on failure. Do something.
-
+	jnc .success
+	xor bx, bx
+	jmp .freturn
 ; Step 3: Find and return the end of the load
+.success
 	mov bx, [bp+4]
 	shl bx, 9 ; bx := bx * 512
 	add bx, [bp+8]
