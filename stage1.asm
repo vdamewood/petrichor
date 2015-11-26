@@ -66,7 +66,9 @@ entries:
 	db 0xF0       ; Media descriptor
 fatsize:
 	dw 9          ; Sectors per file-allocation table
+sectors:
 	dw 18         ; Sectors per track (cylinder)
+heads:
 	dw 2          ; Number of heads/sides
 	dd 0          ; Hidden sectors
 	dd 0          ; Number of sectors (if > 2^16-1)
@@ -240,17 +242,19 @@ load:
 .fbody:
 
 ; Step 1: Convert sector number to CHS
+	mov bl, [sectors]
+	mov al, [heads]
+	mul bl
+	mov bl, al
+
 	mov ax, [bp+6]
-	; FIXME: Technically, I'm hard-coding values here I can't rely on.
-	mov bl, 36
 	div bl ; AL has cyl, AH has remainder
 
 	mov ch, al ; Set CH = Cylinder
 	mov al, ah
 	mov ah, 0
 
-	; FIXME: This is another hard-coded value.
-	mov bl, 18 ; AL has head, AH has sector
+	mov bl, byte[sectors] ; AL has head, AH has sector
 	div bl
 
 	mov dh, al
@@ -269,7 +273,7 @@ load:
 	xor bx, bx
 	jmp .freturn
 ; Step 3: Find and return the end of the load
-.success
+.success:
 	mov bx, [bp+4]
 	shl bx, 9 ; bx := bx * 512
 	add bx, [bp+8]
