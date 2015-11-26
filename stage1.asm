@@ -35,7 +35,11 @@ data_start     equ  0x0500 ; Begining of memory where we'll load
                            ; file allocation tables.
 stage1_start   equ  0x7C00 ; The beginning of where the boot sector
                            ; is loaded.
+%ifdef DEBUG
+stage2_start   equ  0x8000 ; Where to load the second-stage image.
+%else
 stage2_start   equ  0x7E00 ; Where to load the second-stage image.
+%endif
 stack_base     equ  stage1_start
 rootsize       equ  14     ; Number of sectors in root directory.
 
@@ -114,20 +118,20 @@ start:
 	push rootsize   ; Count
 	call load
 	add sp, 6
-	;or ax, ax
+	;or bx, bx
 	;jz error.loaddir
 
 .load_fat:
-	push ax ; ax holds the location to which the FAT will be loaded.
+	push bx ; bx holds the location to which the FAT will be loaded.
 	push word[reserved] ; Source
 	push word[fatsize] ; Count
 	call load
 	add sp, 4 ; We pushed 3 values to stack, but only pop 2.
 	          ; The remaining value (the beginning of the FAT in
 	          ; memory) will be used later.
-	;or ax, ax
+	;or bx, bx
 	;jz error.loadfat
-	push ax   ; We'll also save the end of the FAT.
+	push bx   ; We'll also save the end of the FAT.
 
 	mov bx, data_start
 	mov cx, [entries]
@@ -176,7 +180,8 @@ start:
 	push ax
 	call load
 	add sp, 6
-	or ax, ax
+
+	or bx, bx
 	jz error.loads2sec
 
 	; [bp-4] Beginning of FAT
@@ -205,10 +210,7 @@ start:
 	; At this point cx has the next cluster
 	cmp cx, 0xFF8    ; If the next cluster is an EOF marker...
 	jge stage2_start ; We're done loading, jmp to the next stage.
-
-	; Otherwise, setup to load the next cluster.
-	add bx, 512
-	jmp .loadnext
+	jmp .loadnext    ; Else load the next one.
 
 error:
 .loaddir:
@@ -228,14 +230,14 @@ load:
 ;[bp+4]: Number of sectors to load
 ;[bp+6]: First sector to load
 ;[bp+8]: Destination starting memory address
-; returns ax: Memory address that's one past
+; returns bx: Memory address that's one past
 ;        the end of the loaded section
 .fpreamb:
 	push bp
 	mov bp, sp
+	push ax
 	push cx
 	push dx
-	push bx
 .fbody:
 
 ; Step 1: Convert sector number to CHS
@@ -248,7 +250,7 @@ load:
 	mov al, ah
 	mov ah, 0
 
-	; This is another hard-coded value.
+	; FIXME: This is another hard-coded value.
 	mov bl, 18 ; AL has head, AH has sector
 	div bl
 
@@ -267,14 +269,13 @@ load:
 	; FIXME: Carry flag set on failure. Do something.
 
 ; Step 3: Find and return the end of the load
-	mov ax, 512
-	mov bx, [bp+6]
-	mul bx
-	add ax, [bp+8]
+	mov bx, [bp+4]
+	shl bx, 9 ; bx := bx * 512
+	add bx, [bp+8]
 .freturn:
-	pop bx
 	pop dx
 	pop cx
+	pop ax
 	mov sp, bp
 	pop bp
 	ret

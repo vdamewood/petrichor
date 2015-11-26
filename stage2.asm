@@ -30,7 +30,13 @@
 mem_start   equ  0x0500
 load_start  equ  0x0600
 st1_start   equ  0x7C00
+
+%ifdef DEBUG
+st2_start   equ  0x8000
+%else
 st2_start   equ  0x7E00
+%endif
+
 ;past_end    equ  0x080000
 true        equ  0xFFFF
 false       equ  0x0000
@@ -256,6 +262,8 @@ print_byte:
 	mov sp, bp
 	pop bp
 	ret
+
+times 1024 db 0
 
 ; === Non-executable Data ===
 msg_start:   db 'Second stage loaded. '
