@@ -114,6 +114,8 @@ start:
 	push rootsize   ; Count
 	call load
 	add sp, 6
+	;or ax, ax
+	;jz error.loaddir
 
 .load_fat:
 	push ax ; ax holds the location to which the FAT will be loaded.
@@ -123,6 +125,8 @@ start:
 	add sp, 4 ; We pushed 3 values to stack, but only pop 2.
 	          ; The remaining value (the beginning of the FAT in
 	          ; memory) will be used later.
+	;or ax, ax
+	;jz error.loadfat
 	push ax   ; We'll also save the end of the FAT.
 
 	mov bx, data_start
@@ -144,7 +148,7 @@ start:
 .file_nomatch:
 	add bx, 32 ; Directory entries are 32 bytes
 	loop .nextfile
-	jmp .error ; We've exhausted all entries. Quit.
+	jmp error.notfound ; We've exhausted all entries. Quit.
 
 .file_found:
 	; bx now has directory entry of matching file
@@ -173,7 +177,7 @@ start:
 	call load
 	add sp, 4
 	or ax, ax
-	jz .error
+	jz error.loads2sec
 
 	; [bp-4] Beginning of FAT
 	; [bp-2] End of FAT
@@ -203,8 +207,14 @@ start:
 	; Otherwise, setup to load the next cluster.
 	add bx, 512
 	jmp .loadnext
-.error:
+
+error:
+.loaddir:
+.loadfat:
+.notfound:
+.loads2sec:
 	mov ax, 0x0E13
+.print:
 	int 0x10
 .freeze:
 	hlt
