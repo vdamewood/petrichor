@@ -26,34 +26,25 @@
 ; (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 ; OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-
-mem_start   equ  0x0500
-load_start  equ  0x0600
-st1_start   equ  0x7C00
-
-%ifdef DEBUG
-st2_start   equ  0x8000
-%else
-st2_start   equ  0x7E00
-%endif
-
-;past_end    equ  0x080000
-true        equ  0xFFFF
-false       equ  0x0000
-
-cmdbuf      equ  mem_start
-cmdbuf_size equ  20
-stack       equ  st1_start
-
 [BITS 16]
-[ORG st2_start]
+
+; FIXME: This will probably go into a different segment.
+cmdbuf      equ  0xFFE0
+cmdbuf_size equ  32
+;stack       equ  st1_start
+
 
 stage2:
+	; FIXME: The value that's pop should be hard-coded.
+	pop ax
+	mov ds, ax
+	mov es, ax
+
 	; Setup stack. This was probably done
 	; in the boot sector but this will
 	; reset it.
-	mov sp, stack
-	mov bp, stack
+	;mov sp, stack
+	;mov bp, stack
 
 	; Display start-up message
 	push msg_start

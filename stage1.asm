@@ -40,6 +40,7 @@ stage2_start   equ  0x8000 ; Where to load the second-stage image.
 %else
 stage2_start   equ  0x7E00 ; Where to load the second-stage image.
 %endif
+stage2_seg     equ stage2_start >> 4
 stack_base     equ  stage1_start
 rootsize       equ  14     ; Number of sectors in root directory.
 
@@ -211,7 +212,9 @@ start:
 	; At this point cx has the next cluster
 	cmp cx, 0xFF8    ; If the next cluster is not an EOF marker...
 	jl .loadnext     ; load the next cluster.
-	jmp stage2_start ; Else, We're done loading, jmp to the next stage.
+	push stage2_seg  ; FIXME: hard code this value once we can load to other
+	                   ; segments.
+	jmp stage2_seg:0 ; Else, We're done loading, jmp to the next stage.
 
 error:
 .loaddir:
