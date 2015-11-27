@@ -209,9 +209,9 @@ start:
 	and cx, 0x0FFF      ; If even, garbage bits are the high-order bits. Zero.
 .fat_align_end:
 	; At this point cx has the next cluster
-	cmp cx, 0xFF8    ; If the next cluster is an EOF marker...
-	jge stage2_start ; We're done loading, jmp to the next stage.
-	jmp .loadnext    ; Else load the next one.
+	cmp cx, 0xFF8    ; If the next cluster is not an EOF marker...
+	jl .loadnext     ; load the next cluster.
+	jmp stage2_start ; Else, We're done loading, jmp to the next stage.
 
 error:
 .loaddir:
