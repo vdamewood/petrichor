@@ -30,12 +30,16 @@
 
 ; 00000 to 0FFFF:
 ;   0x0000 to 0x04FF: Reserved for System
-;   0x0500 to 0x20FF: Root Directory
-;   0x2100 to 0x32FF: File-Allocation Table
-;   0x3300 to 0x7BFF: Empty (Last few bytes will have stale stack data)
+;   0x0500 to 0x16FF: File-Allocation Table
+;   0x1700 to 0x32FF: Root Directory
+;   0x3300 to 0x7BF7: [Empty]
+;   0x7BF8 to 0x7BF9: Pointer to Root Directory
+;   0x7BFA to 0x7BFB: Pointer to Fat
+;   0x7BFC to 0x7BFD: Sector offset for FAT clusters
+;   0x7BFE to 0x7BFF: Sector where FAT starts
 ;   0x7C00 to 0x7DFF: Boot sector
-;   0x7E00 to 0xFFFF: Empty
-; 10000 to 1FFFF: Stage 2
+;   0x7E00 to 0xFFFF: [Empty]
+; 10000 to 1FFFF: Stage 2 (This file)
 ; 20000 to 2FFFF: Free
 ; 30000 to 3FFFF: Free
 ; 40000 to 4FFFF: Free
