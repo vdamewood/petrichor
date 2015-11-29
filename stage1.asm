@@ -29,20 +29,11 @@
 [BITS 16]
 [ORG 0x7C00]
 
-memory_start   equ  0x0500 ; Beginning of free memory.
-data_start     equ  0x0500 ; Begining of memory where we'll load
-                           ; data: the root directory and
-                           ; file allocation tables.
-stage1_start   equ  0x7C00 ; The beginning of where the boot sector
-                           ; is loaded.
-%ifdef DEBUG
-stage2_start   equ  0x8000 ; Where to load the second-stage image.
-%else
-stage2_start   equ  0x7E00 ; Where to load the second-stage image.
-%endif
-stage2_seg     equ stage2_start >> 4
-stack_base     equ  stage1_start
-rootsize       equ  14     ; Number of sectors in root directory.
+data_start    equ  0x0500  ; Begining of memory where we'll load data: The
+                           ; directory and file allocation tables.
+stg2_segment  equ  0x1000  ; Where to load the stage-2 image.
+stack_base    equ  0x7C00  ; This is where the stack starts.
+rootsize      equ  14      ; Number of sectors in root directory.
 
 ; === FAT DATA ===
 
@@ -138,6 +129,7 @@ start:
 
 	mov bx, data_start
 	mov cx, [entries]
+
 .nextfile:
 	mov ax, [bx+0x0B] ; Ignore directories and the volume label
 	and ax, 0x18
@@ -162,8 +154,10 @@ start:
 	; this would be the place to save it. It's at
 	; dword[bx+28].
 
+	mov ax, stg2_segment
+	mov es, ax
 	mov cx, word[bx+26]
-	mov bx, stage2_start
+	xor bx, bx
 .loadnext:
 	; CX has cluster to load
 	; BX has memory address to load to
@@ -210,11 +204,9 @@ start:
 	and cx, 0x0FFF      ; If even, garbage bits are the high-order bits. Zero.
 .fat_align_end:
 	; At this point cx has the next cluster
-	cmp cx, 0xFF8    ; If the next cluster is not an EOF marker...
-	jl .loadnext     ; load the next cluster.
-	push stage2_seg  ; FIXME: hard code this value once we can load to other
-	                   ; segments.
-	jmp stage2_seg:0 ; Else, We're done loading, jmp to the next stage.
+	cmp cx, 0xFF8      ; If the next cluster is not an EOF marker...
+	jl .loadnext       ; load the next cluster.
+	jmp stg2_segment:0 ; Else, We're done loading, jmp to the next stage.
 
 error:
 .loaddir:

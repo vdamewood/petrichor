@@ -28,23 +28,38 @@
 
 [BITS 16]
 
+; 00000 to 0FFFF:
+;   0x0000 to 0x04FF: Reserved for System
+;   0x0500 to 0x20FF: Root Directory
+;   0x2100 to 0x32FF: File-Allocation Table
+;   0x3300 to 0x7BFF: Empty (Last few bytes will have stale stack data)
+;   0x7C00 to 0x7DFF: Boot sector
+;   0x7E00 to 0xFFFF: Empty
+; 10000 to 1FFFF: Stage 2
+; 20000 to 2FFFF: Free
+; 30000 to 3FFFF: Free
+; 40000 to 4FFFF: Free
+; 50000 to 5FFFF: Free
+; 60000 to 6FFFF: Free
+; 70000 to 7FFFF: Free
+; 80000 to 8FFFF: Free
+; 90000 to 9FFFF: Free, but Last few 128 KiB (possibly less) unusable
+; After  A0000 is unusable.
+
 ; FIXME: This will probably go into a different segment.
 cmdbuf      equ  0xFFE0
 cmdbuf_size equ  32
-;stack       equ  st1_start
-
 
 stage2:
-	; FIXME: The value that's pop should be hard-coded.
-	pop ax
+	; Initial Setup. This was probably done differently in the boot sector.
+	mov ax, 0x1000
 	mov ds, ax
 	mov es, ax
 
-	; Setup stack. This was probably done
-	; in the boot sector but this will
-	; reset it.
-	;mov sp, stack
-	;mov bp, stack
+	mov ax, 0x2000
+	mov ss, ax
+	xor sp, sp
+	mov bp, sp
 
 	; Display start-up message
 	push msg_start
