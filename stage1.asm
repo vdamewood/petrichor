@@ -98,9 +98,9 @@ start:
 	pop ax
 %endif ; DEBUG
 
-%define fat_sector word[bp-2]
-%define data_sector [bp-4]
-%define fat_memory word[bp-6]
+%define fat_sector  word[bp-2]
+%define data_sector word[bp-4]
+%define fat_memory  word[bp-6]
 %define root_memory word[bp-8]
 
 find_disk_values:
@@ -144,6 +144,10 @@ find_stage_2:
 	mov ax, [bx+0x0B] ; Ignore directories and the volume label
 	and ax, 0x18
 	jnz .file_nomatch
+
+	mov al, [bx]      ; If the first byte is 0x00, this is the end of the root
+	or al, al         ; directory and we've failed to find the file.
+	jz error.notfound ; So, panic and cry about it.
 
 	push cx ; Inner Loop
 	mov si, st2_file
