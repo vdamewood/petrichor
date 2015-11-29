@@ -50,13 +50,6 @@
 ; 90000 to 9FFFF: Free, but Last few 128 KiB (possibly less) unusable
 ; After  A0000 is unusable.
 
-; FIXME: This will probably go into a different segment.
-cmdbuf      equ  0xFFE0
-cmdbuf_size equ  32
-
-
-times (($$-$)%2) nop
-
 stage2:
 	; Initial Setup. This was probably done differently in the boot sector.
 	mov ax, 0x1000
@@ -283,3 +276,6 @@ newline:     db 0x0D, 0x0A, 0
 msg_prompt:  db '?> ', 0
 str_hi:      db 'Hi', 0
 msg_hello:   db 'Hello.', 0x0D, 0x0A, 0
+; FIXME: This will probably go into a different segment.
+cmdbuf_size equ  32
+cmdbuf      times cmdbuf_size db 0
