@@ -54,6 +54,9 @@
 cmdbuf      equ  0xFFE0
 cmdbuf_size equ  32
 
+
+times (($$-$)%2) nop
+
 stage2:
 	; Initial Setup. This was probably done differently in the boot sector.
 	mov ax, 0x1000
@@ -272,8 +275,6 @@ print_byte:
 	mov sp, bp
 	pop bp
 	ret
-
-times 1024 db 0
 
 ; === Non-executable Data ===
 msg_start:   db 'Second stage loaded. '
