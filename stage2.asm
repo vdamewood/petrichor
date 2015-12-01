@@ -91,46 +91,39 @@ stage2:
 
 ; Match a filename
 match_file:
+%define source      [bp+4]
+%define destination [bp+6]
 .fpreamb:
 	push bp
 	mov bp, sp
+	push cx
 	push si
 	push di
-	push cx
-	push dx
-	push bx
 .fbody:
-	mov si, [bp+4]
-	mov di, [bp+6]
+	mov si, source
+	mov di, destination
 	mov cx, 11
-.loop:
-	mov al, [di]
-	mov dl, [si]
-	cmp al, dl
+	repe cmpsb
 	jne .nomatch
-	dec cx
-	jcxz .match
-	inc di
-	inc si
-	jmp .loop
 .match:
 	mov ax, 0xFFFF
 	jmp .freturn
 .nomatch:
 	mov ax, 0x0000
 .freturn:
-	pop cx
-	pop dx
-	pop bx
 	pop di
 	pop si
+	pop cx
 	mov sp, bp
 	pop bp
 	ret
-
+%undef src
+%undef dst
 
 ; Compare Zero-Terminated Strings
 match:
+%define source      [bp+4]
+%define destination [bp+6]
 .fpreamb:
 	push bp
 	mov bp, sp
@@ -138,8 +131,8 @@ match:
 	push di
 	push dx
 .fbody:
-	mov si, [bp+4]
-	mov di, [bp+6]
+	mov si, source
+	mov di, destination
 .loop:
 	mov al, [di]
 	mov dl, [si]
@@ -164,15 +157,18 @@ match:
 	mov sp, bp
 	pop bp
 	ret
+%undef src
+%undef dst
 
 ; Print a string
 print:
+%define string [bp+4]
 .fpreamb:
 	push bp
 	mov bp, sp
 	push si
 .fbody:
-	mov si, [bp+4]
+	mov si, string
 	mov ah, 0x0E ; Causes the BIOS interrupt to print a character
 .loop:
 	lodsb        ; Fetch next byte in string, ...
@@ -185,6 +181,7 @@ print:
 	mov sp, bp
 	pop bp
 	ret
+%undef string
 
 get:
 .fpreamb:
@@ -239,41 +236,12 @@ get:
 	pop bp
 	ret
 
-; === Debuging Functions ===
-print_byte:
-.fpreamb:
-	push bp
-	mov bp, sp
-.fbody:
-	mov ah, 0x0E
-
-	mov al, [bp+4]
-	shr al, 4
-	add al, 0x30
-	cmp al, 0x39
-	jle .skip1
-	add al, 7
-.skip1:
-	int 0x10
-
-	mov al, [bp+4]
-	and al, 0x0F
-	add al, 0x30
-	cmp al, 0x39
-	jle .skip2
-	add al, 7
-.skip2:
-	int 0x10
-.freturn:
-	mov sp, bp
-	pop bp
-	ret
-
 ; === Non-executable Data ===
 msg_start:   db 'Second stage loaded. '
 msg_sayhi:   db 'Say Hi.'
 newline:     db 0x0D, 0x0A, 0
 msg_prompt:  db '?> ', 0
+
 str_hi:      db 'Hi', 0
 msg_hello:   db 'Hello.', 0x0D, 0x0A, 0
 ; FIXME: This will probably go into a different segment.
