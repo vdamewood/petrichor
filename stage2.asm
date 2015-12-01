@@ -117,8 +117,8 @@ match_file:
 	mov sp, bp
 	pop bp
 	ret
-%undef src
-%undef dst
+%undef source
+%undef destination
 
 ; Compare Zero-Terminated Strings
 match:
@@ -129,29 +129,22 @@ match:
 	mov bp, sp
 	push si
 	push di
-	push dx
 .fbody:
 	mov si, source
 	mov di, destination
 .loop:
-	mov al, [di]
-	mov dl, [si]
-
-	cmp al, dl
+	lodsb
+	scasb
 	jne .nomatch
 
-	cmp al, 0
-	jz .match
-	inc di
-	inc si
-	jmp .loop
+	or al, al
+	jnz .loop
 .match:
 	mov ax, 0xFFFF
 	jmp .freturn
 .nomatch:
 	mov ax, 0x0000
 .freturn:
-	pop dx
 	pop di
 	pop si
 	mov sp, bp
@@ -244,6 +237,5 @@ msg_prompt:  db '?> ', 0
 
 str_hi:      db 'Hi', 0
 msg_hello:   db 'Hello.', 0x0D, 0x0A, 0
-; FIXME: This will probably go into a different segment.
-cmdbuf_size equ  32
-cmdbuf      times cmdbuf_size db 0
+cmdbuf_size  equ  32
+cmdbuf       times cmdbuf_size db 0
