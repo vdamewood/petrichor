@@ -28,6 +28,8 @@
 
 [BITS 16]
 
+code_seg equ 0x1000
+
 ; 00000 to 0FFFF:
 ;   0x0000 to 0x04FF: Reserved for System
 ;   0x0500 to 0x16FF: File-Allocation Table
@@ -66,6 +68,19 @@ stage2:
 	call print
 	add esp, 2
 
+	call a20_on
+	call a20_status
+	or ax, ax
+	jnz .a20on
+.a20off:
+	push msg_a20off
+	jmp .a20end
+.a20on:
+	push msg_a20on
+.a20end:
+	call print
+	add sp, 2
+
 .cmdloop:
 	push msg_prompt
 	call print
@@ -88,6 +103,108 @@ stage2:
 	jmp .cmdloop
 
 ; === FUNCTIONS ===
+
+ftemplate:
+.fpreamb:
+	push bp
+	mov bp, sp
+.fbody:
+.freturn:
+	mov sp, bp
+	pop bp
+	ret
+
+; Enable A20 Line
+; FIXME: The method used isn't supported on all systems. Add other methods
+;   for other kinds of systems.
+a20_on:
+.fpreamb:
+	push bp
+	mov bp, sp
+.fbody:
+	call a20_status
+	or ax, ax
+	jnz .freturn
+	mov ax, 0x2401
+	int 0x15
+.freturn:
+	mov sp, bp
+	pop bp
+	ret
+
+; Disable A20 Line
+; FIXME: The method used isn't supported on all systems. Add other methods
+;   for other kinds of systems.
+a20_off:
+.fpreamb:
+	push bp
+	mov bp, sp
+.fbody:
+	call a20_status
+	or ax, ax
+	jz .freturn
+	mov ax, 0x2400
+	int 0x15
+.freturn:
+	mov sp, bp
+	pop bp
+	ret
+
+; Check for A20 Status
+a20_status:
+%define original   [ds:0x7DFE]
+%define wraparound [es:0x7E0E]
+.fpreamb:
+	push bp
+	mov bp, sp
+	push dx
+	push bx
+	push ds
+	push es
+.fbody:
+	xor ax, ax
+	mov ds, ax
+	mov ax, 0xFFFF
+	mov es, ax
+
+	; First Test
+	mov dx, original
+	mov bx, wraparound
+	cmp dx, bx
+	jne .enabled
+
+	; Change value probed
+	mov ax, dx
+	xor ax, 0xFFFF
+	mov original, ax
+
+	; Test if change reflects
+	mov dx, original
+	mov bx, wraparound
+
+	; Put the original Value back
+	xor ax, 0xFFFF
+	mov ax, original
+
+	; Continue Testing
+	cmp dx, bx
+	jne .enabled
+
+.notenabled:
+	xor ax, ax
+	jmp .freturn
+.enabled:
+	mov ax, 0xFFFF
+.freturn:
+	pop es
+	pop ds
+	pop bx
+	pop dx
+	mov sp, bp
+	pop bp
+	ret
+%undef original
+%undef wraparound
 
 ; Match a filename
 match_file:
@@ -159,8 +276,12 @@ print:
 .fpreamb:
 	push bp
 	mov bp, sp
+	push ds
 	push si
+	push ax
 .fbody:
+	mov ax, 0x1000
+	mov ds, ax
 	mov si, string
 	mov ah, 0x0E ; Causes the BIOS interrupt to print a character
 .loop:
@@ -170,7 +291,9 @@ print:
 	int 0x10     ; Due to ah = 0x0E, prints character
 	jmp .loop
 .freturn:
+	pop ax
 	pop si
+	pop ds
 	mov sp, bp
 	pop bp
 	ret
@@ -229,13 +352,104 @@ get:
 	pop bp
 	ret
 
-; === Non-executable Data ===
-msg_start:   db 'Second stage loaded. '
-msg_sayhi:   db 'Say Hi.'
-newline:     db 0x0D, 0x0A, 0
-msg_prompt:  db '?> ', 0
+debug_printq_byte:
+.fpreamb:
+	push bp
+	mov bp, sp
+	push ax
+.fbody:
+	mov ah, 0x0E
+	mov al, [bp+4]
+	shr al, 4
+	add al, 0x30
+	cmp al, 0x39
+	jle .skip1
+	add al, 7
+.skip1:
+	int 0x10
 
-str_hi:      db 'Hi', 0
-msg_hello:   db 'Hello.', 0x0D, 0x0A, 0
+	mov al, [bp+4]
+	and al, 0x0F
+	add al, 0x30
+	cmp al, 0x39
+	jle .skip2
+	add al, 7
+.skip2:
+	int 0x10
+.freturn:
+	pop ax
+	mov sp, bp
+	pop bp
+	ret
+
+debug_word:
+.fpreamb:
+	push bp
+	mov bp, sp
+	push ax
+.fbody:
+	push msg_debug_word
+	call print
+
+	mov ax, [bp+4]
+	shr ax, 8
+	push ax
+	call debug_printq_byte
+
+	mov ax, [bp+4]
+	push ax
+	call debug_printq_byte
+
+	push msg_debug_end
+	call print
+	add sp, 8
+.freturn:
+	pop ax
+	mov sp, bp
+	pop bp
+	ret
+
+debug_byte:
+.fpreamb:
+	push bp
+	mov bp, sp
+	push ax
+.fbody:
+	push msg_debug_byte
+	call print
+
+	mov ax, [bp+4]
+	push ax
+	call debug_printq_byte
+
+	push msg_debug_end
+	call print
+	add sp, 6
+.freturn:
+	pop ax
+	mov sp, bp
+	pop bp
+	ret
+
+%define CRLF 0x0A, 0x0D
+%define CRLFZ CRLF, 0x00
+
+; === Non-executable Data ===
+msg_start:      db 'Second stage loaded. '
+msg_sayhi:      db 'Say Hi.'
+newline:        db CRLFZ
+msg_prompt:     db '?> ', 0
+str_hi:         db 'Hi', 0
+msg_hello:      db 'Hello.', CRLFZ
+
+msg_debug_byte: db 'BYTE(', 0
+msg_debug_word: db 'WORD(', 0
+msg_debug_end:  db ')', 0x0A, 0x0D, 0
+
+msg_a20on:      db 'A20 Enabled.', CRLFZ
+msg_a20off:     db 'A20 disabled.', CRLFZ
+msg_ncarry:     db '[No Carry]',  CRLFZ
+msg_carry:      db '[Carry]',  CRLFZ
+
 cmdbuf_size  equ  32
 cmdbuf       times cmdbuf_size db 0
