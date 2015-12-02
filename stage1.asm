@@ -67,8 +67,8 @@ heads:
 fat_extended_boot_record:
 	db 0x00          ; Drive number
 	db 0x00          ; Current Head (Unused)
-	db 0x28          ; Signature (0x28 or 0x29)
-	dd 0xBAADBEEF    ; Volume ID
+	db 0x29          ; Signature (0x28 or 0x29)
+	dd 0x00000000    ; Volume ID, will be replaced by formatter
 	db 'BOOTDISK   ' ; Volume label
 	db 'FAT12   '    ; System ID; Unreliable.
 
