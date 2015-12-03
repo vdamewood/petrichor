@@ -205,7 +205,7 @@ error:
 .loadfat:
 .notfound:
 .loads2sec:
-	mov ax, 0x0E13
+	mov ax, 0x0E21
 .print:
 	int 0x10
 .freeze:
