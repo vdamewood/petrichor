@@ -105,7 +105,6 @@ stage2:
 ; === FUNCTIONS ===
 
 %include "stage2-a20.asm"
-%include "stage2-debug.asm"
 %include "stage2-fat12.asm"
 %include "stage2-io.asm"
 %include "stage2-string.asm"

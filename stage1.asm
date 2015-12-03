@@ -45,11 +45,7 @@ fat_bios_parameter_block:
 cluster:
 	db 1          ; sectors per cluster
 reserved:
-%ifdef DEBUG
-	dw 2          ; Number of reserved clusters
-%else ; not DEBUG
 	dw 1          ; Number of reserved clusters
-%endif
 fatcount:
 	db 2          ; Number of file-allocation tables
 entries:
@@ -81,22 +77,6 @@ start:
 	mov ss, ax
 	mov sp, stack_base
 	mov bp, stack_base
-
-%ifdef DEBUG
-	push ax
-	; Load debugging/development code
-	push 0x7E00
-	push 1
-	push 1
-	call load
-	add sp, 6
-
-	; Display start-up message
-	push msg_start
-	call print
-	add sp, 2
-	pop ax
-%endif ; DEBUG
 
 %define fat_sector  word[bp-2]
 %define data_sector word[bp-4]
@@ -299,118 +279,3 @@ marker:     dw 0xFFFE ; This is so that I can see how much space
                       ; is available in the binary.
 ptable:     times 64 db 0
 bootsig:    dw 0xAA55
-
-; === End of first sector ===
-; All code below this point is for debugging and should be
-; removed after the bootsector is complete.
-
-%ifdef DEBUG
-; Print a string
-print:
-.fpreamb:
-	push bp
-	mov bp, sp
-	push ax
-	push si
-.fbody:
-	mov si, [bp+4]
-	mov ah, 0x0E ; Causes the BIOS interrupt to print a character
-.loop:
-	lodsb        ; Fetch next byte in string, ...
-	or al, al    ; ... test if it's 0x00, ...
-	jz .freturn  ; ... and, if so, were'd done
-	int 0x10     ; Due to ah = 0x0E, prints character
-	jmp .loop
-.freturn:
-	pop si
-	pop ax
-	mov sp, bp
-	pop bp
-	ret
-
-print_byte:
-.fpreamb:
-	push bp
-	mov bp, sp
-	push ax
-.fbody:
-	mov ah, 0x0E
-	mov al, [bp+4]
-	shr al, 4
-	add al, 0x30
-	cmp al, 0x39
-	jle .skip1
-	add al, 7
-.skip1:
-	int 0x10
-
-	mov al, [bp+4]
-	and al, 0x0F
-	add al, 0x30
-	cmp al, 0x39
-	jle .skip2
-	add al, 7
-.skip2:
-	int 0x10
-.freturn:
-	pop ax
-	mov sp, bp
-	pop bp
-	ret
-
-debug_word:
-.fpreamb:
-	push bp
-	mov bp, sp
-	push ax
-.fbody:
-	push msg_debug_word
-	call print
-
-	mov ax, [bp+4]
-	shr ax, 8
-	push ax
-	call print_byte
-
-	mov ax, [bp+4]
-	push ax
-	call print_byte
-
-	push msg_debug_end
-	call print
-	add sp, 8
-.freturn:
-	pop ax
-	mov sp, bp
-	pop bp
-	ret
-
-debug_byte:
-.fpreamb:
-	push bp
-	mov bp, sp
-	push ax
-.fbody:
-	push msg_debug_byte
-	call print
-
-	mov ax, [bp+4]
-	push ax
-	call print_byte
-
-	push msg_debug_end
-	call print
-	add sp, 6
-.freturn:
-	pop ax
-	mov sp, bp
-	pop bp
-	ret
-
-msg_start:      db 'Boot sector loaded.', 0x0D, 0x0A, 0
-msg_debug_byte: db 'BYTE(', 0
-msg_debug_word: db 'WORD(', 0
-msg_debug_end:  db ')'
-
-pad2:        times 1024-($-$$) db 0
-%endif

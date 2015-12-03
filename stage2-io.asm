@@ -110,3 +110,59 @@ get:
 	mov sp, bp
 	pop bp
 	ret
+
+putbyte:
+%define byte_at [bp+4]
+.fpreamb:
+	push bp
+	mov bp, sp
+	push ax
+.fbody:
+	mov ah, 0x0E
+	mov al, byte_at
+	shr al, 4
+	add al, 0x30
+	cmp al, 0x39
+	jle .skip1
+	add al, 7
+.skip1:
+	int 0x10
+
+	mov al, byte_at
+	and al, 0x0F
+	add al, 0x30
+	cmp al, 0x39
+	jle .skip2
+	add al, 7
+.skip2:
+	int 0x10
+.freturn:
+	pop ax
+	mov sp, bp
+	pop bp
+	ret
+%undef byte_at
+
+putword:
+%define word_at [bp+4]
+.fpreamb:
+	push bp
+	mov bp, sp
+	push ax
+.fbody:
+	mov ax, word_at
+	shr ax, 8
+	push ax
+	call putbyte
+
+	mov ax, word_at
+	push ax
+	call putbyte
+
+	add sp, 4
+.freturn:
+	pop ax
+	mov sp, bp
+	pop bp
+	ret
+%undef word_at
