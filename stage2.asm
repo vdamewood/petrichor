@@ -65,8 +65,9 @@ stage2:
 
 	; Display start-up message
 	push msg_start
-	call print
+	call con_print
 	add esp, 2
+	call con_breakline
 
 	call a20_enable
 	call a20_status
@@ -78,7 +79,8 @@ stage2:
 .a20on:
 	push msg_a20on
 .a20end:
-	call print
+	call con_print
+	call con_breakline
 	add sp, 2
 
 .cmdloop:
@@ -87,19 +89,32 @@ stage2:
 	add sp, 2
 
 	call get
-	push str_hi
+
 	push ax
+	push str_hi
 	call match
-	add sp, 4
-	cmp ax, 0x0000
-	je .nomatch
-	push msg_hello
-	jmp .endmatch
-.nomatch:
-	push msg_sayhi
-.endmatch:
-	call print
 	add sp, 2
+	or ax, ax
+	jz .not_hi
+	push msg_hello
+	call print
+	call con_breakline
+	add sp, 4
+	jmp .cmdloop
+.not_hi:
+	push str_shift
+	call match
+	add sp, 2
+	or ax, ax
+	jz .default
+	add sp, 2
+	call con_shift
+	jmp .cmdloop
+.default:
+	;push msg_sayhi
+	;call print
+	;call con_breakline
+	;add sp, 2
 	jmp .cmdloop
 
 ; === FUNCTIONS ===
@@ -119,18 +134,15 @@ stage2:
 ;	pop bp
 ;	ret
 
-%define CRLF 0x0A, 0x0D
-%define CRLFZ CRLF, 0x00
-
 ; === Non-executable Data ===
-msg_start:      db 'Second stage loaded. '
-msg_sayhi:      db 'Say Hi.'
-newline:        db CRLFZ
+msg_start:      db 'Second stage loaded. ',
+msg_sayhi:      db 'Say Hi.', 0
 msg_prompt:     db '?> ', 0
 str_hi:         db 'Hi', 0
-msg_hello:      db 'Hello.', CRLFZ
+str_shift:      db 'shift', 0
+msg_hello:      db 'Hello.', 0
 
-msg_a20on:      db 'A20 Enabled.', CRLFZ
-msg_a20off:     db 'A20 disabled.', CRLFZ
-msg_ncarry:     db '[No Carry]',  CRLFZ
-msg_carry:      db '[Carry]',  CRLFZ
+msg_a20on:      db 'A20 Enabled.', 0
+msg_a20off:     db 'A20 disabled.', 0
+msg_ncarry:     db '[No Carry]',  0
+msg_carry:      db '[Carry]',  0

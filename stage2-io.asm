@@ -26,29 +26,145 @@
 ; (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 ; OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+%define con_segment 0xB800
+
+con_color:      db 0x07
+con_cursor:     dw 0x0000
+; When placing, LSB is character in CP437, MSB is Forground/Backgorund color
+
+
+con_shift:
+.fpramb:
+	push bp
+	mov bp, sp
+	push ds
+	push es
+	push ax
+	push cx
+	push si
+	push di
+.fbody:
+	mov ax, con_segment
+	mov ds, ax
+	mov es, ax
+	mov di, 0
+	mov si, 160
+	mov cx, 80 * 24
+	rep movsw
+
+	mov al, 0
+	mov ah, [cs:con_color]
+	mov cx, 80
+.lastline:
+	mov [di], ax
+	add di, 2
+	loop .lastline
+.freturn:
+	pop di
+	pop si
+	pop cx
+	pop ax
+	pop es
+	pop ds
+	mov sp, bp
+	pop bp
+	ret
+
+con_set_bios_cursor:
+.fpreamb:
+	push bp
+	mov bp, sp
+	push ax
+	push dx
+	push bx
+.fbody:
+	mov ax, [cs:con_cursor]
+	mov bx, 2*80
+	xor dx, dx
+	div bx ; ax = quot ; dx = mod
+	shr dx, 1
+	mov dh, al
+	mov bh, 0
+	mov ah, 2
+	int 0x10
+.freturn:
+	pop bx
+	pop dx
+	pop ax
+	mov sp, bp
+	pop bp
+	ret
+
+con_breakline:
+.fpreamb:
+	push bp
+	mov bp, sp
+	push ax
+	push dx
+	push bx
+.fbody:
+	mov ax, [cs:con_cursor]
+	cmp ax, 2*80*24
+	jge .last_line
+.not_last_line:
+	mov bx, 2*80
+	xor dx, dx
+	div bx ; ax = quot ; dx = mod
+	mov ax, [cs:con_cursor]
+	sub ax, dx
+	add ax, 2*80
+	mov [cs:con_cursor], ax
+	jmp .bios_cursor
+.last_line:
+	call con_shift
+	mov ax, 2*80*24
+	mov [cs:con_cursor], ax
+.bios_cursor:
+	call con_set_bios_cursor
+.freturn:
+	pop bx
+	pop dx
+	pop ax
+	mov sp, bp
+	pop bp
+	ret
+
 ; Print a string
 print:
+con_print:
 %define string [bp+4]
 .fpreamb:
 	push bp
 	mov bp, sp
 	push ds
+	push es
 	push si
+	push di
 	push ax
 .fbody:
 	mov ax, 0x1000
 	mov ds, ax
+	mov ax, con_segment
+	mov es, ax
 	mov si, string
-	mov ah, 0x0E ; Causes the BIOS interrupt to print a character
+	mov di, [cs:con_cursor]
+	mov ah, [cs:con_color]
 .loop:
 	lodsb        ; Fetch next byte in string, ...
 	or al, al    ; ... test if it's 0x00, ...
-	jz .freturn  ; ... and, if so, were'd done
-	int 0x10     ; Due to ah = 0x0E, prints character
+	jz .done     ; ... and, if so, were'd done
+
+	;int 0x10    ; Due to ah = 0x0E, prints character
+	stosw
 	jmp .loop
+.done:
+	mov [cs:con_cursor], di
+	call con_set_bios_cursor
 .freturn:
 	pop ax
+	pop di
 	pop si
+	pop es
 	pop ds
 	mov sp, bp
 	pop bp
@@ -90,9 +206,7 @@ get:
 .entr:
 	mov al, 0
 	stosb
-	push newline
-	call print
-	add sp, 2
+	call con_breakline
 	jmp .return
 .else:
 	mov dx, di
