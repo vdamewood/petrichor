@@ -77,6 +77,7 @@ start:
 	mov ss, ax
 	mov sp, stack_base
 	mov bp, stack_base
+	mov [bootdrive], dl
 
 %define fat_sector  word[bp-2]
 %define data_sector word[bp-4]
@@ -87,8 +88,7 @@ find_disk_values:
 	; Calculate Where root Directory is.
 	; (Sector # = fatcount * fatsize + reserved)
 	mov al, [fatcount]
-	imul ax, [fatsize] ; This will be wrong if fatcount*fatsize > 32767
-	                   ; Maximum is 2880 for floppies.
+	mul word[fatsize]
 	add ax, [reserved]
 	push ax ; fat_sector, sector on disk that has FAT
 
@@ -251,7 +251,7 @@ load:
 
 ; Step 2: Make the actual copy to memory
 	mov al, [bp+4] ; Number of sectors
-	mov dl, 0 ; drive
+	mov dl, [bootdrive] ; drive
 
 	mov bx, [bp+8] ; destination
 	mov ah, 2
@@ -274,6 +274,7 @@ load:
 
 ; === Non-executable Data ===
 st2_file:  db 'STAGE2  BIN'
+bootdrive:  db 0
 pad:        times 444-($-$$) db 0
 marker:     dw 0xFFFE ; This is so that I can see how much space
                       ; is available in the binary.
