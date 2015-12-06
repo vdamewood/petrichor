@@ -171,6 +171,20 @@ con_print:
 	ret
 %undef string
 
+con_println:
+.fpreamb:
+	push bp
+	mov bp, sp
+.fbody:
+	push word[bp+4]
+	call print
+	add sp, 2
+	call con_breakline
+.freturn:
+	mov sp, bp
+	pop bp
+	ret
+
 cmdbuf_size  equ  32
 cmdbuf       times cmdbuf_size db 0
 
