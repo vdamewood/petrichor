@@ -65,9 +65,8 @@ stage2:
 
 	; Display start-up message
 	push msg_start
-	call con_print
+	call con_println
 	add esp, 2
-	call con_breakline
 
 	call a20_enable
 	call a20_status
@@ -111,10 +110,6 @@ stage2:
 	call con_shift
 	jmp .cmdloop
 .default:
-	;push msg_sayhi
-	;call print
-	;call con_breakline
-	;add sp, 2
 	jmp .cmdloop
 
 ; === FUNCTIONS ===
@@ -135,14 +130,13 @@ stage2:
 ;	ret
 
 ; === Non-executable Data ===
-msg_start:      db 'Second stage loaded. ',
+msg_start:      db 'Second stage loaded.', 0
 msg_sayhi:      db 'Say Hi.', 0
 msg_prompt:     db '?> ', 0
-str_hi:         db 'Hi', 0
-str_shift:      db 'shift', 0
 msg_hello:      db 'Hello.', 0
-
 msg_a20on:      db 'A20 Enabled.', 0
 msg_a20off:     db 'A20 disabled.', 0
-msg_ncarry:     db '[No Carry]',  0
-msg_carry:      db '[Carry]',  0
+
+str_hi:         db 'Hi', 0
+str_shift:      db 'shift', 0
+
