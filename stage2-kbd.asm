@@ -97,19 +97,6 @@ kbd_scan:
 	pop bp
 	ret
 
-kbd_getch:
-.fpreamb:
-	push bp
-	mov bp, sp
-
-.freturn:
-	pop cx
-	mov sp, bp
-	pop bp
-	ret
-
-
-
 %undef obuf
 %undef ibuf
 
