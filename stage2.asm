@@ -68,6 +68,7 @@ stage2:
 	call con_println
 	add esp, 2
 
+stage2_enable_a20:
 	call a20_enable
 	call a20_status
 	or ax, ax
@@ -82,12 +83,28 @@ stage2:
 	call con_breakline
 	add sp, 2
 
+stage2_init_keyboard:
+	;call kbd_init
+	xor ax, ax
+	or ax, ax
+	jz .fail
+	push msg_kbd_on
+	jmp .done
+.fail:
+	push msg_kbd_off
+.done:
+	call con_println
+	add sp, 2
+
+stage2_cmdloop:
 .cmdloop:
 	push msg_prompt
 	call print
 	add sp, 2
 
 	call get
+	;call kbd_getch
+	;call con_breakline
 
 	push ax
 	push str_hi
@@ -117,26 +134,31 @@ stage2:
 %include "stage2-a20.asm"
 %include "stage2-fat12.asm"
 %include "stage2-io.asm"
+%include "stage2-kbd.asm"
 %include "stage2-string.asm"
 
-;ftemplate:
-;.fpreamb:
-;	push bp
-;	mov bp, sp
-;.fbody:
-;.freturn:
-;	mov sp, bp
-;	pop bp
-;	ret
+%ifdef blockcomment
+ftemplate:
+.fpreamb:
+	push bp
+	mov bp, sp
+.fbody:
+.freturn:
+	mov sp, bp
+	pop bp
+	ret
+%endif
 
 ; === Non-executable Data ===
 msg_start:      db 'Second stage loaded.', 0
 msg_sayhi:      db 'Say Hi.', 0
 msg_prompt:     db '?> ', 0
 msg_hello:      db 'Hello.', 0
+
 msg_a20on:      db 'A20 Enabled.', 0
 msg_a20off:     db 'A20 disabled.', 0
-
+msg_kbd_on:     db 'Keyboard driver enabled.', 0
+msg_kbd_off:    db 'Keyboard driver disabled.', 0
 str_hi:         db 'Hi', 0
 str_shift:      db 'shift', 0
 

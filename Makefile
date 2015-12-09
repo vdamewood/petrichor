@@ -13,7 +13,7 @@ bootdisk.img: stage1.bin stage2.bin
 stage1.bin: stage1.asm
 	nasm stage1.asm -f bin -o stage1.bin
 
-stage2.bin: stage2.asm stage2-a20.asm stage2-fat12.asm stage2-io.asm stage2-string.asm
+stage2.bin: stage2.asm stage2-a20.asm stage2-fat12.asm stage2-io.asm stage2-kbd.asm stage2-string.asm
 	nasm stage2.asm -f bin -o stage2.bin
 
 .PHONY: all clean distclean
