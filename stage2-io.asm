@@ -153,8 +153,6 @@ con_print:
 	lodsb        ; Fetch next byte in string, ...
 	or al, al    ; ... test if it's 0x00, ...
 	jz .done     ; ... and, if so, were'd done
-
-	;int 0x10    ; Due to ah = 0x0E, prints character
 	stosw
 	jmp .loop
 .done:
@@ -185,6 +183,39 @@ con_println:
 	pop bp
 	ret
 
+putch:
+.fpreamb:
+	push bp
+	mov bp, sp
+	push ax
+.fbody:
+	mov ax, [bp+4]
+	mov ah, 0x0E
+	int 0x10
+.freturn:
+	pop ax
+	mov sp, bp
+	pop bp
+	ret
+
+delch:
+.fpreamb:
+	push bp
+	mov bp, sp
+	push ax
+.fbody:
+	mov ax, 0x0E08
+	int 0x10
+	mov al, ' '
+	int 0x10
+	mov al, 0x08
+	int 0x10
+.freturn:
+	pop ax
+	mov sp, bp
+	pop bp
+	ret
+
 cmdbuf_size  equ  32
 cmdbuf       times cmdbuf_size db 0
 
@@ -206,12 +237,7 @@ get:
 	cmp di, cx ; if at the beginning of the buffer
 	je .loop   ; ignore
 
-	mov ah, 0x0E
-	int 0x10
-	mov al, ' '
-	int 0x10
-	mov al, 0x08
-	int 0x10
+	call delch
 	dec di
 	jmp .loop
 .ifentr:
@@ -228,8 +254,9 @@ get:
 	cmp dx, (cmdbuf_size-1) ; if buffer is full
 	je .loop ; ignore keypress
 
-	mov ah, 0x0E
-	int 0x10
+	push ax
+	call putch
+	pop ax
 	stosb
 	jmp .loop
 .return:
