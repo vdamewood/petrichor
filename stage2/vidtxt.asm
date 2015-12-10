@@ -70,31 +70,6 @@ vidtxt_shift:
 	pop bp
 	ret
 
-vidtxt_set_bios_cursor:
-.fpreamb:
-	push bp
-	mov bp, sp
-	push ax
-	push dx
-	push bx
-.fbody:
-	mov ax, [cs:vidtxt_cursor]
-	mov bx, 2*80
-	xor dx, dx
-	div bx ; ax = quot ; dx = mod
-	shr dx, 1
-	mov dh, al
-	mov bh, 0
-	mov ah, 2
-	int 0x10
-.freturn:
-	pop bx
-	pop dx
-	pop ax
-	mov sp, bp
-	pop bp
-	ret
-
 vidtxt_breakline:
 .fpreamb:
 	push bp
@@ -120,7 +95,7 @@ vidtxt_breakline:
 	mov ax, 2*80*24
 	mov [cs:vidtxt_cursor], ax
 .bios_cursor:
-	call vidtxt_set_bios_cursor
+	;call vidtxt_set_bios_cursor
 .freturn:
 	pop bx
 	pop dx
@@ -157,7 +132,7 @@ vidtxt_print:
 	jmp .loop
 .done:
 	mov [cs:vidtxt_cursor], di
-	call vidtxt_set_bios_cursor
+	;call vidtxt_set_bios_cursor
 .freturn:
 	pop ax
 	pop di
@@ -188,11 +163,25 @@ vidtxt_putch:
 	push bp
 	mov bp, sp
 	push ax
+	push di
+	push es
 .fbody:
+	mov ax, vidtxt_segment
+	mov es, ax
 	mov ax, [bp+4]
-	mov ah, 0x0E
-	int 0x10
+	mov ah, [cs:vidtxt_color]
+	mov di, [cs:vidtxt_cursor]
+	stosw
+	cmp di, 80*25*2
+	jle .save_cursor
+
+	call vidtxt_shift
+	mov di, 80*24*2
+.save_cursor:
+	mov [cs:vidtxt_cursor], di
 .freturn:
+	pop es
+	pop di
 	pop ax
 	mov sp, bp
 	pop bp
@@ -204,14 +193,21 @@ vidtxt_backspace:
 	push bp
 	mov bp, sp
 	push ax
+	push di
+	push es
 .fbody:
-	mov ax, 0x0E08
-	int 0x10
+	mov ax, vidtxt_segment
+	mov es, ax
+	mov ah, [cs:vidtxt_color]
+	mov di, [cs:vidtxt_cursor]
+	times 2 dec di
 	mov al, ' '
-	int 0x10
-	mov al, 0x08
-	int 0x10
+
+	mov [es:di], ax
+	mov [cs:vidtxt_cursor], di
 .freturn:
+	pop es
+	pop di
 	pop ax
 	mov sp, bp
 	pop bp
@@ -232,7 +228,9 @@ vidtxt_putbyte:
 	jle .skip1
 	add al, 7
 .skip1:
-	int 0x10
+	push ax
+	call vidtxt_putch
+	pop ax
 
 	mov al, byte_at
 	and al, 0x0F
@@ -241,7 +239,9 @@ vidtxt_putbyte:
 	jle .skip2
 	add al, 7
 .skip2:
-	int 0x10
+	push ax
+	call vidtxt_putch
+	pop ax
 .freturn:
 	pop ax
 	mov sp, bp
