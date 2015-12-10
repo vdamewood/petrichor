@@ -134,11 +134,11 @@ stage2_cmdloop:
 
 ; === FUNCTIONS ===
 
-%include "stage2-a20.asm"
-%include "stage2-fat12.asm"
-%include "stage2-io.asm"
-%include "stage2-kbd.asm"
-%include "stage2-string.asm"
+%include "a20.asm"
+%include "fat12.asm"
+%include "io.asm"
+%include "keyboard.asm"
+%include "strings.asm"
 
 %ifdef blockcomment
 ftemplate:
