@@ -65,7 +65,7 @@ stage2:
 
 	; Display start-up message
 	push msg_start
-	call con_println
+	call vidtxt_println
 	add esp, 2
 
 stage2_enable_a20:
@@ -79,8 +79,8 @@ stage2_enable_a20:
 .a20on:
 	push msg_a20on
 .a20end:
-	call con_print
-	call con_breakline
+	call vidtxt_print
+	call vidtxt_breakline
 	add sp, 2
 
 stage2_init_keyboard:
@@ -93,7 +93,7 @@ stage2_init_keyboard:
 .fail:
 	push msg_kbd_off
 .done:
-	call con_println
+	call vidtxt_println
 	add sp, 2
 
 stage2_cmdloop:
@@ -105,8 +105,8 @@ stage2_cmdloop:
 	;call get
 	call kbd_scan
 	push ax
-	call putbyte
-	call con_breakline
+	call vidtxt_putbyte
+	call vidtxt_breakline
 	pop ax
 	
 	push ax
@@ -117,7 +117,7 @@ stage2_cmdloop:
 	jz .not_hi
 	push msg_hello
 	call print
-	call con_breakline
+	call vidtxt_breakline
 	add sp, 4
 	jmp .cmdloop
 .not_hi:
@@ -127,7 +127,7 @@ stage2_cmdloop:
 	or ax, ax
 	jz .default
 	add sp, 2
-	call con_shift
+	call vidtxt_shift
 	jmp .cmdloop
 .default:
 	jmp .cmdloop
@@ -135,9 +135,10 @@ stage2_cmdloop:
 ; === FUNCTIONS ===
 
 %include "a20.asm"
-%include "fat12.asm"
-%include "io.asm"
+%include "vidtxt.asm"
 %include "keyboard.asm"
+%include "command.asm"
+;%include "fat12.asm"
 %include "strings.asm"
 
 %ifdef blockcomment

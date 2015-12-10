@@ -26,14 +26,14 @@
 ; (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 ; OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-%define con_segment 0xB800
+%define vidtxt_segment 0xB800
 
-con_color:      db 0x07
-con_cursor:     dw 0x0000
+vidtxt_color:      db 0x07
+vidtxt_cursor:     dw 0x0000
 ; When placing, LSB is character in CP437, MSB is Forground/Backgorund color
 
 
-con_shift:
+vidtxt_shift:
 .fpramb:
 	push bp
 	mov bp, sp
@@ -44,7 +44,7 @@ con_shift:
 	push si
 	push di
 .fbody:
-	mov ax, con_segment
+	mov ax, vidtxt_segment
 	mov ds, ax
 	mov es, ax
 	mov di, 0
@@ -53,7 +53,7 @@ con_shift:
 	rep movsw
 
 	mov al, 0
-	mov ah, [cs:con_color]
+	mov ah, [cs:vidtxt_color]
 	mov cx, 80
 .lastline:
 	mov [di], ax
@@ -70,7 +70,7 @@ con_shift:
 	pop bp
 	ret
 
-con_set_bios_cursor:
+vidtxt_set_bios_cursor:
 .fpreamb:
 	push bp
 	mov bp, sp
@@ -78,7 +78,7 @@ con_set_bios_cursor:
 	push dx
 	push bx
 .fbody:
-	mov ax, [cs:con_cursor]
+	mov ax, [cs:vidtxt_cursor]
 	mov bx, 2*80
 	xor dx, dx
 	div bx ; ax = quot ; dx = mod
@@ -95,7 +95,7 @@ con_set_bios_cursor:
 	pop bp
 	ret
 
-con_breakline:
+vidtxt_breakline:
 .fpreamb:
 	push bp
 	mov bp, sp
@@ -103,24 +103,24 @@ con_breakline:
 	push dx
 	push bx
 .fbody:
-	mov ax, [cs:con_cursor]
+	mov ax, [cs:vidtxt_cursor]
 	cmp ax, 2*80*24
 	jge .last_line
 .not_last_line:
 	mov bx, 2*80
 	xor dx, dx
 	div bx ; ax = quot ; dx = mod
-	mov ax, [cs:con_cursor]
+	mov ax, [cs:vidtxt_cursor]
 	sub ax, dx
 	add ax, 2*80
-	mov [cs:con_cursor], ax
+	mov [cs:vidtxt_cursor], ax
 	jmp .bios_cursor
 .last_line:
-	call con_shift
+	call vidtxt_shift
 	mov ax, 2*80*24
-	mov [cs:con_cursor], ax
+	mov [cs:vidtxt_cursor], ax
 .bios_cursor:
-	call con_set_bios_cursor
+	call vidtxt_set_bios_cursor
 .freturn:
 	pop bx
 	pop dx
@@ -131,7 +131,7 @@ con_breakline:
 
 ; Print a string
 print:
-con_print:
+vidtxt_print:
 %define string [bp+4]
 .fpreamb:
 	push bp
@@ -144,11 +144,11 @@ con_print:
 .fbody:
 	mov ax, 0x1000
 	mov ds, ax
-	mov ax, con_segment
+	mov ax, vidtxt_segment
 	mov es, ax
 	mov si, string
-	mov di, [cs:con_cursor]
-	mov ah, [cs:con_color]
+	mov di, [cs:vidtxt_cursor]
+	mov ah, [cs:vidtxt_color]
 .loop:
 	lodsb        ; Fetch next byte in string, ...
 	or al, al    ; ... test if it's 0x00, ...
@@ -156,8 +156,8 @@ con_print:
 	stosw
 	jmp .loop
 .done:
-	mov [cs:con_cursor], di
-	call con_set_bios_cursor
+	mov [cs:vidtxt_cursor], di
+	call vidtxt_set_bios_cursor
 .freturn:
 	pop ax
 	pop di
@@ -169,7 +169,7 @@ con_print:
 	ret
 %undef string
 
-con_println:
+vidtxt_println:
 .fpreamb:
 	push bp
 	mov bp, sp
@@ -177,13 +177,13 @@ con_println:
 	push word[bp+4]
 	call print
 	add sp, 2
-	call con_breakline
+	call vidtxt_breakline
 .freturn:
 	mov sp, bp
 	pop bp
 	ret
 
-putch:
+vidtxt_putch:
 .fpreamb:
 	push bp
 	mov bp, sp
@@ -198,7 +198,8 @@ putch:
 	pop bp
 	ret
 
-delch:
+vidtxt_delch:
+vidtxt_backspace:
 .fpreamb:
 	push bp
 	mov bp, sp
@@ -216,57 +217,7 @@ delch:
 	pop bp
 	ret
 
-cmdbuf_size  equ  32
-cmdbuf       times cmdbuf_size db 0
-
-get:
-.fpreamb:
-	push bp
-	mov bp, sp
-	push di
-.fbody:
-	mov cx, cmdbuf
-	mov di, cx
-.loop:
-	mov ah, 0
-	int 0x16
-.ifbksp:
-	cmp al, 0x08 ; Backspace
-	jne .ifentr
-.bksp:
-	cmp di, cx ; if at the beginning of the buffer
-	je .loop   ; ignore
-
-	call delch
-	dec di
-	jmp .loop
-.ifentr:
-	cmp al, 0x0D ; Enter
-	jne .else
-.entr:
-	mov al, 0
-	stosb
-	call con_breakline
-	jmp .return
-.else:
-	mov dx, di
-	sub dx, cx
-	cmp dx, (cmdbuf_size-1) ; if buffer is full
-	je .loop ; ignore keypress
-
-	push ax
-	call putch
-	pop ax
-	stosb
-	jmp .loop
-.return:
-	mov ax, cmdbuf
-	pop di
-	mov sp, bp
-	pop bp
-	ret
-
-putbyte:
+vidtxt_putbyte:
 %define byte_at [bp+4]
 .fpreamb:
 	push bp
@@ -298,7 +249,7 @@ putbyte:
 	ret
 %undef byte_at
 
-putword:
+vidtxt_putword:
 %define word_at [bp+4]
 .fpreamb:
 	push bp
@@ -308,11 +259,11 @@ putword:
 	mov ax, word_at
 	shr ax, 8
 	push ax
-	call putbyte
+	call vidtxt_putbyte
 
 	mov ax, word_at
 	push ax
-	call putbyte
+	call vidtxt_putbyte
 
 	add sp, 4
 .freturn:
@@ -321,3 +272,5 @@ putword:
 	pop bp
 	ret
 %undef word_at
+
+%undef vidtxt_segment
