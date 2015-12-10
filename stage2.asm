@@ -84,8 +84,8 @@ stage2_enable_a20:
 	add sp, 2
 
 stage2_init_keyboard:
-	;call kbd_init
-	xor ax, ax
+	call kbd_init
+	;xor ax, ax
 	or ax, ax
 	jz .fail
 	push msg_kbd_on
@@ -102,10 +102,13 @@ stage2_cmdloop:
 	call print
 	add sp, 2
 
-	call get
-	;call kbd_getch
-	;call con_breakline
-
+	;call get
+	call kbd_scan
+	push ax
+	call putbyte
+	call con_breakline
+	pop ax
+	
 	push ax
 	push str_hi
 	call match
