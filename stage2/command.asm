@@ -48,6 +48,7 @@ get:
 	je .loop   ; ignore
 
 	call vidtxt_delch
+	call vidtxt_show_cursor
 	dec di
 	jmp .loop
 .ifentr:
@@ -67,6 +68,7 @@ get:
 	push ax
 	call vidtxt_putch
 	pop ax
+	call vidtxt_show_cursor
 	stosb
 	jmp .loop
 .return:

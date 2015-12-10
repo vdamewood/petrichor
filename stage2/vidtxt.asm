@@ -32,6 +32,60 @@ vidtxt_color:      db 0x07
 vidtxt_cursor:     dw 0x0000
 ; When placing, LSB is character in CP437, MSB is Forground/Backgorund color
 
+vidtxt_set_cursor:
+%define newpos [bp+4]
+.fpramb:
+	push bp
+	mov bp, sp
+	push ax
+.fbody:
+	mov ax, newpos
+	mov [cs:vidtxt_cursor], ax
+.freturn:
+	pop ax
+	mov sp, bp
+	pop bp
+	ret
+%undef newpos
+
+vidtxt_show_cursor:
+.fpramb:
+	push bp
+	mov bp, sp
+	push ax
+	push dx
+	push bx
+.fbody:
+	mov bx, [cs:vidtxt_cursor]
+	shr bx, 1
+
+    ; out 0x3D4, 0x0F
+	mov dx, 0x03D4
+	mov ax, 0x0F
+	out dx, al
+
+    ; out 0x3D5, 243
+	mov dx, 0x03D5
+	mov al, bl
+	out dx, al
+
+    ; out 0x3D4, 0x0E
+	mov dx, 0x03D4
+	mov ax, 0x0E
+	out dx, al
+
+    ; out 0x3D5, 0
+	mov dx, 0x03D5
+	mov al, bh
+	out dx, al
+.freturn:
+	pop bx
+	pop dx
+	pop ax
+	mov sp, bp
+	pop bp
+	ret
+
 
 vidtxt_shift:
 .fpramb:
@@ -89,13 +143,13 @@ vidtxt_breakline:
 	sub ax, dx
 	add ax, 2*80
 	mov [cs:vidtxt_cursor], ax
-	jmp .bios_cursor
+	jmp .show_cursor
 .last_line:
 	call vidtxt_shift
 	mov ax, 2*80*24
 	mov [cs:vidtxt_cursor], ax
-.bios_cursor:
-	;call vidtxt_set_bios_cursor
+.show_cursor:
+	call vidtxt_show_cursor
 .freturn:
 	pop bx
 	pop dx
@@ -132,7 +186,7 @@ vidtxt_print:
 	jmp .loop
 .done:
 	mov [cs:vidtxt_cursor], di
-	;call vidtxt_set_bios_cursor
+	call vidtxt_show_cursor
 .freturn:
 	pop ax
 	pop di
@@ -200,7 +254,7 @@ vidtxt_backspace:
 	mov es, ax
 	mov ah, [cs:vidtxt_color]
 	mov di, [cs:vidtxt_cursor]
-	times 2 dec di
+	sub di, 2
 	mov al, ' '
 
 	mov [es:di], ax
