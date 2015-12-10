@@ -97,6 +97,45 @@ kbd_scan:
 	pop bp
 	ret
 
+keyboard_get_stroke:
+.fpreamb:
+	push bp
+	mov bp, sp
+.fbody:
+	xor ah, ah
+	int 0x16
+.chk_printable:
+	cmp al, 0x20
+	jl .chk_bksp
+	xor ah, ah
+	jmp .freturn
+.chk_bksp:
+	cmp al, 0x08 ; Backspace
+	jne .chk_tab
+	mov ax, 0x0110
+	jmp .freturn
+.chk_tab:
+	cmp al, 0x09 ; Tab
+	jne .chk_enter
+	mov ax, 0x0111
+	jmp .freturn
+.chk_enter:
+	cmp al, 0x0D ; Enter
+	jne .chk_esc
+	mov ax, 0x0112
+	jmp .freturn
+.chk_esc:
+	cmp al, 0x1B ; Escape
+	jne .freturn
+	mov ax, 0x0100
+	jmp .freturn
+.else_error:
+	mov ax, 0xFFFF
+.freturn:
+	mov sp, bp
+	pop bp
+	ret
+
 %undef obuf
 %undef ibuf
 

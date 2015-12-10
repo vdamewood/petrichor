@@ -37,29 +37,15 @@ get:
 .fbody:
 	mov cx, cmdbuf
 	mov di, cx
-.loop:
-	mov ah, 0
-	int 0x16
-.ifbksp:
-	cmp al, 0x08 ; Backspace
-	jne .ifentr
-.bksp:
-	cmp di, cx ; if at the beginning of the buffer
-	je .loop   ; ignore
 
-	call vidtxt_delch
-	call vidtxt_show_cursor
-	dec di
-	jmp .loop
-.ifentr:
-	cmp al, 0x0D ; Enter
-	jne .else
-.entr:
-	mov al, 0
-	stosb
-	call vidtxt_breakline
-	jmp .return
-.else:
+.loop:
+	call keyboard_get_stroke
+
+.chk_special:
+	cmp ah, 0x00
+	jne .special
+
+.printable:
 	mov dx, di
 	sub dx, cx
 	cmp dx, (cmdbuf_size-1) ; if buffer is full
@@ -71,6 +57,49 @@ get:
 	call vidtxt_show_cursor
 	stosb
 	jmp .loop
+
+.special:
+	cmp ah, 0x01 ; Ignore ctrl-, alt- and errors.
+	jne .loop
+
+.chk_esc:
+	cmp al, 0x00 ; Escape
+	jne .chk_bksp
+.do_esc:
+	cmp di, cx
+	je .loop
+
+	call vidtxt_delch
+	call vidtxt_show_cursor
+	dec di
+	jmp .do_esc
+
+	;jmp .loop
+
+.chk_bksp:
+	cmp al, 0x10 ; Backspace
+	jne .chk_enter
+.do_bksp:
+	cmp di, cx ; if at the beginning of the buffer
+	je .loop   ; ignore
+
+	call vidtxt_delch
+	call vidtxt_show_cursor
+	dec di
+	jmp .loop
+
+.chk_enter:
+	cmp al, 0x12 ; Enter
+	jne .else
+.do_enter:
+	mov al, 0
+	stosb
+	call vidtxt_breakline
+	jmp .return
+
+.else:
+	jmp .loop ; Ignore all other keystrokes
+
 .return:
 	mov ax, cmdbuf
 	pop di
