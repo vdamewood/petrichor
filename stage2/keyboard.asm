@@ -31,11 +31,7 @@
 %define get_status 0x20
 %define set_status 0x60
 
-keyboard_init_old:
-	xor ax, ax
-	ret
-
-keyboard_init_new:
+keyboard_enable:
 .fpreamb:
 	push bp
 	mov bp, sp
@@ -80,7 +76,62 @@ keyboard_init_new:
 	xor ax, ax
 	jmp .freturn
 .zero:
+	mov ax, keyboard_get_stroke_enabled
+	mov [cs:keyboard_get_stroke_current], ax
 	mov ax, 0xFFFF
+.freturn:
+	mov sp, bp
+	pop bp
+	ret
+
+keyboard_disable:
+.fpreamb:
+	push bp
+	mov bp, sp
+.fbody:
+.wait_buff1:
+	in al, 0x64
+	and al, obuf_full
+	jnz .wait_buff1
+
+.get_status:
+	mov al, get_status
+	out 0x64, al
+	in al, 0x60
+
+.cache_disabled:
+	mov ah, 1
+	or ah, al
+
+.wait_buff2:
+	in al, 0x64
+	and al, obuf_full
+	jnz .wait_buff2
+
+.set_status:
+	mov al, set_status
+	out 0x64, al
+	mov al, ah
+	out 0x60, al
+	in al, 0x60 ; Get (and ignore) response to command
+
+.wait_buff3:
+	in al, 0x64
+	and al, obuf_full
+	jnz .wait_buff3
+
+.check_status:
+	mov al, get_status
+	out 0x64, al
+	in al, 0x60
+	and al, 1
+	jz .zero
+	mov ax, keyboard_get_stroke_disabled
+	mov [cs:keyboard_get_stroke_current], ax
+	mov ax, 0xFFFF
+	jmp .freturn
+.zero:
+	xor ax, ax
 .freturn:
 	mov sp, bp
 	pop bp
@@ -102,6 +153,12 @@ kbd_scan:
 	pop bp
 	ret
 
+keyboard_get_stroke_current: dw keyboard_get_stroke_disabled
+
+keyboard_get_stroke:
+	;mov ax, [cs:keyboard_get_stroke_current]
+	jmp [cs:keyboard_get_stroke_current]
+
 ;keyboard_meta_state: db 0
 	; 0: Left Shift
 	; 1: Righ Shift
@@ -110,7 +167,7 @@ kbd_scan:
 	; 4: Left Alt
 	; 5: Right Alt
 
-keyboard_get_stroke_new:
+keyboard_get_stroke_enabled:
 .fpreamb:
 	push bp
 	mov bp, sp
@@ -131,7 +188,7 @@ keyboard_get_stroke_new:
 	pop bp
 	ret
 
-keyboard_get_stroke_old:
+keyboard_get_stroke_disabled:
 .fpreamb:
 	push bp
 	mov bp, sp
@@ -173,8 +230,8 @@ keyboard_get_stroke_old:
 str_scancode: db "Scan:", 0
 str_keycode:  db "KeyC:", 0
 
-kbd_init:				jmp keyboard_init_new
-keyboard_get_stroke:	jmp keyboard_get_stroke_new
+;kbd_init:				jmp keyboard_init_new
+;keyboard_get_stroke:	jmp keyboard_get_stroke_new
 
 ;kbd_init:				jmp keyboard_init_old
 ;keyboard_get_stroke:	jmp keyboard_get_stroke_old

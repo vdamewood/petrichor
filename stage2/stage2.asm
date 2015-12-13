@@ -83,19 +83,6 @@ stage2_enable_a20:
 	call vidtxt_breakline
 	add sp, 2
 
-stage2_init_keyboard:
-	call kbd_init
-	;xor ax, ax
-	or ax, ax
-	jz .fail
-	push msg_kbd_on
-	jmp .done
-.fail:
-	push msg_kbd_off
-.done:
-	call vidtxt_println
-	add sp, 2
-
 stage2_cmdloop:
 .cmdloop:
 	push msg_prompt
@@ -116,18 +103,46 @@ stage2_cmdloop:
 	or ax, ax
 	jz .not_hi
 	push msg_hello
-	call print
-	call vidtxt_breakline
+	call vidtxt_println
 	add sp, 4
 	jmp .cmdloop
 .not_hi:
-	push str_shift
+	push str_enable
+	call match
+	add sp, 2
+	or ax, ax
+	jz .not_enable
+	add sp, 2
+	call keyboard_enable
+	or ax, ax
+	jz .enable_fail
+	push msg_kbd_on
+	call vidtxt_println
+	add sp, 2
+	jmp .cmdloop
+.enable_fail:
+	push msg_fail
+	call vidtxt_println
+	add sp, 2
+	jmp .cmdloop
+.not_enable:
+	push str_disable
 	call match
 	add sp, 2
 	or ax, ax
 	jz .default
 	add sp, 2
-	call vidtxt_shift
+	call keyboard_disable
+	or ax, ax
+	jz .disable_fail
+	push msg_kbd_off
+	call vidtxt_println
+	add sp, 2
+	jmp .cmdloop
+.disable_fail:
+	push msg_fail
+	call vidtxt_println
+	add sp, 2
 	jmp .cmdloop
 .default:
 	jmp .cmdloop
@@ -155,7 +170,7 @@ ftemplate:
 
 ; === Non-executable Data ===
 msg_start:      db 'Second stage loaded.', 0
-msg_sayhi:      db 'Say Hi.', 0
+msg_sayhi:      db 'Say hi.', 0
 msg_prompt:     db '?> ', 0
 msg_hello:      db 'Hello.', 0
 
@@ -163,6 +178,9 @@ msg_a20on:      db 'A20 Enabled.', 0
 msg_a20off:     db 'A20 disabled.', 0
 msg_kbd_on:     db 'Keyboard driver enabled.', 0
 msg_kbd_off:    db 'Keyboard driver disabled.', 0
-str_hi:         db 'Hi', 0
-str_shift:      db 'shift', 0
+msg_fail:		db 'Command failed.', 0
+str_hi:         db 'hi', 0
+str_enable:     db 'enable', 0
+str_disable:    db 'disable', 0
+
 
