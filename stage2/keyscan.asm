@@ -2,7 +2,7 @@ keyscan_table:
 ; 0x00
 	dw 0xFFFF ; Not assigned
 	dw 0x0100 ; Escape
-	db '1'
+	dw '1'
 	dw '2'
 	dw '3'
 	dw '4'

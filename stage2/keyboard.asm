@@ -117,20 +117,14 @@ keyboard_get_stroke_new:
 	push bx
 .fbody:
 	call kbd_scan
-	;push ax
-	;push str_scancode
-	;call vidtxt_print
-	;add sp, 2
-	;call vidtxt_putword
-	;call vidtxt_breakline
-	;pop ax
 
 	cmp ax, 0x0080
-	jl .fbody
+	jge .fbody
 	; lea, maybe?
+	shl ax, 1
 	mov bx, keyscan_table
 	add bx, ax
-	mov ax, [bx]
+	mov ax, [cs:bx]
 .freturn:
 	pop bx
 	mov sp, bp
