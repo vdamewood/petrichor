@@ -31,7 +31,11 @@
 %define get_status 0x20
 %define set_status 0x60
 
-kbd_init:
+keyboard_init_old:
+	xor ax, ax
+	ret
+
+keyboard_init_new:
 .fpreamb:
 	push bp
 	mov bp, sp
@@ -91,13 +95,49 @@ kbd_scan:
 	and al, ibuf_full
 	jz .fbody
 	in al, 0x60
-	xor ah, 0
+	xor ah, ah
+	;mov ax, 0x001E
 .freturn:
 	mov sp, bp
 	pop bp
 	ret
 
-keyboard_get_stroke:
+;keyboard_meta_state: db 0
+	; 0: Left Shift
+	; 1: Righ Shift
+	; 2: Left Ctrl
+	; 3: Right Ctrl
+	; 4: Left Alt
+	; 5: Right Alt
+
+keyboard_get_stroke_new:
+.fpreamb:
+	push bp
+	mov bp, sp
+	push bx
+.fbody:
+	call kbd_scan
+	;push ax
+	;push str_scancode
+	;call vidtxt_print
+	;add sp, 2
+	;call vidtxt_putword
+	;call vidtxt_breakline
+	;pop ax
+
+	cmp ax, 0x0080
+	jl .fbody
+	; lea, maybe?
+	mov bx, keyscan_table
+	add bx, ax
+	mov ax, [bx]
+.freturn:
+	pop bx
+	mov sp, bp
+	pop bp
+	ret
+
+keyboard_get_stroke_old:
 .fpreamb:
 	push bp
 	mov bp, sp
@@ -135,6 +175,18 @@ keyboard_get_stroke:
 	mov sp, bp
 	pop bp
 	ret
+
+str_scancode: db "Scan:", 0
+str_keycode:  db "KeyC:", 0
+
+kbd_init:				jmp keyboard_init_new
+keyboard_get_stroke:	jmp keyboard_get_stroke_new
+
+;kbd_init:				jmp keyboard_init_old
+;keyboard_get_stroke:	jmp keyboard_get_stroke_old
+
+
+%include "keyscan.asm"
 
 %undef obuf
 %undef ibuf

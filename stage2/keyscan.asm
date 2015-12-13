@@ -1,207 +1,207 @@
-kbd_normal_table:
+keyscan_table:
 ; 0x00
-	db 0x00 ; Not assigned
-	db 0x00 ; Escape
+	dw 0xFFFF ; Not assigned
+	dw 0x0100 ; Escape
 	db '1'
-	db '2'
-	db '3'
-	db '4'
-	db '5'
-	db '6'
-	db '7'
-	db '8'
-	db '9'
-	db '0'
-	db '-'
-	db '='
-	db 0x00 ; backspace
-	db 0x00 ; tab
+	dw '2'
+	dw '3'
+	dw '4'
+	dw '5'
+	dw '6'
+	dw '7'
+	dw '8'
+	dw '9'
+	dw '0'
+	dw '-'
+	dw '='
+	dw 0x0110 ; backspace
+	dw 0x0111 ; tab
 ; 0x10
-	db 'q'
-	db 'w'
-	db 'e'
-	db 'r'
-	db 't'
-	db 'y'
-	db 'u'
-	db 'i'
-	db 'o'
-	db 'p'
-	db '['
-	db ']'
-	db 0x00 ; Enter
-	db 0x00 ; Left Ctrl
-	db 'a'
-	db 's'
+	dw 'q'
+	dw 'w'
+	dw 'e'
+	dw 'r'
+	dw 't'
+	dw 'y'
+	dw 'u'
+	dw 'i'
+	dw 'o'
+	dw 'p'
+	dw '['
+	dw ']'
+	dw 0x0112 ; Enter
+	dw 0xFFFE ; Left Ctrl
+	dw 'a'
+	dw 's'
 ; 0x20
-	db 'd'
-	db 'f'
-	db 'g'
-	db 'h'
-	db 'j'
-	db 'k'
-	db 'l'
-	db ';'
-	db 0x27 ; Single Quote
-	db '`'
-	db 0x00 ; Left Shift
-	db '\'
-	db 'z'
-	db 'x'
-	db 'c'
-	db 'v'
+	dw 'd'
+	dw 'f'
+	dw 'g'
+	dw 'h'
+	dw 'j'
+	dw 'k'
+	dw 'l'
+	dw ';'
+	dw 0x0027 ; Single Quote
+	dw '`'
+	dw 0xFFFE ; Left Shift
+	dw '\'
+	dw 'z'
+	dw 'x'
+	dw 'c'
+	dw 'v'
 ; 0x30
-	db 'b'
-	db 'n'
-	db 'm'
-	db ','
-	db '.'
-	db '/'
-	db 0x00 ; Right Shift
-	db '*'  ; Numeric Keypad
-	db 0x00 ; Left Alt
-	db ' '
-	db 0x00 ; Caps Lock
-	db 0x00 ; F1
-	db 0x00 ; F2
-	db 0x00 ; F3
-	db 0x00 ; F4
-	db 0x00 ; F5
+	dw 'b'
+	dw 'n'
+	dw 'm'
+	dw ','
+	dw '.'
+	dw '/'
+	dw 0xFFFE ; Right Shift
+	dw '*'  ; Numeric Keypad
+	dw 0xFFFE ; Left Alt
+	dw ' '
+	dw 0xFFFE ; Caps Lock
+	dw 0xFFFF ; F1
+	dw 0xFFFF ; F2
+	dw 0xFFFF ; F3
+	dw 0xFFFF ; F4
+	dw 0xFFFF ; F5
 ; 0x40
-	db 0x00 ; F6
-	db 0x00 ; F7
-	db 0x00 ; F8
-	db 0x00 ; F9
-	db 0x00 ; F10
-	db 0x00 ; Num lock
-	db 0x00 ; Scroll lock
-	db '7'  ; Numeric Keypad
-	db '8'  ; Numeric Keypad
-	db '9'  ; Numeric Keypad
-	db '-'  ; Numeric Keypad
-	db '4'  ; Numeric Keypad
-	db '5'  ; Numeric Keypad
-	db '6'  ; Numeric Keypad
-	db '+'  ; Numeric Keypad
-	db '1'  ; Numeric Keypad
+	dw 0xFFFF ; F6
+	dw 0xFFFF ; F7
+	dw 0xFFFF ; F8
+	dw 0xFFFF ; F9
+	dw 0xFFFF ; F10
+	dw 0xFFFE ; Num lock
+	dw 0xFFFE ; Scroll lock
+	dw '7'  ; Numeric Keypad
+	dw '8'  ; Numeric Keypad
+	dw '9'  ; Numeric Keypad
+	dw '-'  ; Numeric Keypad
+	dw '4'  ; Numeric Keypad
+	dw '5'  ; Numeric Keypad
+	dw '6'  ; Numeric Keypad
+	dw '+'  ; Numeric Keypad
+	dw '1'  ; Numeric Keypad
 ; 0x50
-	db '2'  ; Numeric Keypad
-	db '3'  ; Numeric Keypad
-	db '0'  ; Numeric Keypad
-	db '.'  ; Numeric Keypad
-	db 0x00
-	db 0x00
-	db 0x00
-	db 0x00 ; F11
-	db 0x00 ; F12
-	db 0x00
-	db 0x00
-	db 0x00
-	db 0x00
-	db 0x00
-	db 0x00
-	db 0x00
+	dw '2'  ; Numeric Keypad
+	dw '3'  ; Numeric Keypad
+	dw '0'  ; Numeric Keypad
+	dw '.'  ; Numeric Keypad
+	dw 0xFFFF
+	dw 0xFFFF
+	dw 0xFFFF
+	dw 0xFFFF ; F11
+	dw 0xFFFF ; F12
+	dw 0xFFFF
+	dw 0xFFFF
+	dw 0xFFFF
+	dw 0xFFFF
+	dw 0xFFFF
+	dw 0xFFFF
+	dw 0xFFFF
 
-kbd_shift_table:
-; 0x00
-	db 0x00 ; Not assigned
-	db 0x00 ; Escape
-	db '!'
-	db '@'
-	db '#'
-	db '$'
-	db '%'
-	db '^'
-	db '&'
-	db '*'
-	db '('
-	db ')'
-	db '_'
-	db '+'
-	db 0x00 ; backspace
-	db 0x00 ; tab
+keyscan_shift_table:
+; 0xFFFF
+	dw 0xFFFF ; Not assigned
+	dw 0xFFFF ; Escape
+	dw '!'
+	dw '@'
+	dw '#'
+	dw '$'
+	dw '%'
+	dw '^'
+	dw '&'
+	dw '*'
+	dw '('
+	dw ')'
+	dw '_'
+	dw '+'
+	dw 0xFFFF ; backspace
+	dw 0xFFFF ; tab
 ; 0x10
-	db 'Q'
-	db 'W'
-	db 'E'
-	db 'R'
-	db 'T'
-	db 'Y'
-	db 'U'
-	db 'I'
-	db 'O'
-	db 'P'
-	db '{'
-	db '}'
-	db 0x00 ; Enter
-	db 0x00 ; Left Ctrl
-	db 'A'
-	db 'S'
+	dw 'Q'
+	dw 'W'
+	dw 'E'
+	dw 'R'
+	dw 'T'
+	dw 'Y'
+	dw 'U'
+	dw 'I'
+	dw 'O'
+	dw 'P'
+	dw '{'
+	dw '}'
+	dw 0xFFFF ; Enter
+	dw 0xFFFE ; Left Ctrl
+	dw 'A'
+	dw 'S'
 ; 0x20
-	db 'D'
-	db 'F'
-	db 'G'
-	db 'H'
-	db 'J'
-	db 'K'
-	db 'L'
-	db ':'
-	db '"'
-	db '~'
-	db 0x00 ; Left Shift
-	db '|'
-	db 'Z'
-	db 'X'
-	db 'C'
-	db 'V'
+	dw 'D'
+	dw 'F'
+	dw 'G'
+	dw 'H'
+	dw 'J'
+	dw 'K'
+	dw 'L'
+	dw ':'
+	dw '"'
+	dw '~'
+	dw 0xFFFE ; Left Shift
+	dw '|'
+	dw 'Z'
+	dw 'X'
+	dw 'C'
+	dw 'V'
 ; 0x30
-	db 'B'
-	db 'N'
-	db 'M'
-	db '<'
-	db '>'
-	db '?'
-	db 0x00 ; Right Shift
-	db '*'  ; Numeric Keypad
-	db 0x00 ; Left Alt
-	db ' '
-	db 0x00 ; Caps Lock
-	db 0x00 ; F1
-	db 0x00 ; F2
-	db 0x00 ; F3
-	db 0x00 ; F4
-	db 0x00 ; F5
+	dw 'B'
+	dw 'N'
+	dw 'M'
+	dw '<'
+	dw '>'
+	dw '?'
+	dw 0xFFFE ; Right Shift
+	dw '*'  ; Numeric Keypad
+	dw 0xFFFE ; Left Alt
+	dw ' '
+	dw 0xFFFF ; Caps Lock
+	dw 0xFFFF ; F1
+	dw 0xFFFF ; F2
+	dw 0xFFFF ; F3
+	dw 0xFFFF ; F4
+	dw 0xFFFF ; F5
 ; 0x40
-	db 0x00 ; F6
-	db 0x00 ; F7
-	db 0x00 ; F8
-	db 0x00 ; F9
-	db 0x00 ; F10
-	db 0x00 ; Num lock
-	db 0x00 ; Scroll lock
-	db 0x00 ; Numeric Keypad 7
-	db 0x00 ; Numeric Keypad 8
-	db 0x00 ; Numeric Keypad 9
-	db '-'  ; Numeric Keypad
-	db 0x00 ; Numeric Keypad 4
-	db 0x00 ; Numeric Keypad 5
-	db 0x00 ; Numeric Keypad 6
-	db '+'  ; Numeric Keypad
-	db 0x00 ; Numeric Keypad 1
+	dw 0xFFFF ; F6
+	dw 0xFFFF ; F7
+	dw 0xFFFF ; F8
+	dw 0xFFFF ; F9
+	dw 0xFFFF ; F10
+	dw 0xFFFF ; Num lock
+	dw 0xFFFF ; Scroll lock
+	dw 0xFFFF ; Numeric Keypad 7
+	dw 0xFFFF ; Numeric Keypad 8
+	dw 0xFFFF ; Numeric Keypad 9
+	dw '-'  ; Numeric Keypad
+	dw 0xFFFF ; Numeric Keypad 4
+	dw 0xFFFF ; Numeric Keypad 5
+	dw 0xFFFF ; Numeric Keypad 6
+	dw '+'  ; Numeric Keypad
+	dw 0xFFFF ; Numeric Keypad 1
 ; 0x50
-	db 0x00 ; Numeric Keypad 2
-	db 0x00 ; Numeric Keypad 3
-	db 0x00 ; Numeric Keypad 0
-	db '.'  ; Numeric Keypad
-	db 0x00
-	db 0x00
-	db 0x00
-	db 0x00 ; F11
-	db 0x00 ; F12
-	db 0x00
-	db 0x00
-	db 0x00
-	db 0x00
-	db 0x00
-	db 0x00
-	db 0x00
+	dw 0xFFFF ; Numeric Keypad 2
+	dw 0xFFFF ; Numeric Keypad 3
+	dw 0xFFFF ; Numeric Keypad 0
+	dw '.'  ; Numeric Keypad
+	dw 0xFFFF
+	dw 0xFFFF
+	dw 0xFFFF
+	dw 0xFFFF ; F11
+	dw 0xFFFF ; F12
+	dw 0xFFFF
+	dw 0xFFFF
+	dw 0xFFFF
+	dw 0xFFFF
+	dw 0xFFFF
+	dw 0xFFFF
+	dw 0xFFFF

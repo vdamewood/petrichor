@@ -84,8 +84,8 @@ stage2_enable_a20:
 	add sp, 2
 
 stage2_init_keyboard:
-	;call kbd_init
-	xor ax, ax
+	call kbd_init
+	;xor ax, ax
 	or ax, ax
 	jz .fail
 	push msg_kbd_on
