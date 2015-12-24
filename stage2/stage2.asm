@@ -90,11 +90,6 @@ stage2_cmdloop:
 	add sp, 2
 
 	call get
-	;call kbd_scan
-	;push ax
-	;call vidtxt_putbyte
-	;call vidtxt_breakline
-	;pop ax
 	
 	push ax
 	push str_hi
