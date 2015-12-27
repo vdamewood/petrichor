@@ -125,7 +125,7 @@ stage2_cmdloop:
 	call match
 	add sp, 2
 	or ax, ax
-	jz .default
+	jz .check_vendor
 	add sp, 2
 	call keyboard_disable
 	or ax, ax
@@ -139,10 +139,45 @@ stage2_cmdloop:
 	call vidtxt_println
 	add sp, 2
 	jmp .cmdloop
+.check_vendor:
+	push str_vendor
+	call match
+	or ax, ax
+	jz .default
+	call load_vendor_id
+	push msg_vendor
+	call vidtxt_println
+	add sp, 2
 .default:
 	jmp .cmdloop
 
 ; === FUNCTIONS ===
+
+load_vendor_id:
+ftemplate:
+.fpreamb:
+	push bp
+	mov bp, sp
+.fbody:
+	mov al, [msg_vendor]
+	or al, al
+	jnz .freturn
+	xor eax, eax
+	push cx
+	push dx
+	push bx
+	cpuid
+	mov [sub_vendor_1], ebx
+	mov [sub_vendor_2], edx
+	mov [sub_vendor_3], ecx
+	pop bx
+	pop dx
+	pop cx
+.freturn:
+	mov sp, bp
+	pop bp
+	ret
+
 
 %include "a20.asm"
 %include "vidtxt.asm"
@@ -174,8 +209,15 @@ msg_a20off:     db 'A20 disabled.', 0
 msg_kbd_on:     db 'Keyboard driver enabled.', 0
 msg_kbd_off:    db 'Keyboard driver disabled.', 0
 msg_fail:		db 'Command failed.', 0
+msg_vendor:
+sub_vendor_1:   times 4 db 0
+sub_vendor_2:   times 4 db 0
+sub_vendor_3:   times 4 db 0
+term_vendor:    db 0
+
 str_hi:         db 'hi', 0
 str_enable:     db 'enable', 0
 str_disable:    db 'disable', 0
+str_vendor:   db 'vendor', 0
 
 
