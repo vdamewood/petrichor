@@ -142,16 +142,41 @@ stage2_cmdloop:
 .check_vendor:
 	push str_vendor
 	call match
+	add sp, 2
 	or ax, ax
-	jz .default
+	jz .check_pmode
 	call load_vendor_id
 	push msg_vendor
 	call vidtxt_println
 	add sp, 2
+	jmp .cmdloop
+.check_pmode:
+	push str_pmode
+	call match
+	or ax, ax
+	jz .default
+	push ax
+	call vidtxt_putword
+	pop ax
+	call enter_pmode
 .default:
 	jmp .cmdloop
 
 ; === FUNCTIONS ===
+
+enter_pmode:
+.fpreamb:
+	push bp
+	mov bp, sp
+.fbody:
+	push msg_pmode_enabled
+	call vidtxt_println
+	add sp, 2
+.freturn:
+	mov sp, bp
+	pop bp
+	ret
+
 
 load_vendor_id:
 ftemplate:
@@ -179,6 +204,48 @@ ftemplate:
 	ret
 
 
+GDT_Pointer:
+limit: dw 0xFFFF
+base:  dq GlobalDescTable + 0x10000
+
+GlobalDescTable:
+GDT_null:
+	times 8 db 0
+
+GDT_sys_code:
+.limit_low:   dw 0xFFFF ; lower 16 bits of limit
+.base_low:    dw 0x0000 ; Low 16 bits of the base
+.base_middle: db 0x00   ; Next 8 bytes of the base.
+.access       db 0x9A   ; Access flags, ring, etc
+.granularity  db 0xCF   ; Example code set all to 0xCF
+.base_high    db 0x00   ; highest 0 bits of base
+
+GDT_sys_data:
+.limit_low:   dw 0xFFFF ; lower 16 bits of limit
+.base_low:    dw 0x0000 ; Low 16 bits of the base
+.base_middle: db 0x00   ; Next 8 bytes of the base.
+.access       db 0x92   ; Access flags, ring, etc
+.granularity  db 0xCF   ; Example code set all to 0xCF
+.base_high    db 0x00   ; highest 0 bits of base
+
+GDT_usr_code:
+.limit_low:   dw 0xFFFF ; lower 16 bits of limit
+.base_low:    dw 0x0000 ; Low 16 bits of the base
+.base_middle: db 0x00   ; Next 8 bytes of the base.
+.access       db 0xFA   ; Access flags, ring, etc
+.granularity  db 0xCF   ; Example code set all to 0xCF
+.base_high    db 0x00   ; highest 0 bits of base
+
+GDT_usr_data:
+.limit_low:   dw 0xFFFF ; lower 16 bits of limit
+.base_low:    dw 0x0000 ; Low 16 bits of the base
+.base_middle: db 0x00   ; Next 8 bytes of the base.
+.access       db 0xF2   ; Access flags, ring, etc
+.granularity  db 0xCF   ; Example code set all to 0xCF
+.base_high    db 0x00   ; highest 0 bits of base
+
+
+
 %include "a20.asm"
 %include "vidtxt.asm"
 %include "keyboard.asm"
@@ -203,7 +270,7 @@ msg_start:      db 'Second stage loaded.', 0
 msg_sayhi:      db 'Say hi.', 0
 msg_prompt:     db '?> ', 0
 msg_hello:      db 'Hello.', 0
-
+msg_pmode_enabled: db 'Protected Mode Enabled', 0
 msg_a20on:      db 'A20 Enabled.', 0
 msg_a20off:     db 'A20 disabled.', 0
 msg_kbd_on:     db 'Keyboard driver enabled.', 0
@@ -218,6 +285,7 @@ term_vendor:    db 0
 str_hi:         db 'hi', 0
 str_enable:     db 'enable', 0
 str_disable:    db 'disable', 0
-str_vendor:   db 'vendor', 0
+str_vendor:     db 'vendor', 0
+str_pmode:      db 'pmode', 0
 
 
