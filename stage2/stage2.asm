@@ -26,7 +26,7 @@
 ; (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 ; OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-[BITS 16]
+;[BITS 16]
 
 code_seg equ 0x1000
 
@@ -153,13 +153,12 @@ stage2_cmdloop:
 .check_pmode:
 	push str_pmode
 	call match
+	add sp, 2
 	or ax, ax
 	jz .default
-	push ax
-	call vidtxt_putword
-	pop ax
 	call enter_pmode
 .default:
+	add sp, 2
 	jmp .cmdloop
 
 ; === FUNCTIONS ===
@@ -169,14 +168,20 @@ enter_pmode:
 	push bp
 	mov bp, sp
 .fbody:
+	cli
+	mov eax, GDT_Pointer
+	lgdt [eax]
+	mov eax, cr0
+	or al, 1
+	mov cr0, eax ; Fault here
 	push msg_pmode_enabled
 	call vidtxt_println
 	add sp, 2
+ 	jmp 0x08:0x00010800
 .freturn:
 	mov sp, bp
 	pop bp
 	ret
-
 
 load_vendor_id:
 ftemplate:
@@ -288,4 +293,4 @@ str_disable:    db 'disable', 0
 str_vendor:     db 'vendor', 0
 str_pmode:      db 'pmode', 0
 
-
+pad:        times 0x800-($-$$) db 0
