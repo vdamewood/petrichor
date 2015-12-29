@@ -29,6 +29,7 @@
 ;[BITS 16]
 
 code_seg equ 0x1000
+segment_offset equ (code_seg << 4)
 
 ; 00000 to 0FFFF:
 ;   0x0000 to 0x04FF: Reserved for System
@@ -169,15 +170,19 @@ enter_pmode:
 	mov bp, sp
 .fbody:
 	cli
-	mov eax, GDT_Pointer
+	mov ax, 0
+	mov ds, ax
+	mov eax, 0x7DBC
+	xchg bx, bx
+
 	lgdt [eax]
 	mov eax, cr0
 	or al, 1
-	mov cr0, eax ; Fault here
-	push msg_pmode_enabled
-	call vidtxt_println
-	add sp, 2
- 	jmp 0x08:0x00010800
+	mov cr0, eax
+ 	jmp dword 0x08:0x10800
+.freeze:
+	hlt
+	jmp .freeze
 .freturn:
 	mov sp, bp
 	pop bp
@@ -210,8 +215,8 @@ ftemplate:
 
 
 GDT_Pointer:
-limit: dw 0xFFFF
-base:  dq GlobalDescTable + 0x10000
+limit: dw 23
+base:  dd GlobalDescTable+segment_offset
 
 GlobalDescTable:
 GDT_null:
