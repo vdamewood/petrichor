@@ -26,52 +26,86 @@
 ; (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 ; OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-%define vidtxt_segment 0xB800
+vidtxt_color:  db  0x07
+vidtxt_cursor: dd  0x000B8000
 
-vidtxt_color:      db 0x07
-vidtxt_cursor:     dw 0x0000
+%define vmem    0x000B8000
+%define pcolor  vidtxt_color
+%define pcursor vidtxt_cursor
+%define color   byte[vidtxt_color]
+%define cursor  dword[vidtxt_cursor]
+%define width   80
+%define height  25
+%define fullscr (width*height)
+
 ; When placing, LSB is character in CP437, MSB is Forground/Backgorund color
 
-vidtxt_set_cursor:
-%define newpos [bp+4]
+vidtxt_clear:
 .fpramb:
-	push bp
-	mov bp, sp
-	push ax
+	push ebp
+	mov ebp, esp
+	push eax
+	push ecx
+	push edi
 .fbody:
-	mov ax, newpos
-	mov [cs:vidtxt_cursor], ax
+	mov edi, vmem
+	mov ax, 0
+	mov ecx, fullscr
+.loop:
+	mov word[edi], ax
+	add edi, 2
+	loop .loop
+	mov eax, vmem
+	mov cursor, eax
 .freturn:
-	pop ax
-	mov sp, bp
-	pop bp
+	pop edi
+	pop ecx
+	pop eax
+	mov esp, ebp
+	pop ebp
+	ret
+
+vidtxt_set_cursor:
+%define newpos [bp+8]
+.fpramb:
+	push ebp
+	mov ebp, esp
+	push eax
+.fbody:
+	mov eax, newpos
+	mov cursor, eax
+.freturn:
+	pop eax
+	mov esp, ebp
+	pop ebp
 	ret
 %undef newpos
 
 vidtxt_show_cursor:
 .fpramb:
-	push bp
-	mov bp, sp
-	push ax
-	push dx
-	push bx
+	push ebp
+	mov ebp, esp
+	push eax
+	push edx
+	push ebx
 .fbody:
-	mov bx, [cs:vidtxt_cursor]
-	shr bx, 1
+	mov ebx, cursor
+	sub ebx, vmem
+	shr ebx, 1
 
     ; out 0x3D4, 0x0F
 	mov dx, 0x03D4
-	mov ax, 0x0F
+	mov al, 0x0F
 	out dx, al
 
-    ; out 0x3D5, 243
+    ; out 0x3D5, bl
 	mov dx, 0x03D5
 	mov al, bl
 	out dx, al
 
     ; out 0x3D4, 0x0E
 	mov dx, 0x03D4
-	mov ax, 0x0E
+	mov al, 0x0E
 	out dx, al
 
     ; out 0x3D5, 0
@@ -79,105 +113,92 @@ vidtxt_show_cursor:
 	mov al, bh
 	out dx, al
 .freturn:
-	pop bx
-	pop dx
-	pop ax
-	mov sp, bp
-	pop bp
+	pop ebx
+	pop edx
+	pop eax
+	mov esp, ebp
+	pop ebp
 	ret
 
 
 vidtxt_shift:
 .fpramb:
-	push bp
-	mov bp, sp
-	push ds
-	push es
-	push ax
-	push cx
-	push si
-	push di
+	push ebp
+	mov ebp, esp
+	push eax
+	push ecx
+	push esi
+	push edi
 .fbody:
-	mov ax, vidtxt_segment
-	mov ds, ax
-	mov es, ax
-	mov di, 0
-	mov si, 160
-	mov cx, 80 * 24
+	mov edi, vmem
+	mov esi, vmem+160
+	mov ecx, 80 * 24
 	rep movsw
 
-	mov al, 0
-	mov ah, [cs:vidtxt_color]
-	mov cx, 80
+	xor eax, eax
+	mov ah, color
+	mov ecx, 80
 .lastline:
-	mov [di], ax
-	add di, 2
+	mov word[edi], ax
+	add edi, 2
 	loop .lastline
 .freturn:
-	pop di
-	pop si
-	pop cx
-	pop ax
-	pop es
-	pop ds
-	mov sp, bp
-	pop bp
+	pop edi
+	pop esi
+	pop ecx
+	pop eax
+	mov esp, ebp
+	pop ebp
 	ret
 
 vidtxt_breakline:
 .fpreamb:
-	push bp
-	mov bp, sp
-	push ax
-	push dx
-	push bx
+	push ebp
+	mov ebp, esp
+	push eax
+	push edx
+	push ebx
 .fbody:
-	mov ax, [cs:vidtxt_cursor]
-	cmp ax, 2*80*24
+	mov eax, cursor
+	sub eax, vmem
+	cmp eax, 2*80*24
 	jge .last_line
 .not_last_line:
-	mov bx, 2*80
-	xor dx, dx
-	div bx ; ax = quot ; dx = mod
-	mov ax, [cs:vidtxt_cursor]
-	sub ax, dx
-	add ax, 2*80
-	mov [cs:vidtxt_cursor], ax
+	mov ebx, 2*80
+	xor edx, edx
+	div ebx ; eax = quot ; edx = mod
+	mov eax, cursor
+	sub eax, edx ; cursor - mod = first char of row
+	add eax, 2*80 ; next row
+	mov cursor, eax
 	jmp .show_cursor
 .last_line:
 	call vidtxt_shift
-	mov ax, 2*80*24
-	mov [cs:vidtxt_cursor], ax
+	mov eax, 2*80*24
+	mov cursor, eax
 .show_cursor:
 	call vidtxt_show_cursor
 .freturn:
-	pop bx
-	pop dx
-	pop ax
-	mov sp, bp
-	pop bp
+	pop ebx
+	pop edx
+	pop eax
+	mov esp, ebp
+	pop ebp
 	ret
 
 ; Print a string
-print:
 vidtxt_print:
-%define string [bp+4]
+%define string [bp+8]
 .fpreamb:
-	push bp
-	mov bp, sp
-	push ds
-	push es
-	push si
-	push di
-	push ax
+	push ebp
+	mov ebp, esp
+	push esi
+	push edi
+	push eax
 .fbody:
-	mov ax, 0x1000
-	mov ds, ax
-	mov ax, vidtxt_segment
-	mov es, ax
-	mov si, string
-	mov di, [cs:vidtxt_cursor]
-	mov ah, [cs:vidtxt_color]
+	mov esi, string
+	mov edi, cursor
+	mov ah, color
 .loop:
 	lodsb        ; Fetch next byte in string, ...
 	or al, al    ; ... test if it's 0x00, ...
@@ -185,87 +206,81 @@ vidtxt_print:
 	stosw
 	jmp .loop
 .done:
-	mov [cs:vidtxt_cursor], di
-	call vidtxt_show_cursor
+	mov cursor, edi
+	;call vidtxt_show_cursor
 .freturn:
-	pop ax
-	pop di
-	pop si
-	pop es
-	pop ds
-	mov sp, bp
-	pop bp
+	pop eax
+	pop edi
+	pop esi
+	mov esp, ebp
+	pop ebp
 	ret
 %undef string
 
 vidtxt_println:
 .fpreamb:
-	push bp
-	mov bp, sp
+	push ebp
+	mov ebp, esp
 .fbody:
-	push word[bp+4]
-	call print
-	add sp, 2
+	push word[bp+8]
+	call vidtxt_print
+	add esp, 4
 	call vidtxt_breakline
 .freturn:
-	mov sp, bp
-	pop bp
+	mov esp, ebp
+	pop ebp
 	ret
 
 vidtxt_putch:
 .fpreamb:
-	push bp
-	mov bp, sp
-	push ax
-	push di
-	push es
+	push ebp
+	mov ebp, esp
+	push eax
+	push edi
 .fbody:
-	mov ax, vidtxt_segment
-	mov es, ax
 	mov ax, [bp+4]
-	mov ah, [cs:vidtxt_color]
-	mov di, [cs:vidtxt_cursor]
+	mov ah, [vidtxt_color]
+	mov edi, [vidtxt_cursor]
 	stosw
-	cmp di, 80*25*2
+	cmp edi, 80*25*2
 	jle .save_cursor
 
 	call vidtxt_shift
-	mov di, 80*24*2
+	mov edi, 80*24*2
 .save_cursor:
-	mov [cs:vidtxt_cursor], di
+	mov [vidtxt_cursor], edi
 .freturn:
-	pop es
-	pop di
-	pop ax
-	mov sp, bp
-	pop bp
+	pop edi
+	pop eax
+	mov esp, ebp
+	pop ebp
 	ret
+
 
 vidtxt_delch:
 vidtxt_backspace:
 .fpreamb:
-	push bp
-	mov bp, sp
-	push ax
-	push di
-	push es
+	push ebp
+	mov ebp, esp
+	push eax
+	push edi
 .fbody:
-	mov ax, vidtxt_segment
-	mov es, ax
-	mov ah, [cs:vidtxt_color]
-	mov di, [cs:vidtxt_cursor]
-	sub di, 2
+	mov ah, [vidtxt_color]
+	mov edi, vmem
+	add edi, [vidtxt_cursor]
+	sub edi, 2
 	mov al, ' '
 
-	mov [es:di], ax
-	mov [cs:vidtxt_cursor], di
+	mov [edi], ax
+	mov [vidtxt_cursor], edi
 .freturn:
-	pop es
-	pop di
-	pop ax
-	mov sp, bp
-	pop bp
+	pop edi
+	pop eax
+	mov esp, ebp
+	pop ebp
 	ret
+
+%ifdef blockcomment
 
 vidtxt_putbyte:
 %define byte_at [bp+4]
@@ -327,4 +342,13 @@ vidtxt_putword:
 	ret
 %undef word_at
 
-%undef vidtxt_segment
+%endif
+
+%undef vmem
+%undef pcolor
+%undef pcursor
+%undef color
+%undef cursor
+%undef width
+%undef height
+%undef fullscr

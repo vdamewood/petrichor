@@ -28,16 +28,16 @@
 
 ; Compare Zero-Terminated Strings
 match:
-%define source      [bp+4]
-%define destination [bp+6]
+%define source      [bp+8]
+%define destination [bp+12]
 .fpreamb:
-	push bp
-	mov bp, sp
-	push si
-	push di
+	push ebp
+	mov ebp, esp
+	push esi
+	push edi
 .fbody:
-	mov si, source
-	mov di, destination
+	mov esi, source
+	mov edi, destination
 .loop:
 	lodsb
 	scasb
@@ -46,15 +46,15 @@ match:
 	or al, al
 	jnz .loop
 .match:
-	mov ax, 0xFFFF
+	mov eax, 0xFFFFFFFF
 	jmp .freturn
 .nomatch:
-	mov ax, 0x0000
+	mov eax, 0x00000000
 .freturn:
-	pop di
-	pop si
-	mov sp, bp
-	pop bp
+	pop edi
+	pop esi
+	mov esp, ebp
+	pop ebp
 	ret
 %undef src
 %undef dst

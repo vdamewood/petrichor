@@ -26,10 +26,9 @@
 ; (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 ; OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-;[BITS 16]
+[ORG 0x10000]
 
-code_seg equ 0x1000
-segment_offset equ (code_seg << 4)
+%define popoff(num) add sp, (num*4)
 
 ; 00000 to 0FFFF:
 ;   0x0000 to 0x04FF: Reserved for System
@@ -51,10 +50,10 @@ segment_offset equ (code_seg << 4)
 ; 70000 to 7FFFF: Free
 ; 80000 to 8FFFF: Free
 ; 90000 to 9FFFF: Free, but Last few 128 KiB (possibly less) unusable
-; After  A0000 is unusable.
+; After A0000 is unusable.
 
 stage2:
-	; Initial Setup. This was probably done differently in the boot sector.
+	; Initial Setup. This may not be needed, anymore.
 	mov ax, 0x1000
 	mov ds, ax
 	mov es, ax
@@ -64,204 +63,79 @@ stage2:
 	xor sp, sp
 	mov bp, sp
 
-	; Display start-up message
-	push msg_start
-	call vidtxt_println
-	add esp, 2
+	; Enable A20
+	; FIXME: This only works on a few systems.
+	; Might want to check if other systems need a
+	; different method.
+	mov ax, 0x2401
+	int 0x15
 
-stage2_enable_a20:
-	call a20_enable
-	call a20_status
-	or ax, ax
-	jnz .a20on
-.a20off:
-	push msg_a20off
-	jmp .a20end
-.a20on:
-	push msg_a20on
-.a20end:
-	call vidtxt_print
-	call vidtxt_breakline
-	add sp, 2
-
-stage2_cmdloop:
-.cmdloop:
-	push msg_prompt
-	call print
-	add sp, 2
-
-	call get
-	
-	push ax
-	push str_hi
-	call match
-	add sp, 2
-	or ax, ax
-	jz .not_hi
-	push msg_hello
-	call vidtxt_println
-	add sp, 4
-	jmp .cmdloop
-.not_hi:
-	push str_enable
-	call match
-	add sp, 2
-	or ax, ax
-	jz .not_enable
-	add sp, 2
-	call keyboard_enable
-	or ax, ax
-	jz .enable_fail
-	push msg_kbd_on
-	call vidtxt_println
-	add sp, 2
-	jmp .cmdloop
-.enable_fail:
-	push msg_fail
-	call vidtxt_println
-	add sp, 2
-	jmp .cmdloop
-.not_enable:
-	push str_disable
-	call match
-	add sp, 2
-	or ax, ax
-	jz .check_vendor
-	add sp, 2
-	call keyboard_disable
-	or ax, ax
-	jz .disable_fail
-	push msg_kbd_off
-	call vidtxt_println
-	add sp, 2
-	jmp .cmdloop
-.disable_fail:
-	push msg_fail
-	call vidtxt_println
-	add sp, 2
-	jmp .cmdloop
-.check_vendor:
-	push str_vendor
-	call match
-	add sp, 2
-	or ax, ax
-	jz .check_pmode
-	call load_vendor_id
-	push msg_vendor
-	call vidtxt_println
-	add sp, 2
-	jmp .cmdloop
-.check_pmode:
-	push str_pmode
-	call match
-	add sp, 2
-	or ax, ax
-	jz .default
-	call enter_pmode
-.default:
-	add sp, 2
-	jmp .cmdloop
-
-; === FUNCTIONS ===
-
-enter_pmode:
-.fpreamb:
-	push bp
-	mov bp, sp
-.fbody:
+	; Move to protected mode
 	cli
-	mov ax, 0
+	; The following code loads a GDT that's hard-coded
+	; into the boot sector. Move it to a more sane
+	; location.
+	xor ax, ax
 	mov ds, ax
 	mov eax, 0x7DBC
-	xchg bx, bx
-
 	lgdt [eax]
+
 	mov eax, cr0
 	or al, 1
 	mov cr0, eax
- 	jmp dword 0x08:0x10800
-.freeze:
-	hlt
-	jmp .freeze
-.freturn:
-	mov sp, bp
-	pop bp
-	ret
+ 	jmp dword 0x08:pmode
+
+[BITS 32]
+pmode:
+	mov eax, 0x10
+	mov ds, ax
+	mov es, ax
+	mov fs, ax
+	mov gs, ax
+	mov ss, ax
+	mov esp, 0x90000
+	mov ebp, esp
+
+	call vidtxt_clear
+
+	xchg bx, bx
+	push msg_start
+	call vidtxt_print
+	add esp, 4
+	xchg bx, bx
+
+.infloop:
+	jmp .infloop
+
+; === FUNCTIONS ===
 
 load_vendor_id:
-ftemplate:
 .fpreamb:
-	push bp
-	mov bp, sp
+	push ebp
+	mov ebp, esp
+	push ecx
+	push edx
+	push ebx
 .fbody:
 	mov al, [msg_vendor]
 	or al, al
-	jnz .freturn
+	jnz .set_rval
 	xor eax, eax
-	push cx
-	push dx
-	push bx
 	cpuid
 	mov [sub_vendor_1], ebx
 	mov [sub_vendor_2], edx
 	mov [sub_vendor_3], ecx
-	pop bx
-	pop dx
-	pop cx
+.set_rval:
+	mov eax, msg_vendor
 .freturn:
-	mov sp, bp
-	pop bp
+	pop ebx
+	pop edx
+	pop ecx
+	mov esp, ebp
+	pop ebp
 	ret
 
-
-GDT_Pointer:
-limit: dw 23
-base:  dd GlobalDescTable+segment_offset
-
-GlobalDescTable:
-GDT_null:
-	times 8 db 0
-
-GDT_sys_code:
-.limit_low:   dw 0xFFFF ; lower 16 bits of limit
-.base_low:    dw 0x0000 ; Low 16 bits of the base
-.base_middle: db 0x00   ; Next 8 bytes of the base.
-.access       db 0x9A   ; Access flags, ring, etc
-.granularity  db 0xCF   ; Example code set all to 0xCF
-.base_high    db 0x00   ; highest 0 bits of base
-
-GDT_sys_data:
-.limit_low:   dw 0xFFFF ; lower 16 bits of limit
-.base_low:    dw 0x0000 ; Low 16 bits of the base
-.base_middle: db 0x00   ; Next 8 bytes of the base.
-.access       db 0x92   ; Access flags, ring, etc
-.granularity  db 0xCF   ; Example code set all to 0xCF
-.base_high    db 0x00   ; highest 0 bits of base
-
-GDT_usr_code:
-.limit_low:   dw 0xFFFF ; lower 16 bits of limit
-.base_low:    dw 0x0000 ; Low 16 bits of the base
-.base_middle: db 0x00   ; Next 8 bytes of the base.
-.access       db 0xFA   ; Access flags, ring, etc
-.granularity  db 0xCF   ; Example code set all to 0xCF
-.base_high    db 0x00   ; highest 0 bits of base
-
-GDT_usr_data:
-.limit_low:   dw 0xFFFF ; lower 16 bits of limit
-.base_low:    dw 0x0000 ; Low 16 bits of the base
-.base_middle: db 0x00   ; Next 8 bytes of the base.
-.access       db 0xF2   ; Access flags, ring, etc
-.granularity  db 0xCF   ; Example code set all to 0xCF
-.base_high    db 0x00   ; highest 0 bits of base
-
-
-
-%include "a20.asm"
 %include "vidtxt.asm"
-%include "keyboard.asm"
-%include "command.asm"
-;%include "fat12.asm"
-%include "strings.asm"
 
 %ifdef blockcomment
 ftemplate:
@@ -276,13 +150,14 @@ ftemplate:
 %endif
 
 ; === Non-executable Data ===
+
 msg_start:      db 'Second stage loaded.', 0
 msg_sayhi:      db 'Say hi.', 0
 msg_prompt:     db '?> ', 0
 msg_hello:      db 'Hello.', 0
-msg_pmode_enabled: db 'Protected Mode Enabled', 0
-msg_a20on:      db 'A20 Enabled.', 0
-msg_a20off:     db 'A20 disabled.', 0
+;msg_pmode_enabled: db 'Protected Mode Enabled', 0
+;msg_a20on:      db 'A20 Enabled.', 0
+;msg_a20off:     db 'A20 disabled.', 0
 msg_kbd_on:     db 'Keyboard driver enabled.', 0
 msg_kbd_off:    db 'Keyboard driver disabled.', 0
 msg_fail:		db 'Command failed.', 0
@@ -298,4 +173,4 @@ str_disable:    db 'disable', 0
 str_vendor:     db 'vendor', 0
 str_pmode:      db 'pmode', 0
 
-pad:        times 0x800-($-$$) db 0
+;pad:        times 0x800-($-$$) db 0
