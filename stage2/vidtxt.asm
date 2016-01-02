@@ -188,7 +188,7 @@ vidtxt_breakline:
 
 ; Print a string
 vidtxt_print:
-%define string [bp+8]
+%define string [ebp+8]
 .fpreamb:
 	push ebp
 	mov ebp, esp
