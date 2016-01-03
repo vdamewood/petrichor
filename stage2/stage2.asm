@@ -109,6 +109,8 @@ pmode:
 
 ; === FUNCTIONS ===
 
+%include "functions.inc"
+
 load_vendor_id:
 .fpreamb:
 	push ebp

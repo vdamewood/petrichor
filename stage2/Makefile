@@ -5,7 +5,7 @@ clean:
 
 distclean: clean
 
-stage2.bin: stage2.asm fat12.asm vidtxt.asm keyboard.asm keyscan.asm command.asm strings.asm
+stage2.bin: stage2.asm functions.inc fat12.asm vidtxt.asm keyboard.asm keyscan.asm command.asm strings.asm
 	nasm stage2.asm -f bin -o stage2.bin
 
 .PHONY: all clean distclean
