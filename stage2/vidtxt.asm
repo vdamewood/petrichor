@@ -218,11 +218,12 @@ vidtxt_print:
 %undef string
 
 vidtxt_println:
+%define string dword[ebp+8]
 .fpreamb:
 	push ebp
 	mov ebp, esp
 .fbody:
-	push word[bp+8]
+	push string
 	call vidtxt_print
 	add esp, 4
 	call vidtxt_breakline
@@ -230,6 +231,7 @@ vidtxt_println:
 	mov esp, ebp
 	pop ebp
 	ret
+%undef string
 
 vidtxt_putch:
 .fpreamb:
