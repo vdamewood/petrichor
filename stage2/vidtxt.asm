@@ -1,6 +1,6 @@
 ; stage2.asm: Second-stage startup program
 ;
-; Copyright 2015, Vincent Damewood
+; Copyright 2015, 2016 Vincent Damewood
 ; All rights reserved.
 ;
 ; Redistribution and use in source and binary forms, with or without
@@ -26,68 +26,54 @@
 ; (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 ; OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-vidtxt_color:  db  0x07
+%include "functions.inc"
+
+vidtxt_color:  db  0x17
 vidtxt_cursor: dd  0x000B8000
+vidtxt_width:  db  80
+vidtxt_height: db  25
 
 %define vmem    0x000B8000
 %define pcolor  vidtxt_color
 %define pcursor vidtxt_cursor
 %define color   byte[vidtxt_color]
 %define cursor  dword[vidtxt_cursor]
-%define width   80
-%define height  25
-%define fullscr (width*height)
+%define width   byte[vidtxt_width]
+%define height  byte[vidtxt_height]
 
 ; When placing, LSB is character in CP437, MSB is Forground/Backgorund color
 
+; Clears the screen
 vidtxt_clear:
-.fpramb:
-	push ebp
-	mov ebp, esp
-	push eax
-	push ecx
-	push edi
+	fprolog 0, eax, ecx, edi
 .fbody:
 	mov edi, vmem
-	mov ax, 0
-	mov ecx, fullscr
+	mov cursor, edi
+	mov al, width
+	mov ah, height
+	mul ah
+	mov cx, ax
+	xor ax, ax
+	mov ah, color
 .loop:
 	mov word[edi], ax
 	add edi, 2
 	loop .loop
-	mov eax, vmem
-	mov cursor, eax
 .freturn:
-	pop edi
-	pop ecx
-	pop eax
-	mov esp, ebp
-	pop ebp
-	ret
+	freturn eax, ecx, edi
 
 vidtxt_set_cursor:
-%define newpos [bp+8]
-.fpramb:
-	push ebp
-	mov ebp, esp
-	push eax
+	fprolog 0, eax
 .fbody:
+%define newpos [bp+8]
 	mov eax, newpos
 	mov cursor, eax
-.freturn:
-	pop eax
-	mov esp, ebp
-	pop ebp
-	ret
 %undef newpos
+.freturn:
+	freturn eax
 
 vidtxt_show_cursor:
-.fpramb:
-	push ebp
-	mov ebp, esp
-	push eax
-	push edx
-	push ebx
+	fprolog 0, eax, edx, ebx
 .fbody:
 	mov ebx, cursor
 	sub ebx, vmem
@@ -113,88 +99,100 @@ vidtxt_show_cursor:
 	mov al, bh
 	out dx, al
 .freturn:
-	pop ebx
-	pop edx
-	pop eax
-	mov esp, ebp
-	pop ebp
-	ret
+	freturn eax, edx, ebx
 
 
 vidtxt_shift:
-.fpramb:
-	push ebp
-	mov ebp, esp
-	push eax
-	push ecx
-	push esi
-	push edi
+	fprolog 0, eax, ecx, esi, edi
 .fbody:
+	; Clear register so that high bytes don't contain garbage
+	xor eax, eax
+
+	; edi: Start of shift
 	mov edi, vmem
-	mov esi, vmem+160
-	mov ecx, 80 * 24
+
+	; esi: Line below edi; should be edi+width*2
+	mov al, width
+	mov ah, 2
+	mul ah
+	mov esi, eax
+	add esi, edi
+
+	; ecx: Number of characters to move; width*(height-1)
+	mov ah, width
+	mov al, height
+	sub al, 1
+	mul ah
+	mov ecx, eax
+
 	rep movsw
 
+.lastline:
 	xor eax, eax
 	mov ah, color
-	mov ecx, 80
-.lastline:
+	mov cl, width
+.loop:
 	mov word[edi], ax
 	add edi, 2
-	loop .lastline
+	loop .loop
 .freturn:
-	pop edi
-	pop esi
-	pop ecx
-	pop eax
-	mov esp, ebp
-	pop ebp
-	ret
+	freturn eax, ecx, esi, edi
 
+; Shift the flow of text to the next line.
 vidtxt_breakline:
 .fpreamb:
-	push ebp
-	mov ebp, esp
-	push eax
-	push edx
-	push ebx
+	fprolog 0, eax, edx, ebx
 .fbody:
+	; edx = (height-1)*width*2, that is height-1 lines
+	xor eax, eax
+	mov ah, width
+	mov al, height
+	dec al
+	mul ah
+	shl ax, 1
+	mov edx, eax
+
+	; eax = cursor's offset from vmem
 	mov eax, cursor
 	sub eax, vmem
-	cmp eax, 2*80*24
-	jge .last_line
+
+	cmp eax, edx ; If The offset is past the first n-1 lines
+	jge .last_line ; then handle the last line specially
 .not_last_line:
-	mov ebx, 2*80
+	; ebx = width*2
+	xor ebx, ebx
+	mov bl, width
+	shl bx, 1
+
 	xor edx, edx
-	div ebx ; eax = quot ; edx = mod
+	div ebx ; cursor position/line size: eax = quotient ; edx = modulus
 	mov eax, cursor
 	sub eax, edx ; cursor - mod = first char of row
-	add eax, 2*80 ; next row
+	add eax, ebx ; next row
 	mov cursor, eax
 	jmp .show_cursor
 .last_line:
 	call vidtxt_shift
-	mov eax, 2*80*24
+
+	xor eax, eax
+	mov al, height
+	mov ah, width
+	sub al, 1
+	mul ah
+	shl ax, 1
+	add eax, vmem
+
 	mov cursor, eax
 .show_cursor:
 	call vidtxt_show_cursor
 .freturn:
-	pop ebx
-	pop edx
-	pop eax
-	mov esp, ebp
-	pop ebp
-	ret
+	freturn eax, edx, ebx
 
 ; Print a string
 vidtxt_print:
 %define string [ebp+8]
 .fpreamb:
-	push ebp
-	mov ebp, esp
-	push esi
-	push edi
-	push eax
+	fprolog 0, esi, edi, eax
 .fbody:
 	mov esi, string
 	mov edi, cursor
@@ -204,92 +202,85 @@ vidtxt_print:
 	or al, al    ; ... test if it's 0x00, ...
 	jz .done     ; ... and, if so, were'd done
 	stosw
+
+	; FIXME: Check for line wrapping
+	;  and adjust behavior when wrapping past the end of
+	;  the last line.
+
 	jmp .loop
 .done:
 	mov cursor, edi
-	;call vidtxt_show_cursor
 .freturn:
-	pop eax
-	pop edi
-	pop esi
-	mov esp, ebp
-	pop ebp
-	ret
+	freturn esi, edi, eax
 %undef string
 
 vidtxt_println:
 %define string dword[ebp+8]
-.fpreamb:
-	push ebp
-	mov ebp, esp
+	fprolog 0
 .fbody:
 	push string
 	call vidtxt_print
+
 	add esp, 4
+	; FIXME: Check that the cursor isn't in the
+	;   first column and skip the call if it is.
 	call vidtxt_breakline
 .freturn:
-	mov esp, ebp
-	pop ebp
-	ret
+	freturn
 %undef string
 
 vidtxt_putch:
-.fpreamb:
-	push ebp
-	mov ebp, esp
-	push eax
-	push edi
+	fprolog 0, eax, edi
 .fbody:
-	mov ax, [bp+4]
-	mov ah, [vidtxt_color]
-	mov edi, [vidtxt_cursor]
+%define char byte[ebp+4] ; Only the LSB is considered
+	mov al, char
+	mov ah, color
+
+	mov edi, cursor
 	stosw
-	cmp edi, 80*25*2
+
+	xor eax, eax
+	mov ah, width
+	mov al, height
+	mul ah
+	shl eax, 1
+
+	cmp edi, eax
 	jle .save_cursor
 
-	call vidtxt_shift
-	mov edi, 80*24*2
-.save_cursor:
-	mov [vidtxt_cursor], edi
-.freturn:
-	pop edi
-	pop eax
-	mov esp, ebp
-	pop ebp
-	ret
+	mov edi, eax
+	xor eax, eax
+	mov al, width
+	shl eax, 1
+	sub edi, eax
 
+	call vidtxt_shift
+	sub edi, eax
+.save_cursor:
+	mov cursor, edi
+%undef char
+.freturn:
+	freturn eax, edi
 
 vidtxt_delch:
 vidtxt_backspace:
 .fpreamb:
-	push ebp
-	mov ebp, esp
-	push eax
-	push edi
+	fprolog 0, eax, edi
 .fbody:
-	mov ah, [vidtxt_color]
+	mov ah, color
 	mov edi, vmem
-	add edi, [vidtxt_cursor]
+	add edi, cursor
 	sub edi, 2
 	mov al, ' '
 
 	mov [edi], ax
-	mov [vidtxt_cursor], edi
+	mov cursor, edi
 .freturn:
-	pop edi
-	pop eax
-	mov esp, ebp
-	pop ebp
-	ret
-
-%ifdef blockcomment
+	freturn eax, edi
 
 vidtxt_putbyte:
 %define byte_at [bp+4]
-.fpreamb:
-	push bp
-	mov bp, sp
-	push ax
+	fprolog 0, eax
 .fbody:
 	mov ah, 0x0E
 	mov al, byte_at
@@ -314,18 +305,12 @@ vidtxt_putbyte:
 	call vidtxt_putch
 	pop ax
 .freturn:
-	pop ax
-	mov sp, bp
-	pop bp
-	ret
+	freturn eax
 %undef byte_at
 
 vidtxt_putword:
 %define word_at [bp+4]
-.fpreamb:
-	push bp
-	mov bp, sp
-	push ax
+	fprolog 0, eax
 .fbody:
 	mov ax, word_at
 	shr ax, 8
@@ -337,14 +322,10 @@ vidtxt_putword:
 	call vidtxt_putbyte
 
 	add sp, 4
-.freturn:
-	pop ax
-	mov sp, bp
-	pop bp
-	ret
 %undef word_at
+.freturn:
+	freturn eax
 
-%endif
 
 %undef vmem
 %undef pcolor
