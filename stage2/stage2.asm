@@ -1,6 +1,6 @@
 ; stage2.asm: Second-stage startup program
 ;
-; Copyright 2015, Vincent Damewood
+; Copyright 2015, 2016 Vincent Damewood
 ; All rights reserved.
 ;
 ; Redistribution and use in source and binary forms, with or without
@@ -98,11 +98,9 @@ pmode:
 
 	call vidtxt_clear
 
-	xchg bx, bx
 	push msg_start
 	call vidtxt_print
 	add esp, 4
-	xchg bx, bx
 
 .infloop:
 	jmp .infloop
