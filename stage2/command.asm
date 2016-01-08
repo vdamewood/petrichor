@@ -26,34 +26,33 @@
 ; (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 ; OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-cmdbuf_size  equ  32
-cmdbuf       times cmdbuf_size db 0
 
-get:
-.fpreamb:
-	push bp
-	mov bp, sp
-	push di
-.fbody:
-	mov cx, cmdbuf
-	mov di, cx
+command_buffer_size  equ 32
+command_buffer       times command_buffer_size db 0
+
+%define buffer command_buffer
+%define end    (command_buffer+command_buffer_size-1)
+
+command_get:
+	fprolog 0, edi
+.start:
+	call vidtxt_show_cursor
+	mov edi, command_buffer
 
 .loop:
 	call keyboard_get_stroke
 
-.chk_special:
+.check_special:
 	cmp ah, 0x00
 	jne .special
 
 .printable:
-	mov dx, di
-	sub dx, cx
-	cmp dx, (cmdbuf_size-1) ; if buffer is full
+	cmp edi, end ; if buffer is full
 	je .loop ; ignore keypress
 
-	push ax
+	push eax
 	call vidtxt_putch
-	pop ax
+	pop eax ; smaller than add esp, 4
 	call vidtxt_show_cursor
 	stosb
 	jmp .loop
@@ -62,47 +61,45 @@ get:
 	cmp ah, 0x01 ; Ignore ctrl-, alt- and errors.
 	jne .loop
 
-.chk_esc:
+.check_esc:
 	cmp al, 0x00 ; Escape
-	jne .chk_bksp
+	jne .not_esc
 .do_esc:
-	cmp di, cx
+	cmp edi, buffer
 	je .loop
 
 	call vidtxt_delch
 	call vidtxt_show_cursor
-	dec di
+	dec edi
 	jmp .do_esc
+.not_esc:
 
-	;jmp .loop
-
-.chk_bksp:
+.check_bksp:
 	cmp al, 0x10 ; Backspace
-	jne .chk_enter
+	jne .not_bksp
 .do_bksp:
-	cmp di, cx ; if at the beginning of the buffer
+	cmp edi, buffer ; if at the beginning of the buffer
 	je .loop   ; ignore
 
 	call vidtxt_delch
 	call vidtxt_show_cursor
-	dec di
+	dec edi
 	jmp .loop
+.not_bksp:
 
-.chk_enter:
+.check_enter:
 	cmp al, 0x12 ; Enter
-	jne .else
+	jne .not_enter
 .do_enter:
 	mov al, 0
 	stosb
 	call vidtxt_breakline
-	jmp .return
+	jmp .done
+.not_enter:
 
 .else:
 	jmp .loop ; Ignore all other keystrokes
 
-.return:
-	mov ax, cmdbuf
-	pop di
-	mov sp, bp
-	pop bp
-	ret
+.done:
+	mov eax, buffer
+	freturn edi

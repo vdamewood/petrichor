@@ -28,7 +28,7 @@
 
 [ORG 0x10000]
 
-%define popoff(num) add sp, (num*4)
+%define popoff(num) add esp, (num*4)
 
 ; 00000 to 0FFFF:
 ;   0x0000 to 0x04FF: Reserved for System
@@ -83,9 +83,14 @@ stage2:
 	mov eax, cr0
 	or al, 1
 	mov cr0, eax
- 	jmp dword 0x08:pmode
-
+	jmp dword 0x08:pmode
 [BITS 32]
+
+%include "vidtxt.asm"
+%include "keyboard.asm"
+%include "command.asm"
+%include "strings.asm"
+
 pmode:
 	mov eax, 0x10
 	mov ds, ax
@@ -97,29 +102,54 @@ pmode:
 	mov ebp, esp
 
 	call vidtxt_clear
+	call keyboard_enable
+	println(msg_start)
 
-	push msg_start
-	call vidtxt_print
+stage2_cmdloop:
+.cmdloop:
+	print(msg_prompt)
+
+	call command_get
+	push eax
+
+.check_hi:
+	push str_hi
+	call string_match
 	add esp, 4
+	or eax, eax
+	jz .not_hi
+.do_hi:
+	println(msg_hello)
+	jmp .nextloop
+.not_hi:
 
-.infloop:
-	jmp .infloop
+.check_vendor:
+	push str_vendor
+	call string_match
+	add esp, 4
+	or eax, eax
+	jz .not_vendor
+.do_vendor:
+	call load_vendor_id
+	print(msg_vendor)
+.not_vendor:
+
+.default:
+.nextloop:
+	add esp, 4
+	jmp .cmdloop
 
 ; === FUNCTIONS ===
 
 %include "functions.inc"
 
 load_vendor_id:
-.fpreamb:
-	push ebp
-	mov ebp, esp
-	push ecx
-	push edx
-	push ebx
+	fprolog 0, ecx, edx, ebx
 .fbody:
-	mov al, [msg_vendor]
-	or al, al
+	mov eax, dword[msg_vendor]
+	or eax, eax
 	jnz .set_rval
+
 	xor eax, eax
 	cpuid
 	mov [sub_vendor_1], ebx
@@ -127,27 +157,7 @@ load_vendor_id:
 	mov [sub_vendor_3], ecx
 .set_rval:
 	mov eax, msg_vendor
-.freturn:
-	pop ebx
-	pop edx
-	pop ecx
-	mov esp, ebp
-	pop ebp
-	ret
-
-%include "vidtxt.asm"
-
-%ifdef blockcomment
-ftemplate:
-.fpreamb:
-	push bp
-	mov bp, sp
-.fbody:
-.freturn:
-	mov sp, bp
-	pop bp
-	ret
-%endif
+	freturn ecx, edx, ebx
 
 ; === Non-executable Data ===
 
@@ -155,11 +165,6 @@ msg_start:      db 'Second stage loaded.', 0
 msg_sayhi:      db 'Say hi.', 0
 msg_prompt:     db '?> ', 0
 msg_hello:      db 'Hello.', 0
-;msg_pmode_enabled: db 'Protected Mode Enabled', 0
-;msg_a20on:      db 'A20 Enabled.', 0
-;msg_a20off:     db 'A20 disabled.', 0
-msg_kbd_on:     db 'Keyboard driver enabled.', 0
-msg_kbd_off:    db 'Keyboard driver disabled.', 0
 msg_fail:		db 'Command failed.', 0
 msg_vendor:
 sub_vendor_1:   times 4 db 0

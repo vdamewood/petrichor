@@ -232,7 +232,7 @@ vidtxt_println:
 vidtxt_putch:
 	fprolog 0, eax, edi
 .fbody:
-%define char byte[ebp+4] ; Only the LSB is considered
+%define char byte[ebp+8] ; Only the LSB is considered
 	mov al, char
 	mov ah, color
 
@@ -245,7 +245,7 @@ vidtxt_putch:
 	mul ah
 	shl eax, 1
 
-	cmp edi, eax
+	cmp eax, edi
 	jle .save_cursor
 
 	mov edi, eax
@@ -290,9 +290,9 @@ vidtxt_putbyte:
 	jle .skip1
 	add al, 7
 .skip1:
-	push ax
+	push eax
 	call vidtxt_putch
-	pop ax
+	pop eax
 
 	mov al, byte_at
 	and al, 0x0F
@@ -301,9 +301,9 @@ vidtxt_putbyte:
 	jle .skip2
 	add al, 7
 .skip2:
-	push ax
+	push eax
 	call vidtxt_putch
-	pop ax
+	pop eax
 .freturn:
 	freturn eax
 %undef byte_at
@@ -314,14 +314,14 @@ vidtxt_putword:
 .fbody:
 	mov ax, word_at
 	shr ax, 8
-	push ax
+	push eax
 	call vidtxt_putbyte
 
-	mov ax, word_at
-	push ax
+	mov eax, word_at
+	push eax
 	call vidtxt_putbyte
 
-	add sp, 4
+	add esp, 8
 %undef word_at
 .freturn:
 	freturn eax
@@ -335,3 +335,15 @@ vidtxt_putword:
 %undef width
 %undef height
 %undef fullscr
+
+%macro print 1
+	push %1
+	call vidtxt_print
+	add esp, 4
+%endmacro
+
+%macro println 1
+	push %1
+	call vidtxt_println
+	add esp, 4
+%endmacro

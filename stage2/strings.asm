@@ -1,6 +1,6 @@
 ; stage2.asm: Second-stage startup program
 ;
-; Copyright 2015, Vincent Damewood
+; Copyright 2015, 2016 Vincent Damewood
 ; All rights reserved.
 ;
 ; Redistribution and use in source and binary forms, with or without
@@ -27,15 +27,11 @@
 ; OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ; Compare Zero-Terminated Strings
-match:
+string_match:
+	fprolog 0, esi, edi
+.start:
 %define source      [bp+8]
 %define destination [bp+12]
-.fpreamb:
-	push ebp
-	mov ebp, esp
-	push esi
-	push edi
-.fbody:
 	mov esi, source
 	mov edi, destination
 .loop:
@@ -47,14 +43,10 @@ match:
 	jnz .loop
 .match:
 	mov eax, 0xFFFFFFFF
-	jmp .freturn
+	jmp .done
 .nomatch:
 	mov eax, 0x00000000
-.freturn:
-	pop edi
-	pop esi
-	mov esp, ebp
-	pop ebp
-	ret
-%undef src
-%undef dst
+.done:
+	freturn esi, edi
+%undef source
+%undef destination
