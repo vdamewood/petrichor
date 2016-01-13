@@ -30,8 +30,8 @@
 string_match:
 	fprolog 0, esi, edi
 .start:
-%define source      [bp+8]
-%define destination [bp+12]
+%define source      [ebp+8]
+%define destination [ebp+12]
 	mov esi, source
 	mov edi, destination
 .loop:

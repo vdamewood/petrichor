@@ -65,7 +65,7 @@ vidtxt_clear:
 vidtxt_set_cursor:
 	fprolog 0, eax
 .fbody:
-%define newpos [bp+8]
+%define newpos [ebp+8]
 	mov eax, newpos
 	mov cursor, eax
 %undef newpos
@@ -268,10 +268,10 @@ vidtxt_backspace:
 	fprolog 0, eax, edi
 .fbody:
 	mov ah, color
-	mov edi, vmem
-	add edi, cursor
-	sub edi, 2
 	mov al, ' '
+
+	mov edi, cursor
+	sub edi, 2
 
 	mov [edi], ax
 	mov cursor, edi
@@ -279,7 +279,7 @@ vidtxt_backspace:
 	freturn eax, edi
 
 vidtxt_putbyte:
-%define byte_at [bp+4]
+%define byte_at [ebp+4]
 	fprolog 0, eax
 .fbody:
 	mov ah, 0x0E
@@ -309,7 +309,7 @@ vidtxt_putbyte:
 %undef byte_at
 
 vidtxt_putword:
-%define word_at [bp+4]
+%define word_at [ebp+4]
 	fprolog 0, eax
 .fbody:
 	mov ax, word_at
