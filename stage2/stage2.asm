@@ -112,36 +112,44 @@ stage2_cmdloop:
 	call command_get
 	push eax
 
-.check_hi:
-	push str_hi
+	mov ebx, dummy_table
+.check_next:
+	add ebx, 8
+	mov eax, [ebx]
+	or eax, eax
+	jz .default
+
+	push eax
 	call string_match
 	add esp, 4
 	or eax, eax
-	jz .not_hi
-.do_hi:
-	call say_hi
-	jmp .nextloop
-.not_hi:
-
-.check_vendor:
-	push str_vendor
-	call string_match
-	add esp, 4
-	or eax, eax
-	jz .not_vendor
-.do_vendor:
-	call show_vendor
-.not_vendor:
-
+	jz .check_next
+.found_it:
+	add ebx, 4
+	mov eax, [ebx]
+	call eax
 .default:
-.nextloop:
 	add esp, 4
 	jmp .cmdloop
+
+dummy_table:
+	dd 0
+	dd stub
+command_table:
+	dd str_hi
+	dd say_hi
+	dd str_vendor
+	dd show_vendor
+	dd 0
+	dd stub
 
 
 ; === FUNCTIONS ===
 
 %include "functions.inc"
+
+stub:
+	ret
 
 say_hi:
 	fprolog 0
