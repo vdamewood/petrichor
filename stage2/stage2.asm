@@ -119,7 +119,7 @@ stage2_cmdloop:
 	or eax, eax
 	jz .not_hi
 .do_hi:
-	println(msg_hello)
+	call say_hi
 	jmp .nextloop
 .not_hi:
 
@@ -130,8 +130,7 @@ stage2_cmdloop:
 	or eax, eax
 	jz .not_vendor
 .do_vendor:
-	call load_vendor_id
-	println(msg_vendor)
+	call show_vendor
 .not_vendor:
 
 .default:
@@ -139,9 +138,21 @@ stage2_cmdloop:
 	add esp, 4
 	jmp .cmdloop
 
+
 ; === FUNCTIONS ===
 
 %include "functions.inc"
+
+say_hi:
+	fprolog 0
+	println(msg_hello)
+	freturn
+
+show_vendor:
+	fprolog 0, eax
+	call load_vendor_id
+	println(eax)
+	freturn eax
 
 load_vendor_id:
 	fprolog 0, ecx, edx, ebx
