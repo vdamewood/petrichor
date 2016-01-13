@@ -131,7 +131,7 @@ stage2_cmdloop:
 	jz .not_vendor
 .do_vendor:
 	call load_vendor_id
-	print(msg_vendor)
+	println(msg_vendor)
 .not_vendor:
 
 .default:
@@ -162,7 +162,6 @@ load_vendor_id:
 ; === Non-executable Data ===
 
 msg_start:      db 'Second stage loaded.', 0
-msg_sayhi:      db 'Say hi.', 0
 msg_prompt:     db '?> ', 0
 msg_hello:      db 'Hello.', 0
 msg_fail:		db 'Command failed.', 0
@@ -173,9 +172,4 @@ sub_vendor_3:   times 4 db 0
 term_vendor:    db 0
 
 str_hi:         db 'hi', 0
-str_enable:     db 'enable', 0
-str_disable:    db 'disable', 0
 str_vendor:     db 'vendor', 0
-str_pmode:      db 'pmode', 0
-
-;pad:        times 0x800-($-$$) db 0
