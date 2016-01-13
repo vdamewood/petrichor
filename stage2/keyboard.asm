@@ -90,20 +90,19 @@ keyboard_enable:
 keyboard_get_stroke:
 	fprolog 0, ebx
 .start:
+	xor eax, eax
+
+.wait:
 	in al, 0x64
 	and al, ibuf_full
-	jz .start
+	jz .wait
 
-.get_scancode:
-	xor eax, eax
+.fetch:
 	in al, 0x60
-	cmp al, 0x80
-	jle .start
+	cmp ax, 0x80 ; If the code scanned is a 'release' code
+	jge .start   ; ignore it
 
-	; lea, maybe?
-	shl eax, 1 ; keyscan_table is a table of words, not bytes
-	mov ebx, keyscan_table
-	add ebx, eax
+	lea ebx, [eax*2+keyscan_table]
 	mov ax, word[ebx]
 	freturn ebx
 
