@@ -1,4 +1,4 @@
-; stage2.asm: Second-stage startup program
+; strings.asm: String functions
 ;
 ; Copyright 2015, 2016 Vincent Damewood
 ; All rights reserved.
@@ -25,6 +25,8 @@
 ; THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 ; (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 ; OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+%include "functions.inc"
 
 ; Compare Zero-Terminated Strings
 string_match:

@@ -26,6 +26,8 @@
 ; (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 ; OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+%include "functions.inc"
+
 %define ibuf_full 0x01 ; Output to the keyboard
 %define obuf_full 0x02 ; Input from the keyboard
 %define get_status 0x20

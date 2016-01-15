@@ -1,4 +1,4 @@
-; stage2.asm: Second-stage startup program
+; vidtxt.asm: Video text driver
 ;
 ; Copyright 2015, 2016 Vincent Damewood
 ; All rights reserved.

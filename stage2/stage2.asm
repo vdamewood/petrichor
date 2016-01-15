@@ -117,6 +117,8 @@ stage2:
 	jmp dword 0x08:pmode
 [BITS 32]
 
+%include "functions.inc"
+
 %include "vidtxt.asm"
 %include "keyboard.asm"
 %include "command.asm"

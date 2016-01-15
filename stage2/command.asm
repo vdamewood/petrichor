@@ -1,6 +1,6 @@
-; command.asm: Command Interpreter
+; command.asm: Command interpreter
 ;
-; Copyright 2015, Vincent Damewood
+; Copyright 2015, 2016 Vincent Damewood
 ; All rights reserved.
 ;
 ; Redistribution and use in source and binary forms, with or without
@@ -26,6 +26,7 @@
 ; (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 ; OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+%include "functions.inc"
 
 command_buffer_size  equ 32
 command_buffer       times command_buffer_size db 0

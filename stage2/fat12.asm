@@ -1,6 +1,6 @@
-; stage2.asm: Second-stage startup program
+; fat12.asm: FAT12 driver
 ;
-; Copyright 2015, Vincent Damewood
+; Copyright 2015, 2016 Vincent Damewood
 ; All rights reserved.
 ;
 ; Redistribution and use in source and binary forms, with or without
@@ -26,34 +26,24 @@
 ; (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 ; OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+%include "functions.inc"
+
 ; Match a filename
 match_file:
-%define source      [bp+4]
-%define destination [bp+6]
-.fpreamb:
-	push bp
-	mov bp, sp
-	push cx
-	push si
-	push di
+%define source      [ebp+4]
+%define destination [ebp+6]
+	fprolog 0, ecx, esi, edi
 .fbody:
-	mov si, source
-	mov di, destination
-	mov cx, 11
+	mov esi, source
+	mov edi, destination
+	mov ecx, 11
 	repe cmpsb
 	jne .nomatch
 .match:
-	mov ax, 0xFFFF
+	mov ax, 0xFFFFFFFF
 	jmp .freturn
 .nomatch:
-	mov ax, 0x0000
-.freturn:
-	pop di
-	pop si
-	pop cx
-	mov sp, bp
-	pop bp
-	ret
+	mov ax, 0x00000000
 %undef source
 %undef destination
-
+	freturn ecx, esi, edi
