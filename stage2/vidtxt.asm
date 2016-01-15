@@ -28,7 +28,7 @@
 
 %include "functions.inc"
 
-vidtxt_color:  db  0x17
+vidtxt_color:  db  0x07
 vidtxt_cursor: dd  0x000B8000
 vidtxt_width:  db  80
 vidtxt_height: db  25
