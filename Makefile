@@ -3,6 +3,7 @@ all: stage1/stage1.bin stage2/stage2.bin bootdisk.img
 clean:
 	make -C stage1 clean
 	make -C stage2 clean
+	rm -f bochsout.txt
 
 distclean: clean
 	make -C stage1 distclean
