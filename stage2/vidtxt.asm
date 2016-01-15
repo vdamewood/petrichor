@@ -303,9 +303,10 @@ vidtxt_print_hex:
 
 	or ecx, ecx
 	jnz .loop
+%undef value
+%undef count
 .freturn:
 	freturn eax, ecx, edx
-%undef byte_at
 
 vidtxt_hprint_byte:
 	fprolog 0
@@ -313,6 +314,7 @@ vidtxt_hprint_byte:
 	push arg
 	push 1
 	call vidtxt_print_hex
+%undef arg
 	freturn
 
 vidtxt_hprint_word:
@@ -321,6 +323,7 @@ vidtxt_hprint_word:
 	push arg
 	push 2
 	call vidtxt_print_hex
+%undef arg
 	freturn
 
 vidtxt_hprint_dword:
@@ -329,7 +332,21 @@ vidtxt_hprint_dword:
 	push arg
 	push 4
 	call vidtxt_print_hex
+%undef arg
 	freturn
+
+vidtxt_hprint_qword:
+	fprolog 0
+%define argl dword[ebp+8]
+%define argh dword[ebp+12]
+	push argh
+	push 4
+	call vidtxt_print_hex
+	push argl
+	push 4
+	call vidtxt_print_hex
+	freturn
+
 
 
 %undef vmem

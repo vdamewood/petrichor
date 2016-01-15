@@ -54,14 +54,45 @@
 
 stage2:
 	; Initial Setup. This may not be needed, anymore.
-	mov ax, 0x1000
-	mov ds, ax
+	xor eax, eax
+	mov dx, ax
 	mov es, ax
+	mov [0x3300], eax
+	mov [0x3304], eax
 
-	mov ax, 0x2000
-	mov ss, ax
-	xor sp, sp
-	mov bp, sp
+	mov di, 0x3308
+	xor ebx, ebx
+	mov edx, 0x534D4150
+.next_mem:
+	mov eax, 0xE820
+	mov ecx, 24
+	int 0x15
+	jc .mem_invalid
+	mov eax, [0x3300]
+	inc eax
+	mov [0x3300], eax
+
+	or ebx, ebx
+	jz .mem_done
+	add di, 24
+	jmp .next_mem
+.mem_invalid:
+	xor eax, eax
+	sub eax, 1
+	mov ecx, 24
+	rep stosb
+.mem_done:
+
+
+
+
+
+	;mov ax, 0x2000
+	;mov ss, ax
+	;xor sp, sp
+	;mov bp, sp
+
+
 
 	; Enable A20
 	; FIXME: This only works on a few systems.
@@ -140,6 +171,8 @@ command_table:
 	dd say_hi
 	dd str_vendor
 	dd show_vendor
+	dd str_memory
+	dd show_memory
 	dd 0
 	dd stub
 
@@ -161,6 +194,63 @@ show_vendor:
 	call load_vendor_id
 	println(eax)
 	freturn eax
+
+show_memory:
+%define count 0x3300
+%define first 0x3308
+	fprolog 0, eax, ecx, ebx
+
+	mov ecx, [count]
+	push ecx
+	call vidtxt_hprint_word
+	add esp, 4
+
+	call vidtxt_breakline
+
+	push str_memory_table
+	call vidtxt_println
+	add esp, 4
+
+	mov ebx, first
+.loop:
+	push dword[ebx+4]
+	push dword[ebx]
+	call vidtxt_hprint_qword
+	add esp, 8
+
+	push dword ' '
+	call vidtxt_putch
+	add esp, 4
+
+	push dword[ebx+12]
+	push dword[ebx+8]
+	call vidtxt_hprint_qword
+	add esp, 8
+
+	push dword ' '
+	call vidtxt_putch
+	add esp, 4
+
+	push dword[ebx+16]
+	call vidtxt_hprint_dword
+	add esp, 4
+
+	push dword ' '
+	call vidtxt_putch
+	add esp, 4
+
+	push dword[ebx+20]
+	call vidtxt_hprint_dword
+	add esp, 4
+
+	call vidtxt_breakline
+	add ebx, 24
+	loop .loop
+
+	freturn eax, ecx, ebx
+%undef count
+%undef first
+
 
 load_vendor_id:
 	fprolog 0, ecx, edx, ebx
@@ -192,3 +282,6 @@ term_vendor:    db 0
 
 str_hi:         db 'hi', 0
 str_vendor:     db 'vendor', 0
+str_memory:       db 'memory', 0
+
+str_memory_table: db 'Base             Size             Status   Ext     ', 0 
