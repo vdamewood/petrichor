@@ -278,13 +278,20 @@ vidtxt_backspace:
 .freturn:
 	freturn eax, edi
 
-vidtxt_putbyte:
-%define byte_at [ebp+4]
-	fprolog 0, eax
+vidtxt_print_hex:
+	fprolog 0, eax, ecx, edx
 .fbody:
-	mov ah, 0x0E
-	mov al, byte_at
-	shr al, 4
+%define value [ebp+12] ; The Value to print. If fewer than 4 bytes are printed, the low-order bytes are printed
+%define count [ebp+8] ; The number of bytes to print
+	mov ecx, count
+	shl ecx, 3
+.loop:
+	sub ecx, 4
+
+	mov eax, value
+	shr eax, cl
+	and eax, 0x0F
+
 	add al, 0x30
 	cmp al, 0x39
 	jle .skip1
@@ -294,37 +301,35 @@ vidtxt_putbyte:
 	call vidtxt_putch
 	pop eax
 
-	mov al, byte_at
-	and al, 0x0F
-	add al, 0x30
-	cmp al, 0x39
-	jle .skip2
-	add al, 7
-.skip2:
-	push eax
-	call vidtxt_putch
-	pop eax
+	or ecx, ecx
+	jnz .loop
 .freturn:
-	freturn eax
+	freturn eax, ecx, edx
 %undef byte_at
 
-vidtxt_putword:
-%define word_at [ebp+4]
-	fprolog 0, eax
-.fbody:
-	mov ax, word_at
-	shr ax, 8
-	push eax
-	call vidtxt_putbyte
+vidtxt_hprint_byte:
+	fprolog 0
+%define arg dword[ebp+8]
+	push arg
+	push 1
+	call vidtxt_print_hex
+	freturn
 
-	mov eax, word_at
-	push eax
-	call vidtxt_putbyte
+vidtxt_hprint_word:
+	fprolog 0
+%define arg dword[ebp+8]
+	push arg
+	push 2
+	call vidtxt_print_hex
+	freturn
 
-	add esp, 8
-%undef word_at
-.freturn:
-	freturn eax
+vidtxt_hprint_dword:
+	fprolog 0
+%define arg dword[ebp+8]
+	push arg
+	push 4
+	call vidtxt_print_hex
+	freturn
 
 
 %undef vmem
