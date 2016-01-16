@@ -169,6 +169,8 @@ dummy_table:
 	dd 0
 	dd stub
 command_table:
+	dd str_clear
+	dd clear_screen
 	dd str_hi
 	dd say_hi
 	dd str_vendor
@@ -185,6 +187,11 @@ command_table:
 
 stub:
 	ret
+
+clear_screen:
+	fprolog 0
+	call vidtxt_clear
+	freturn
 
 say_hi:
 	fprolog 0
@@ -284,6 +291,7 @@ term_vendor:    db 0
 
 str_hi:         db 'hi', 0
 str_vendor:     db 'vendor', 0
-str_memory:       db 'memory', 0
+str_memory:     db 'memory', 0
+str_clear:      db 'clear', 0
 
-str_memory_table: db 'Base             Size             Status   Ext     ', 0 
+str_memory_table: db 'Base             Size             Status   Ext     ', 0
