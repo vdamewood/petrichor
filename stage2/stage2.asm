@@ -26,9 +26,11 @@
 ; (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 ; OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-[ORG 0x10000]
+%define CodeOrg       0x10000
+%define CodeSegment   (CodeOrg>>4)
+%define CodeOffset(x) (x-CodeOrg)
 
-%define popoff(num) add esp, (num*4)
+[ORG CodeOrg]
 
 ; 00000 to 0FFFF:
 ;   0x0000 to 0x04FF: Reserved for System
@@ -53,7 +55,7 @@
 ; After A0000 is unusable.
 
 stage2:
-	; Initial Setup. This may not be needed, anymore.
+	; Copy Memory Information
 	xor eax, eax
 	mov dx, ax
 	mov es, ax
@@ -82,18 +84,6 @@ stage2:
 	mov ecx, 24
 	rep stosb
 .mem_done:
-
-
-
-
-
-	;mov ax, 0x2000
-	;mov ss, ax
-	;xor sp, sp
-	;mov bp, sp
-
-
-
 	; Enable A20
 	; FIXME: This only works on a few systems.
 	; Might want to check if other systems need a
@@ -103,22 +93,19 @@ stage2:
 
 	; Move to protected mode
 	cli
-	; The following code loads a GDT that's hard-coded
-	; into the boot sector. Move it to a more sane
-	; location.
-	xor ax, ax
+	mov ax, CodeSegment
 	mov ds, ax
-	mov eax, 0x7DBC
+	mov eax, CodeOffset(GDT_Pointer)
 	lgdt [eax]
-
 	mov eax, cr0
 	or al, 1
 	mov cr0, eax
 	jmp dword 0x08:pmode
+
 [BITS 32]
 
 %include "functions.inc"
-
+%include "gdt.asm"
 %include "vidtxt.asm"
 %include "keyboard.asm"
 %include "command.asm"

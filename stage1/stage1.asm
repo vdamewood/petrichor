@@ -275,47 +275,6 @@ load:
 ; === Non-executable Data ===
 st2_file:  db 'STAGE2  BIN'
 bootdrive:  db 0
-pad:        times 444-($-$$) db 0
-
-GDT_Pointer:
-limit: dw 23
-base:  dd GlobalDescTable
-
-GlobalDescTable:
-GDT_null:
-	times 8 db 0
-
-GDT_sys_code:
-.limit_low:   dw 0xFFFF ; lower 16 bits of limit
-.base_low:    dw 0x0000 ; Low 16 bits of the base
-.base_middle: db 0x00   ; Next 8 bytes of the base.
-.access       db 0x9A   ; Access flags, ring, etc
-.granularity  db 0xCF   ; Example code set all to 0xCF
-.base_high    db 0x00   ; highest 0 bits of base
-
-GDT_sys_data:
-.limit_low:   dw 0xFFFF ; lower 16 bits of limit
-.base_low:    dw 0x0000 ; Low 16 bits of the base
-.base_middle: db 0x00   ; Next 8 bytes of the base.
-.access       db 0x92   ; Access flags, ring, etc
-.granularity  db 0xCF   ; Example code set all to 0xCF
-.base_high    db 0x00   ; highest 0 bits of base
-
-GDT_usr_code:
-.limit_low:   dw 0xFFFF ; lower 16 bits of limit
-.base_low:    dw 0x0000 ; Low 16 bits of the base
-.base_middle: db 0x00   ; Next 8 bytes of the base.
-.access       db 0xFA   ; Access flags, ring, etc
-.granularity  db 0xCF   ; Example code set all to 0xCF
-.base_high    db 0x00   ; highest 0 bits of base
-
-GDT_usr_data:
-.limit_low:   dw 0xFFFF ; lower 16 bits of limit
-.base_low:    dw 0x0000 ; Low 16 bits of the base
-.base_middle: db 0x00   ; Next 8 bytes of the base.
-.access       db 0xF2   ; Access flags, ring, etc
-.granularity  db 0xCF   ; Example code set all to 0xCF
-.base_high    db 0x00   ; highest 0 bits of base
-
-ptable:     times (510)-($-$$) db 0
+pad:        times 446-($-$$) db 0
+ptable:     times 64 db 0
 bootsig:    dw 0xAA55
