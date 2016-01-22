@@ -106,6 +106,7 @@ stage2:
 
 %include "functions.inc"
 %include "gdt.asm"
+%include "idt.asm"
 %include "vidtxt.asm"
 %include "keyboard.asm"
 %include "command.asm"
@@ -164,6 +165,10 @@ command_table:
 	dd show_vendor
 	dd str_memory
 	dd show_memory
+	dd cmd_int
+	dd SetupInturrupts
+	dd cmd_break
+	dd Breakpoint
 	dd 0
 	dd stub
 
@@ -174,6 +179,11 @@ command_table:
 
 stub:
 	ret
+
+Breakpoint:
+	fprolog 0
+	xchg bx, bx
+	freturn
 
 clear_screen:
 	fprolog 0
@@ -279,6 +289,8 @@ term_vendor:    db 0
 str_hi:         db 'hi', 0
 str_vendor:     db 'vendor', 0
 str_memory:     db 'memory', 0
+cmd_int:		db 'int', 0
 str_clear:      db 'clear', 0
+cmd_break:		db 'break', 0
 
 str_memory_table: db 'Base             Size             Status   Ext     ', 0
