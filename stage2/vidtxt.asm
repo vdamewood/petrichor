@@ -262,6 +262,18 @@ vidtxt_putch:
 .freturn:
 	freturn eax, edi
 
+vidtxt_space:
+	fprolog 0, eax, edi
+.fbody:
+	mov ah, color
+	mov al, ' '
+	mov edi, cursor
+	mov [edi], ax
+	add edi, 2
+	mov cursor, edi
+.freturn:
+	freturn eax, edi
+
 vidtxt_delch:
 vidtxt_backspace:
 .fpreamb:
