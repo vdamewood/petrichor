@@ -26,129 +26,85 @@
 ; (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 ; OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-%define IdtCount 32
+%define IdtCount 48
 %define IdtSize  (IdtCount<<3)
 %define IdtLimit (IdtSize-1)
 
-%macro INTR_NOCODE 1
-  IntrIsr%1:
-    cli
-    push byte 0
-    push byte %1
-    jmp IntrIsrCommonStub
-%endmacro
-
-%macro INTR_ERCODE 1
-  IntrIsr%1:
-    cli
-    push byte %1
-    jmp IntrIsrCommonStub
-%endmacro
-
-INTR_NOCODE 0
-INTR_NOCODE 1
-INTR_NOCODE 2
-INTR_NOCODE 3
-INTR_NOCODE 4
-INTR_NOCODE 5
-INTR_NOCODE 6
-INTR_NOCODE 7
-INTR_NOCODE 8
-INTR_NOCODE 9
-INTR_NOCODE 10
-INTR_NOCODE 11
-INTR_NOCODE 12
-INTR_NOCODE 13
-INTR_NOCODE 14
-INTR_NOCODE 15
-INTR_NOCODE 16
-INTR_NOCODE 17
-INTR_NOCODE 18
-INTR_NOCODE 19
-INTR_NOCODE 20
-INTR_NOCODE 21
-INTR_NOCODE 22
-INTR_NOCODE 23
-INTR_NOCODE 24
-INTR_NOCODE 25
-INTR_NOCODE 26
-INTR_NOCODE 27
-INTR_NOCODE 28
-INTR_NOCODE 29
-INTR_NOCODE 30
-INTR_NOCODE 31
-
-IntrIsrCommonStub:
+IntrIsrCommon:
 	call vidtxt_hprint_dword
 	call vidtxt_breakline
 	add esp, 8
 	sti
 	iret
 
+%define IntrHexTable '0123456789ABCDEF'
+
+; The following code creates ISRs for each interrupt.
+%assign i 0
+%rep IdtCount
+	%substr IsrDigit1 IntrHexTable ((i / 16 + 1))
+	%substr IsrDigit2 IntrHexTable ((i % 16 + 1))
+	%strcat IsrHexString '0x' IsrDigit1 IsrDigit2
+	%deftok IsrHexToken IsrHexString
+IntrIsr%[IsrHexToken]:
+		cli
+		%if (0)
+		%else
+			push byte 0
+		%endif
+		push byte i
+		jmp IntrIsrCommon
+	%assign i i+1
+%endrep
+
+; This makes a table of ISRs so that it can be looped
+; through to create the real IDT.
+IntrSimpleTable:
+%assign i 0
+%rep IdtCount
+	%substr IsrDigit1 IntrHexTable ((i / 16 + 1))
+	%substr IsrDigit2 IntrHexTable ((i % 16 + 1))
+	%strcat IsrHexString '0x' IsrDigit1 IsrDigit2
+	%deftok IsrHexToken IsrHexString
+	dd IntrIsr%[IsrHexToken]
+	%assign i i+1
+%endrep
+
+%undef IsrHexToken
+%undef IsrHexString
+%undef IsrDigit2
+%undef IsrDigit1
+%undef IntrHexTable
+
+; Space allocated for the IDT
 IntrTable:
 	times IdtSize db 0x00
 
 IntrTableReference:
-	;.Limit: dw ((32<<3)-1)
 	.Limit: dw IdtLimit
 	.Base:  dd IntrTable
 
-IntrSimpleTable:
-	dd IntrIsr0
-	dd IntrIsr1
-	dd IntrIsr2
-	dd IntrIsr3
-	dd IntrIsr4
-	dd IntrIsr5
-	dd IntrIsr6
-	dd IntrIsr7
-	dd IntrIsr8
-	dd IntrIsr9
-	dd IntrIsr10
-	dd IntrIsr11
-	dd IntrIsr12
-	dd IntrIsr13
-	dd IntrIsr14
-	dd IntrIsr15
-	dd IntrIsr16
-	dd IntrIsr17
-	dd IntrIsr18
-	dd IntrIsr19
-	dd IntrIsr20
-	dd IntrIsr21
-	dd IntrIsr22
-	dd IntrIsr23
-	dd IntrIsr24
-	dd IntrIsr25
-	dd IntrIsr26
-	dd IntrIsr27
-	dd IntrIsr28
-	dd IntrIsr29
-	dd IntrIsr30
-	dd IntrIsr31
-
-SetupInturrupts:
+IntrSetupInturrupts:
 	fprolog 0, eax, ebx
 	mov eax, 0
 	mov ebx, IntrSimpleTable
 	push 0x8E ; Flags
 	push 0x08 ; Segment
-
 .loop:
 	push dword[ebx]
 	push eax
-	call AddInterrupt
+	call IntrAddInterrupt
 	add esp, 8
 	add ebx, 4 ; next entry
 	inc eax
-	cmp eax, 32
+	cmp eax, IdtCount
 	jne .loop
 
 	mov edx, IntrTableReference
 	lidt [edx]
 	freturn eax, edx
 
-AddInterrupt:
+IntrAddInterrupt:
 	fprolog 0, eax, ebx
 %define SrcNumber  byte  [ebp+ 8]
 %define SrcAddr    dword [ebp+12]

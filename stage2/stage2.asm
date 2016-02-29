@@ -166,7 +166,7 @@ command_table:
 	dd str_memory
 	dd show_memory
 	dd cmd_idtinit
-	dd SetupInturrupts
+	dd IntrSetupInturrupts
 	dd cmd_int
 	dd IntrTest
 	dd cmd_break
