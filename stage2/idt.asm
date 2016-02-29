@@ -26,73 +26,179 @@
 ; (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 ; OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-IdtReference:
-.Limit:		dw 0x07FF
-.Base:		dd IDT
+%define IdtCount 32
+%define IdtSize  (IdtCount<<3)
+%define IdtLimit (IdtSize-1)
 
-DefaultInturrupt:
-	push eax
-	push str_int
-	call vidtxt_println
-	add esp, 4
-	pop eax
+%macro INTR_NOCODE 1
+  IntrIsr%1:
+    cli
+    push byte 0
+    push byte %1
+    jmp IntrIsrCommonStub
+%endmacro
+
+%macro INTR_ERCODE 1
+  IntrIsr%1:
+    cli
+    push byte %1
+    jmp IntrIsrCommonStub
+%endmacro
+
+INTR_NOCODE 0
+INTR_NOCODE 1
+INTR_NOCODE 2
+INTR_NOCODE 3
+INTR_NOCODE 4
+INTR_NOCODE 5
+INTR_NOCODE 6
+INTR_NOCODE 7
+INTR_NOCODE 8
+INTR_NOCODE 9
+INTR_NOCODE 10
+INTR_NOCODE 11
+INTR_NOCODE 12
+INTR_NOCODE 13
+INTR_NOCODE 14
+INTR_NOCODE 15
+INTR_NOCODE 16
+INTR_NOCODE 17
+INTR_NOCODE 18
+INTR_NOCODE 19
+INTR_NOCODE 20
+INTR_NOCODE 21
+INTR_NOCODE 22
+INTR_NOCODE 23
+INTR_NOCODE 24
+INTR_NOCODE 25
+INTR_NOCODE 26
+INTR_NOCODE 27
+INTR_NOCODE 28
+INTR_NOCODE 29
+INTR_NOCODE 30
+INTR_NOCODE 31
+
+IntrIsrCommonStub:
+	call vidtxt_hprint_dword
+	call vidtxt_breakline
+	add esp, 8
+	sti
 	iret
 
-str_int db "Int!", 0
+IntrTable:
+	times IdtSize db 0x00
+
+IntrTableReference:
+	;.Limit: dw ((32<<3)-1)
+	.Limit: dw IdtLimit
+	.Base:  dd IntrTable
+
+IntrSimpleTable:
+	dd IntrIsr0
+	dd IntrIsr1
+	dd IntrIsr2
+	dd IntrIsr3
+	dd IntrIsr4
+	dd IntrIsr5
+	dd IntrIsr6
+	dd IntrIsr7
+	dd IntrIsr8
+	dd IntrIsr9
+	dd IntrIsr10
+	dd IntrIsr11
+	dd IntrIsr12
+	dd IntrIsr13
+	dd IntrIsr14
+	dd IntrIsr15
+	dd IntrIsr16
+	dd IntrIsr17
+	dd IntrIsr18
+	dd IntrIsr19
+	dd IntrIsr20
+	dd IntrIsr21
+	dd IntrIsr22
+	dd IntrIsr23
+	dd IntrIsr24
+	dd IntrIsr25
+	dd IntrIsr26
+	dd IntrIsr27
+	dd IntrIsr28
+	dd IntrIsr29
+	dd IntrIsr30
+	dd IntrIsr31
 
 SetupInturrupts:
-	fprolog 0, ecx
-	mov ecx, 256
-	push DefaultInturrupt
+	fprolog 0, eax, ebx
+	mov eax, 0
+	mov ebx, IntrSimpleTable
+	push 0x8E ; Flags
+	push 0x08 ; Segment
+
 .loop:
+	push dword[ebx]
+	push eax
 	call AddInterrupt
-	loop .loop
-	add esp, 4
-	mov ecx, IdtReference
-	lidt [ecx]
-	freturn ecx
+	add esp, 8
+	add ebx, 4 ; next entry
+	inc eax
+	cmp eax, 32
+	jne .loop
+
+	mov edx, IntrTableReference
+	lidt [edx]
+	freturn eax, edx
 
 AddInterrupt:
 	fprolog 0, eax, ebx
-%define Isr     dword[ebp+8]
-%define AddrHi  word[ebx]
-%define Segment word[ebx+2]
-%define Zero    byte[ebx+4]
-%define Flags   byte[ebx+5]
-%define AddrLo  word[ebx+6]
-	mov ebx, [IdtWhere]
-	cmp ebx, IdtEnd
-	je .end
-
-	mov eax, Isr
-	mov AddrLo, ax
-	shr eax, 16
-	mov AddrHi, ax
-
-	mov ax, 0x0008
-	mov Segment, ax
-	mov al, 0x8E
-	mov Flags, al
+%define SrcNumber  byte  [ebp+ 8]
+%define SrcAddr    dword [ebp+12]
+%define SrcSegment word  [ebp+16]
+%define SrcFlags   byte  [ebp+20]
+%define DstAddrLo  word  [ebx+0]
+%define DstSegment word  [ebx+2]
+%define DstZero    byte  [ebx+4]
+%define DstFlags   byte  [ebx+5]
+%define DstAddrHi  word  [ebx+6]
+.EndDebug:
 	xor eax, eax
-	mov Zero, al
-	add ebx, 8
-	mov [IdtWhere], ebx
-%undef address
-%undef AddrHi
-%undef Segment
-%undef Zero
-%undef Flags
-%undef AddrLo
-.end:
+	xor ebx, ebx
+
+	; Establish Entry Address
+	mov bl, SrcNumber
+	shl ebx, 3
+	add ebx, IntrTable
+
+	; Set the Always-Zero Field to Zero
+	mov DstZero, al
+
+	; Mangle and save the ISR address
+	mov eax, SrcAddr
+	mov DstAddrLo, ax
+	shr eax, 16
+	mov DstAddrHi, ax
+
+	; Simple copies
+	mov ax, SrcSegment
+	mov DstSegment, ax
+	mov al, SrcFlags
+	mov DstFlags, al
+%undef SrcNumber
+%undef SrcAddr
+%undef SrcSegment
+%undef SrcFlags
+%undef DstAddrHi
+%undef DstSegment
+%undef DstZero
+%undef DstFlags
+%undef DstAddrLo
 	freturn eax, ebx
 
-; w AddrHi
-; w Seg
-; b 0
-; b 0x8E
-; w AddrLo
+IntrTest:
+	fprolog 0
+	int 0x03
+	int 0x04
+	freturn
 
-IdtWhere: dd IDT
-IDT:
-	times 0x800 db 0x00
-IdtEnd:
+%undef IdtCount
+%undef IdtSize
+%undef IdtLimit

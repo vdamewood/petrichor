@@ -165,8 +165,10 @@ command_table:
 	dd show_vendor
 	dd str_memory
 	dd show_memory
-	dd cmd_int
+	dd cmd_idtinit
 	dd SetupInturrupts
+	dd cmd_int
+	dd IntrTest
 	dd cmd_break
 	dd Breakpoint
 	dd 0
@@ -289,8 +291,9 @@ term_vendor:    db 0
 str_hi:         db 'hi', 0
 str_vendor:     db 'vendor', 0
 str_memory:     db 'memory', 0
-cmd_int:		db 'int', 0
+cmd_int:        db 'int', 0
+cmd_idtinit:    db 'initidt', 0
 str_clear:      db 'clear', 0
-cmd_break:		db 'break', 0
+cmd_break:      db 'break', 0
 
 str_memory_table: db 'Base             Size             Status   Ext     ', 0
