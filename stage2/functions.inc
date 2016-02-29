@@ -54,4 +54,15 @@
 	ret
 %endmacro
 
+%macro  intrfreturn 0-*
+	%rep %0
+		%rotate -1
+		pop %1
+	%endrep
+	mov esp, ebp
+	pop ebp
+	sti
+	ret
+%endmacro
+
 %endif

@@ -122,8 +122,8 @@ pmode:
 	mov esp, 0x90000
 	mov ebp, esp
 
+	call IntrSetupInterrupts
 	call vidtxt_clear
-	call keyboard_enable
 	println(msg_start)
 
 stage2_cmdloop:
@@ -165,8 +165,6 @@ command_table:
 	dd show_vendor
 	dd str_memory
 	dd show_memory
-	dd cmd_idtinit
-	dd IntrSetupInturrupts
 	dd cmd_int
 	dd IntrTest
 	dd cmd_break
@@ -292,7 +290,6 @@ str_hi:         db 'hi', 0
 str_vendor:     db 'vendor', 0
 str_memory:     db 'memory', 0
 cmd_int:        db 'int', 0
-cmd_idtinit:    db 'initidt', 0
 str_clear:      db 'clear', 0
 cmd_break:      db 'break', 0
 

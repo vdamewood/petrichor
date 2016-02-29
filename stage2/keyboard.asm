@@ -33,53 +33,53 @@
 %define get_status 0x20
 %define set_status 0x60
 
-keyboard_enable:
-	fprolog 0
+;keyboard_enable:
+;	fprolog 0
 
-.fbody:
-.wait_buff1:
-	in al, 0x64
-	and al, obuf_full
-	jnz .wait_buff1
+;.fbody:
+;.wait_buff1:
+;	in al, 0x64
+;	and al, obuf_full
+;	jnz .wait_buff1
 
-.get_status:
-	mov al, get_status
-	out 0x64, al
-	in al, 0x60
+;.get_status:
+;	mov al, get_status
+;	out 0x64, al
+;	in al, 0x60
 
-.cache_disabled:
-	mov ah, 0xFE
-	and ah, al
+;.cache_disabled:
+;	mov ah, 0xFE
+;	and ah, al
 
-.wait_buff2:
-	in al, 0x64
-	and al, obuf_full
-	jnz .wait_buff2
+;.wait_buff2:
+;	in al, 0x64
+;	and al, obuf_full
+;	jnz .wait_buff2
 
-.set_status:
-	mov al, set_status
-	out 0x64, al
-	mov al, ah
-	out 0x60, al
-	in al, 0x60 ; Get (and ignore) response to command
+;.set_status:
+;	mov al, set_status
+;	out 0x64, al
+;	mov al, ah
+;	out 0x60, al
+;	in al, 0x60 ; Get (and ignore) response to command
 
-.wait_buff3:
-	in al, 0x64
-	and al, obuf_full
-	jnz .wait_buff3
+;.wait_buff3:
+;	in al, 0x64
+;	and al, obuf_full
+;	jnz .wait_buff3
 
-.check_status:
-	mov al, get_status
-	out 0x64, al
-	in al, 0x60
-	and al, 1
-	jz .zero
-	xor ax, ax
-	jmp .done
-.zero:
-	mov ax, 0xFFFF
-.done:
-	freturn
+;.check_status:
+;	mov al, get_status
+;	out 0x64, al
+;	in al, 0x60
+;	and al, 1
+;	jz .zero
+;	xor ax, ax
+;	jmp .done
+;.zero:
+;	mov ax, 0xFFFF
+;.done:
+;	freturn
 
 ;keyboard_meta_state: db 0
 	; 0: Left Shift

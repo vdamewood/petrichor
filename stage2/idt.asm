@@ -31,11 +31,43 @@
 %define IdtLimit (IdtSize-1)
 
 IntrIsrCommon:
+%define Interrupt dword[ebp+4]
+%define Code     dword[ebp+8]
+	push ebp
+	mov ebp, esp
+	pusha
+
+	mov eax, Interrupt
+	cmp eax, 0x20
+	je .cleanup
+
+	push Interrupt
+	call vidtxt_hprint_dword
+	push Code
 	call vidtxt_hprint_dword
 	call vidtxt_breakline
 	add esp, 8
+
+.cleanup:
+	mov ecx, Interrupt
+	cmp ecx, 0x20
+	jl .done
+	cmp ecx, 0x2F
+	jg .done
+	mov al, 0x20
+	out 0x20, al
+	cmp ecx, 0x28
+	jl .done
+	out 0xA0, al
+.done:
+	popa
+	mov esp, ebp
+	pop ebp
+	add esp, 8
 	sti
 	iret
+%undef Interrupt
+%undef Code
 
 %define IntrHexTable '0123456789ABCDEF'
 
@@ -50,9 +82,9 @@ IntrIsr%[IsrHexToken]:
 		cli
 		%if (0)
 		%else
-			push byte 0
+			push 0
 		%endif
-		push byte i
+		push i
 		jmp IntrIsrCommon
 	%assign i i+1
 %endrep
@@ -84,8 +116,8 @@ IntrTableReference:
 	.Limit: dw IdtLimit
 	.Base:  dd IntrTable
 
-IntrSetupInturrupts:
-	fprolog 0, eax, ebx
+IntrSetupInterrupts:
+	fprolog 0, eax, edx, ebx
 	mov eax, 0
 	mov ebx, IntrSimpleTable
 	push 0x8E ; Flags
@@ -102,7 +134,51 @@ IntrSetupInturrupts:
 
 	mov edx, IntrTableReference
 	lidt [edx]
-	freturn eax, edx
+
+	;read 0x21
+	;read 0xA1
+	in al, 0x21
+	shl ax, 8
+	in al, 0xA1
+	mov bx, ax
+
+	;0x20 <-- 0x11
+	;0xA0 <-- 0x11
+	mov al, 0x11
+	out 0x20, al
+	out 0xA0, al
+
+	;0x21 <-- 0x20
+	;0xA1 <-- 0x28
+	mov al, 0x20
+	out 0x21, al
+	mov al, 0x28
+	out 0xA1, al
+
+	;0x21 <-- 0x04
+	;0xA1 <-- 0x02
+	mov al, 0x04
+	out 0x21, al
+	mov al, 0x02
+	out 0xA1, al
+
+	;0x21 <-- 0x01
+	;0xA1 <-- 0x01
+	mov al, 0x01
+	out 0x21, al
+	out 0xA1, al
+
+	;replace 0xA1
+	;replace 0x21
+	mov ax, bx
+	out 0xA1, al
+	shr ax, 8
+	out 0x21, al
+
+	mov al,20h
+	out 20h,al
+
+	intrfreturn eax, edx, ebx
 
 IntrAddInterrupt:
 	fprolog 0, eax, ebx
