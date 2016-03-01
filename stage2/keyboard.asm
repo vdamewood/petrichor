@@ -89,27 +89,48 @@
 	; 4: Left Alt
 	; 5: Right Alt
 
-keyboard_get_stroke:
-	fprolog 0, ebx
+keyboard_irq:
+	fprolog 0, eax, ebx
 .start:
 	xor eax, eax
-
-.wait:
-	in al, 0x64
-	and al, ibuf_full
-	jz .wait
-
-.fetch:
 	in al, 0x60
 	cmp ax, 0x80 ; If the code scanned is a 'release' code
-	jge .start   ; ignore it
+	jge .done    ; ignore it
 
 	lea ebx, [eax*2+keyscan_table]
 	mov ax, word[ebx]
-	freturn ebx
+	mov word[keyboard_buffer], ax
+	push eax
+	;call vidtxt_hprint_dword
+.done:
+	freturn eax, ebx
 
-str_scancode: db "Scan:", 0
-str_keycode:  db "KeyC:", 0
+keyboard_buffer: dw 0
+
+keyboard_get_stroke:
+	fprolog 0, ebx
+.try_again:
+	hlt
+	xor eax, eax
+	mov ax, word[keyboard_buffer]
+	or ax, ax
+	jz .try_again
+
+	xor ebx, ebx
+	mov word[keyboard_buffer], bx
+	freturn ebx
+;
+;.fetch:
+;	in al, 0x60
+;	cmp ax, 0x80 ; If the code scanned is a 'release' code
+;	jge .start   ; ignore it
+;
+;	lea ebx, [eax*2+keyscan_table]
+;	mov ax, word[ebx]
+;	freturn ebx
+
+;str_scancode: db "Scan:", 0
+;str_keycode:  db "KeyC:", 0
 
 %include "keyscan.asm"
 

@@ -40,7 +40,12 @@ IntrIsrCommon:
 	mov eax, Interrupt
 	cmp eax, 0x20
 	je .cleanup
+	cmp eax, 0x21
+	jne .default
+	call keyboard_irq
+	jmp .cleanup
 
+.default:
 	push Interrupt
 	call vidtxt_hprint_dword
 	call vidtxt_space
