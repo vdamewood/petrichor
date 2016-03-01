@@ -43,6 +43,7 @@ IntrIsrCommon:
 
 	push Interrupt
 	call vidtxt_hprint_dword
+	call vidtxt_space
 	push Code
 	call vidtxt_hprint_dword
 	call vidtxt_breakline
