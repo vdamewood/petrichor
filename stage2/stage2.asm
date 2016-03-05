@@ -26,11 +26,6 @@
 ; (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 ; OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-%define CodeOrg       0x10000
-%define CodeSegment   (CodeOrg>>4)
-%define CodeOffset(x) (x-CodeOrg)
-
-[ORG CodeOrg]
 
 ; 00000 to 0FFFF:
 ;   0x0000 to 0x04FF: Reserved for System
@@ -54,7 +49,13 @@
 ; 90000 to 9FFFF: Free, but Last few 128 KiB (possibly less) unusable
 ; After A0000 is unusable.
 
-stage2:
+SECTION .text
+[BITS 16]
+%define CodeOrg       0x11000
+%define CodeSegment   (CodeOrg>>4)
+%define CodeOffset(x) (x-CodeOrg)
+global Stage2
+Stage2:
 	; Copy Memory Information
 	xor eax, eax
 	mov dx, ax
@@ -105,7 +106,6 @@ stage2:
 [BITS 32]
 
 %include "functions.inc"
-%include "gdt.asm"
 %include "idt.asm"
 %include "vidtxt.asm"
 %include "keyboard.asm"
@@ -275,6 +275,9 @@ load_vendor_id:
 	freturn ecx, edx, ebx
 
 ; === Non-executable Data ===
+SECTION .data
+
+%include "gdt.asm"
 
 msg_start:      db 'Second stage loaded.', 0
 msg_prompt:     db '?> ', 0
