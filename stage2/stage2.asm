@@ -49,6 +49,18 @@
 ; 90000 to 9FFFF: Free, but Last few 128 KiB (possibly less) unusable
 ; After A0000 is unusable.
 
+extern vidtxt_clear
+extern vidtxt_show_cursor
+extern vidtxt_breakline
+extern vidtxt_print
+extern vidtxt_println
+extern vidtxt_putch
+extern vidtxt_space
+extern vidtxt_backspace
+extern vidtxt_hprint_word
+extern vidtxt_hprint_dword
+extern vidtxt_hprint_qword
+
 SECTION .text
 [BITS 16]
 %define CodeOrg       0x11000
@@ -107,7 +119,6 @@ Stage2:
 
 %include "functions.inc"
 %include "idt.asm"
-%include "vidtxt.asm"
 %include "keyboard.asm"
 %include "command.asm"
 %include "strings.asm"
@@ -124,11 +135,15 @@ pmode:
 
 	call IntrSetupInterrupts
 	call vidtxt_clear
-	println(msg_start)
+	push msg_start
+	call vidtxt_println
+	add esp, 4
 
 stage2_cmdloop:
 .cmdloop:
-	print(msg_prompt)
+	push msg_prompt
+	call vidtxt_print
+	add esp, 4
 
 	call command_get
 	push eax
@@ -192,13 +207,17 @@ clear_screen:
 
 say_hi:
 	fprolog 0
-	println(msg_hello)
+	push msg_hello
+	call vidtxt_println
+	add esp, 4
 	freturn
 
 show_vendor:
 	fprolog 0, eax
 	call load_vendor_id
-	println(eax)
+	push eax
+	call vidtxt_println
+	add esp, 4
 	freturn eax
 
 show_memory:

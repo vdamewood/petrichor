@@ -69,7 +69,7 @@ command_get:
 	cmp edi, buffer
 	je .loop
 
-	call vidtxt_delch
+	call vidtxt_backspace
 	call vidtxt_show_cursor
 	dec edi
 	jmp .do_esc
@@ -82,7 +82,7 @@ command_get:
 	cmp edi, buffer ; if at the beginning of the buffer
 	je .loop   ; ignore
 
-	call vidtxt_delch
+	call vidtxt_backspace
 	call vidtxt_show_cursor
 	dec edi
 	jmp .loop

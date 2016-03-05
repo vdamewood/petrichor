@@ -28,11 +28,6 @@
 
 %include "functions.inc"
 
-vidtxt_color:  db  0x07
-vidtxt_cursor: dd  0x000B8000
-vidtxt_width:  db  80
-vidtxt_height: db  25
-
 %define vmem    0x000B8000
 %define pcolor  vidtxt_color
 %define pcursor vidtxt_cursor
@@ -44,6 +39,7 @@ vidtxt_height: db  25
 ; When placing, LSB is character in CP437, MSB is Forground/Backgorund color
 
 ; Clears the screen
+global vidtxt_clear
 vidtxt_clear:
 	fprolog 0, eax, ecx, edi
 .fbody:
@@ -62,6 +58,7 @@ vidtxt_clear:
 .freturn:
 	freturn eax, ecx, edi
 
+global vidtxt_set_cursor
 vidtxt_set_cursor:
 	fprolog 0, eax
 .fbody:
@@ -72,6 +69,7 @@ vidtxt_set_cursor:
 .freturn:
 	freturn eax
 
+global vidtxt_show_cursor
 vidtxt_show_cursor:
 	fprolog 0, eax, edx, ebx
 .fbody:
@@ -101,7 +99,7 @@ vidtxt_show_cursor:
 .freturn:
 	freturn eax, edx, ebx
 
-
+global vidtxt_shift
 vidtxt_shift:
 	fprolog 0, eax, ecx, esi, edi
 .fbody:
@@ -138,7 +136,8 @@ vidtxt_shift:
 .freturn:
 	freturn eax, ecx, esi, edi
 
-; Shift the flow of text to the next line.
+
+global vidtxt_breakline
 vidtxt_breakline:
 .fpreamb:
 	fprolog 0, eax, edx, ebx
@@ -189,6 +188,7 @@ vidtxt_breakline:
 	freturn eax, edx, ebx
 
 ; Print a string
+global vidtxt_print
 vidtxt_print:
 %define string [ebp+8]
 .fpreamb:
@@ -214,6 +214,7 @@ vidtxt_print:
 	freturn esi, edi, eax
 %undef string
 
+global vidtxt_println
 vidtxt_println:
 %define string dword[ebp+8]
 	fprolog 0
@@ -229,6 +230,7 @@ vidtxt_println:
 	freturn
 %undef string
 
+global vidtxt_putch
 vidtxt_putch:
 	fprolog 0, eax, edi
 .fbody:
@@ -262,6 +264,7 @@ vidtxt_putch:
 .freturn:
 	freturn eax, edi
 
+global vidtxt_space
 vidtxt_space:
 	fprolog 0, eax, edi
 .fbody:
@@ -274,7 +277,7 @@ vidtxt_space:
 .freturn:
 	freturn eax, edi
 
-vidtxt_delch:
+global vidtxt_backspace
 vidtxt_backspace:
 .fpreamb:
 	fprolog 0, eax, edi
@@ -290,6 +293,7 @@ vidtxt_backspace:
 .freturn:
 	freturn eax, edi
 
+global vidtxt_print_hex
 vidtxt_print_hex:
 	fprolog 0, eax, ecx, edx
 .fbody:
@@ -320,6 +324,7 @@ vidtxt_print_hex:
 .freturn:
 	freturn eax, ecx, edx
 
+global vidtxt_hprint_byte
 vidtxt_hprint_byte:
 	fprolog 0
 %define arg dword[ebp+8]
@@ -329,6 +334,7 @@ vidtxt_hprint_byte:
 %undef arg
 	freturn
 
+global vidtxt_hprint_word
 vidtxt_hprint_word:
 	fprolog 0
 %define arg dword[ebp+8]
@@ -338,6 +344,7 @@ vidtxt_hprint_word:
 %undef arg
 	freturn
 
+global vidtxt_hprint_dword
 vidtxt_hprint_dword:
 	fprolog 0
 %define arg dword[ebp+8]
@@ -347,6 +354,7 @@ vidtxt_hprint_dword:
 %undef arg
 	freturn
 
+global vidtxt_hprint_qword
 vidtxt_hprint_qword:
 	fprolog 0
 %define argl dword[ebp+8]
@@ -359,25 +367,10 @@ vidtxt_hprint_qword:
 	call vidtxt_print_hex
 	freturn
 
+section .data:
 
+vidtxt_color:  db  0x07
+vidtxt_cursor: dd  0x000B8000
+vidtxt_width:  db  80
+vidtxt_height: db  25
 
-%undef vmem
-%undef pcolor
-%undef pcursor
-%undef color
-%undef cursor
-%undef width
-%undef height
-%undef fullscr
-
-%macro print 1
-	push %1
-	call vidtxt_print
-	add esp, 4
-%endmacro
-
-%macro println 1
-	push %1
-	call vidtxt_println
-	add esp, 4
-%endmacro
