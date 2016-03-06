@@ -5,7 +5,7 @@ clean:
 
 distclean: clean
 
-OBJECTS=stage2.o idt.o vidtxt.o keyboard.o keyscan.o command.o strings.o
+OBJECTS=stage2.o gdt.o idt.o vidtxt.o keyboard.o keyscan.o command.o strings.o
 
 %.o: %.asm functions.inc
 	nasm $< -f elf -o $@

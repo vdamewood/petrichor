@@ -26,15 +26,20 @@
 ; (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 ; OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-GDT_Pointer:
-limit: dw 23
-base:  dd GDT
 
-GDT:
-GDT_null:
+section .data
+
+global GdtPointer
+GdtPointer:
+limit: dw 23
+base:  dd GdtTable
+
+global GdtTable
+GdtTable:
+null:
 	times 8 db 0
 
-GDT_sys_code:
+sys_code:
 .limit_low:   dw 0xFFFF ; lower 16 bits of limit
 .base_low:    dw 0x0000 ; Low 16 bits of the base
 .base_middle: db 0x00   ; Next 8 bytes of the base.
@@ -42,7 +47,7 @@ GDT_sys_code:
 .granularity  db 0xCF   ; Example code set all to 0xCF
 .base_high    db 0x00   ; highest 0 bits of base
 
-GDT_sys_data:
+sys_data:
 .limit_low:   dw 0xFFFF ; lower 16 bits of limit
 .base_low:    dw 0x0000 ; Low 16 bits of the base
 .base_middle: db 0x00   ; Next 8 bytes of the base.
@@ -50,7 +55,7 @@ GDT_sys_data:
 .granularity  db 0xCF   ; Example code set all to 0xCF
 .base_high    db 0x00   ; highest 0 bits of base
 
-GDT_usr_code:
+usr_code:
 .limit_low:   dw 0xFFFF ; lower 16 bits of limit
 .base_low:    dw 0x0000 ; Low 16 bits of the base
 .base_middle: db 0x00   ; Next 8 bytes of the base.
@@ -58,11 +63,10 @@ GDT_usr_code:
 .granularity  db 0xCF   ; Example code set all to 0xCF
 .base_high    db 0x00   ; highest 0 bits of base
 
-GDT_usr_data:
+usr_data:
 .limit_low:   dw 0xFFFF ; lower 16 bits of limit
 .base_low:    dw 0x0000 ; Low 16 bits of the base
 .base_middle: db 0x00   ; Next 8 bytes of the base.
 .access       db 0xF2   ; Access flags, ring, etc
 .granularity  db 0xCF   ; Example code set all to 0xCF
 .base_high    db 0x00   ; highest 0 bits of base
-GDT_end:

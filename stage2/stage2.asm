@@ -64,9 +64,10 @@ extern IntrTest
 extern IntrSetupInterrupts
 extern command_get
 
-SECTION .data
+extern GdtPointer
+extern GdtTable
 
-%include "gdt.asm"
+SECTION .data
 
 dummy_table:
 	dd 0
@@ -150,10 +151,19 @@ Stage2:
 	int 0x15
 
 	; Move to protected mode
-	cli
-	mov ax, CodeSegment
+
+	; Move an appropriate segment to ds
+	mov eax, GdtPointer
+	shr eax, 4
 	mov ds, ax
-	mov eax, CodeOffset(GDT_Pointer)
+
+	; Move an offset to eax. The offset
+	; should probably always be 0, but
+	; just in case, we calculate.
+	mov eax, GdtPointer
+	and eax, 0x0F
+
+	cli
 	lgdt [eax]
 	mov eax, cr0
 	or al, 1
