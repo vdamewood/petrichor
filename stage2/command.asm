@@ -28,12 +28,22 @@
 
 %include "functions.inc"
 
-command_buffer_size  equ 32
-command_buffer       times command_buffer_size db 0
+extern vidtxt_show_cursor
+extern vidtxt_putch
+extern keyboard_get_stroke
+extern vidtxt_breakline
+extern vidtxt_backspace
 
+%define command_buffer_size 32
 %define buffer command_buffer
 %define end    (command_buffer+command_buffer_size-1)
 
+section .bss
+command_buffer: resb command_buffer_size
+
+section .text
+
+global command_get
 command_get:
 	fprolog 0, edi
 .start:

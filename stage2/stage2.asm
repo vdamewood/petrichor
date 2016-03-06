@@ -26,7 +26,6 @@
 ; (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 ; OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-
 ; 00000 to 0FFFF:
 ;   0x0000 to 0x04FF: Reserved for System
 ;   0x0500 to 0x16FF: File-Allocation Table
@@ -60,8 +59,54 @@ extern vidtxt_backspace
 extern vidtxt_hprint_word
 extern vidtxt_hprint_dword
 extern vidtxt_hprint_qword
+extern IntrSetupInterrupts
+extern IntrTest
+extern IntrSetupInterrupts
+extern command_get
 
-SECTION .text
+SECTION .data
+
+%include "gdt.asm"
+
+dummy_table:
+	dd 0
+	dd stub
+command_table:
+	dd str_clear
+	dd clear_screen
+	dd str_hi
+	dd say_hi
+	dd str_vendor
+	dd show_vendor
+	dd str_memory
+	dd show_memory
+	dd cmd_int
+	dd IntrTest
+	dd cmd_break
+	dd Breakpoint
+	dd 0
+	dd stub
+
+msg_start:      db 'Second stage loaded.', 0
+msg_prompt:     db '?> ', 0
+msg_hello:      db 'Hello.', 0
+msg_fail:		db 'Command failed.', 0
+msg_vendor:
+sub_vendor_1:   times 4 db 0
+sub_vendor_2:   times 4 db 0
+sub_vendor_3:   times 4 db 0
+term_vendor:    db 0
+
+str_hi:         db 'hi', 0
+str_vendor:     db 'vendor', 0
+str_memory:     db 'memory', 0
+cmd_int:        db 'int', 0
+str_clear:      db 'clear', 0
+cmd_break:      db 'break', 0
+
+str_memory_table: db 'Base             Size             Status   Ext     ', 0
+
+section .text
 [BITS 16]
 %define CodeOrg       0x11000
 %define CodeSegment   (CodeOrg>>4)
@@ -117,11 +162,8 @@ Stage2:
 
 [BITS 32]
 
-%include "functions.inc"
-%include "idt.asm"
-%include "keyboard.asm"
-%include "command.asm"
-%include "strings.asm"
+extern string_match
+extern command_get
 
 pmode:
 	mov eax, 0x10
@@ -167,26 +209,6 @@ stage2_cmdloop:
 .default:
 	add esp, 4
 	jmp .cmdloop
-
-dummy_table:
-	dd 0
-	dd stub
-command_table:
-	dd str_clear
-	dd clear_screen
-	dd str_hi
-	dd say_hi
-	dd str_vendor
-	dd show_vendor
-	dd str_memory
-	dd show_memory
-	dd cmd_int
-	dd IntrTest
-	dd cmd_break
-	dd Breakpoint
-	dd 0
-	dd stub
-
 
 ; === FUNCTIONS ===
 
@@ -292,27 +314,3 @@ load_vendor_id:
 .set_rval:
 	mov eax, msg_vendor
 	freturn ecx, edx, ebx
-
-; === Non-executable Data ===
-SECTION .data
-
-%include "gdt.asm"
-
-msg_start:      db 'Second stage loaded.', 0
-msg_prompt:     db '?> ', 0
-msg_hello:      db 'Hello.', 0
-msg_fail:		db 'Command failed.', 0
-msg_vendor:
-sub_vendor_1:   times 4 db 0
-sub_vendor_2:   times 4 db 0
-sub_vendor_3:   times 4 db 0
-term_vendor:    db 0
-
-str_hi:         db 'hi', 0
-str_vendor:     db 'vendor', 0
-str_memory:     db 'memory', 0
-cmd_int:        db 'int', 0
-str_clear:      db 'clear', 0
-cmd_break:      db 'break', 0
-
-str_memory_table: db 'Base             Size             Status   Ext     ', 0

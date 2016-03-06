@@ -38,6 +38,15 @@
 
 ; When placing, LSB is character in CP437, MSB is Forground/Backgorund color
 
+section .data
+
+vidtxt_color:  db  0x07
+vidtxt_cursor: dd  0x000B8000
+vidtxt_width:  db  80
+vidtxt_height: db  25
+
+section .text
+
 ; Clears the screen
 global vidtxt_clear
 vidtxt_clear:
@@ -366,11 +375,3 @@ vidtxt_hprint_qword:
 	push 4
 	call vidtxt_print_hex
 	freturn
-
-section .data:
-
-vidtxt_color:  db  0x07
-vidtxt_cursor: dd  0x000B8000
-vidtxt_width:  db  80
-vidtxt_height: db  25
-

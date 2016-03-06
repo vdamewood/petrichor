@@ -30,6 +30,45 @@
 %define IdtSize  (IdtCount<<3)
 %define IdtLimit (IdtSize-1)
 
+%include "functions.inc"
+
+extern keyboard_irq
+extern vidtxt_hprint_dword
+extern vidtxt_space
+extern vidtxt_breakline
+
+%define HexTable '0123456789ABCDEF'
+
+section .data
+
+IntrTableReference:
+	.Limit: dw IdtLimit
+	.Base:  dd IntrTable
+
+; This makes a table of references to the ISRs so
+; that it can be looped through to create the real IDT.
+IntrSimpleTable:
+%assign i 0
+%rep IdtCount
+	%substr IsrDigit1 HexTable ((i / 16 + 1))
+	%substr IsrDigit2 HexTable ((i % 16 + 1))
+	%strcat IsrHexString '0x' IsrDigit1 IsrDigit2
+	%deftok IsrHexToken IsrHexString
+	dd IntrIsr%[IsrHexToken]
+	%assign i i+1
+%endrep
+
+%undef IsrHexToken
+%undef IsrHexString
+%undef IsrDigit2
+%undef IsrDigit1
+%undef IntrHexTable
+
+section .bss
+IntrTable: resb IdtSize
+
+section .text
+
 IntrIsrCommon:
 %define Interrupt dword[ebp+4]
 %define Code     dword[ebp+8]
@@ -75,13 +114,12 @@ IntrIsrCommon:
 %undef Interrupt
 %undef Code
 
-%define IntrHexTable '0123456789ABCDEF'
 
 ; The following code creates ISRs for each interrupt.
 %assign i 0
 %rep IdtCount
-	%substr IsrDigit1 IntrHexTable ((i / 16 + 1))
-	%substr IsrDigit2 IntrHexTable ((i % 16 + 1))
+	%substr IsrDigit1 HexTable ((i / 16 + 1))
+	%substr IsrDigit2 HexTable ((i % 16 + 1))
 	%strcat IsrHexString '0x' IsrDigit1 IsrDigit2
 	%deftok IsrHexToken IsrHexString
 IntrIsr%[IsrHexToken]:
@@ -95,33 +133,8 @@ IntrIsr%[IsrHexToken]:
 	%assign i i+1
 %endrep
 
-; This makes a table of ISRs so that it can be looped
-; through to create the real IDT.
-IntrSimpleTable:
-%assign i 0
-%rep IdtCount
-	%substr IsrDigit1 IntrHexTable ((i / 16 + 1))
-	%substr IsrDigit2 IntrHexTable ((i % 16 + 1))
-	%strcat IsrHexString '0x' IsrDigit1 IsrDigit2
-	%deftok IsrHexToken IsrHexString
-	dd IntrIsr%[IsrHexToken]
-	%assign i i+1
-%endrep
 
-%undef IsrHexToken
-%undef IsrHexString
-%undef IsrDigit2
-%undef IsrDigit1
-%undef IntrHexTable
-
-; Space allocated for the IDT
-IntrTable:
-	times IdtSize db 0x00
-
-IntrTableReference:
-	.Limit: dw IdtLimit
-	.Base:  dd IntrTable
-
+global IntrSetupInterrupts
 IntrSetupInterrupts:
 	fprolog 0, eax, edx, ebx
 	mov eax, 0
@@ -231,6 +244,7 @@ IntrAddInterrupt:
 %undef DstAddrLo
 	freturn eax, ebx
 
+global IntrTest
 IntrTest:
 	fprolog 0
 	int 0x03

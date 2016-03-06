@@ -28,6 +28,8 @@
 
 %include "functions.inc"
 
+section .text
+
 ; Match a filename
 match_file:
 %define source      [ebp+4]

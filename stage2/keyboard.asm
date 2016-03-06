@@ -28,60 +28,17 @@
 
 %include "functions.inc"
 
+extern keyscan_table
+extern keyscan_shift_table
+
 %define ibuf_full 0x01 ; Output to the keyboard
 %define obuf_full 0x02 ; Input from the keyboard
 %define get_status 0x20
 %define set_status 0x60
 
-;keyboard_enable:
-;	fprolog 0
+section .data
 
-;.fbody:
-;.wait_buff1:
-;	in al, 0x64
-;	and al, obuf_full
-;	jnz .wait_buff1
-
-;.get_status:
-;	mov al, get_status
-;	out 0x64, al
-;	in al, 0x60
-
-;.cache_disabled:
-;	mov ah, 0xFE
-;	and ah, al
-
-;.wait_buff2:
-;	in al, 0x64
-;	and al, obuf_full
-;	jnz .wait_buff2
-
-;.set_status:
-;	mov al, set_status
-;	out 0x64, al
-;	mov al, ah
-;	out 0x60, al
-;	in al, 0x60 ; Get (and ignore) response to command
-
-;.wait_buff3:
-;	in al, 0x64
-;	and al, obuf_full
-;	jnz .wait_buff3
-
-;.check_status:
-;	mov al, get_status
-;	out 0x64, al
-;	in al, 0x60
-;	and al, 1
-;	jz .zero
-;	xor ax, ax
-;	jmp .done
-;.zero:
-;	mov ax, 0xFFFF
-;.done:
-;	freturn
-
-;keyboard_meta_state: db 0
+keyboard_meta_state: db 0
 	; 0: Left Shift
 	; 1: Righ Shift
 	; 2: Left Ctrl
@@ -89,6 +46,11 @@
 	; 4: Left Alt
 	; 5: Right Alt
 
+;%include "keyscan.asm"
+
+section .text
+
+global keyboard_irq
 keyboard_irq:
 	fprolog 0, eax, ebx
 .start:
@@ -101,12 +63,12 @@ keyboard_irq:
 	mov ax, word[ebx]
 	mov word[keyboard_buffer], ax
 	push eax
-	;call vidtxt_hprint_dword
 .done:
 	freturn eax, ebx
 
 keyboard_buffer: dw 0
 
+global keyboard_get_stroke
 keyboard_get_stroke:
 	fprolog 0, ebx
 .try_again:
@@ -119,21 +81,3 @@ keyboard_get_stroke:
 	xor ebx, ebx
 	mov word[keyboard_buffer], bx
 	freturn ebx
-;
-;.fetch:
-;	in al, 0x60
-;	cmp ax, 0x80 ; If the code scanned is a 'release' code
-;	jge .start   ; ignore it
-;
-;	lea ebx, [eax*2+keyscan_table]
-;	mov ax, word[ebx]
-;	freturn ebx
-
-;str_scancode: db "Scan:", 0
-;str_keycode:  db "KeyC:", 0
-
-%include "keyscan.asm"
-
-%undef obuf
-%undef ibuf
-

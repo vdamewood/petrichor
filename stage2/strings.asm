@@ -28,7 +28,10 @@
 
 %include "functions.inc"
 
+section .text
+
 ; Compare Zero-Terminated Strings
+global string_match
 string_match:
 	fprolog 0, esi, edi
 .start:

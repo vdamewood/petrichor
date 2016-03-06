@@ -26,6 +26,9 @@
 ; (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 ; OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+section .data
+
+global keyscan_table
 keyscan_table:
 ; 0x00
 	dw 0xFFFF ; Not assigned
@@ -130,6 +133,7 @@ keyscan_table:
 	dw 0xFFFF
 	dw 0xFFFF
 
+global keyscan_shift_table
 keyscan_shift_table:
 ; 0xFFFF
 	dw 0xFFFF ; Not assigned
