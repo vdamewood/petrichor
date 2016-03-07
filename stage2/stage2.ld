@@ -1,9 +1,9 @@
-ENTRY(Stage2)
+ENTRY(Real16)
 
 SECTIONS
 {
-    . = 0x11000;
+    .text.real16 (0x10080) : { real16.o(.text) }
     .text : { *(.text) }
     .data : { *(.data) }
-    .bss : { *(.bss) }
+    .bss  : { *(.bss)  }
 }

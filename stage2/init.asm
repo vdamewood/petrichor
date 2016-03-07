@@ -107,75 +107,11 @@ cmd_break:      db 'break', 0
 
 str_memory_table: db 'Base             Size             Status   Ext     ', 0
 
-section .text
-[BITS 16]
-%define CodeOrg       0x11000
-%define CodeSegment   (CodeOrg>>4)
-%define CodeOffset(x) (x-CodeOrg)
-global Stage2
-Stage2:
-	; Copy Memory Information
-	xor eax, eax
-	mov dx, ax
-	mov es, ax
-	mov [0x3300], eax
-	mov [0x3304], eax
-
-	mov di, 0x3308
-	xor ebx, ebx
-	mov edx, 0x534D4150
-.next_mem:
-	mov eax, 0xE820
-	mov ecx, 24
-	int 0x15
-	jc .mem_invalid
-	mov eax, [0x3300]
-	inc eax
-	mov [0x3300], eax
-
-	or ebx, ebx
-	jz .mem_done
-	add di, 24
-	jmp .next_mem
-.mem_invalid:
-	xor eax, eax
-	sub eax, 1
-	mov ecx, 24
-	rep stosb
-.mem_done:
-	; Enable A20
-	; FIXME: This only works on a few systems.
-	; Might want to check if other systems need a
-	; different method.
-	mov ax, 0x2401
-	int 0x15
-
-	; Move to protected mode
-
-	; Move an appropriate segment to ds
-	mov eax, GdtPointer
-	shr eax, 4
-	mov ds, ax
-
-	; Move an offset to eax. The offset
-	; should probably always be 0, but
-	; just in case, we calculate.
-	mov eax, GdtPointer
-	and eax, 0x0F
-
-	cli
-	lgdt [eax]
-	mov eax, cr0
-	or al, 1
-	mov cr0, eax
-	jmp dword 0x08:pmode
-
-[BITS 32]
-
 extern string_match
 extern command_get
 
-pmode:
+global Init
+Init:
 	mov eax, 0x10
 	mov ds, ax
 	mov es, ax

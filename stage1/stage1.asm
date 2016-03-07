@@ -201,7 +201,7 @@ load_file:
 	jl .loadnext       ; load the next cluster.
 
 jump_to_stage_2:
-	jmp stg2_segment:0x1000 ; Else, We're done loading, jmp to the next stage.
+	jmp stg2_segment:0x80 ; Else, We're done loading, jmp to the next stage.
 
 %undef fat_sector
 %undef data_sector
