@@ -26,10 +26,10 @@
 ; (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 ; OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-%include "functions.inc"
+extern KeyscanTable
+extern KeyscanShiftTable
 
-extern keyscan_table
-extern keyscan_shift_table
+%include "functions.inc"
 
 %define ibuf_full 0x01 ; Output to the keyboard
 %define obuf_full 0x02 ; Input from the keyboard
@@ -38,7 +38,8 @@ extern keyscan_shift_table
 
 section .data
 
-keyboard_meta_state: db 0
+KeyboardBuffer: dw 0
+KeyboardMetaState: db 0
 	; 0: Left Shift
 	; 1: Righ Shift
 	; 2: Left Ctrl
@@ -46,12 +47,10 @@ keyboard_meta_state: db 0
 	; 4: Left Alt
 	; 5: Right Alt
 
-;%include "keyscan.asm"
-
 section .text
 
-global keyboard_irq
-keyboard_irq:
+global KeyboardHandleInterrupt
+KeyboardHandleInterrupt:
 	fprolog 0, eax, ebx
 .start:
 	xor eax, eax
@@ -59,25 +58,23 @@ keyboard_irq:
 	cmp ax, 0x80 ; If the code scanned is a 'release' code
 	jge .done    ; ignore it
 
-	lea ebx, [eax*2+keyscan_table]
+	lea ebx, [eax*2+KeyscanTable]
 	mov ax, word[ebx]
-	mov word[keyboard_buffer], ax
+	mov word[KeyboardBuffer], ax
 	push eax
 .done:
 	freturn eax, ebx
 
-keyboard_buffer: dw 0
-
-global keyboard_get_stroke
-keyboard_get_stroke:
+global KeyboardGetStroke
+KeyboardGetStroke:
 	fprolog 0, ebx
 .try_again:
 	hlt
 	xor eax, eax
-	mov ax, word[keyboard_buffer]
+	mov ax, word[KeyboardBuffer]
 	or ax, ax
 	jz .try_again
 
 	xor ebx, ebx
-	mov word[keyboard_buffer], bx
+	mov word[KeyboardBuffer], bx
 	freturn ebx

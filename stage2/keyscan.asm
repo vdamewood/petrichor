@@ -28,8 +28,8 @@
 
 section .data
 
-global keyscan_table
-keyscan_table:
+global KeyscanTable
+KeyscanTable:
 ; 0x00
 	dw 0xFFFF ; Not assigned
 	dw 0x0100 ; Escape
@@ -133,8 +133,8 @@ keyscan_table:
 	dw 0xFFFF
 	dw 0xFFFF
 
-global keyscan_shift_table
-keyscan_shift_table:
+global KeyscanShiftTable
+KeyscanShiftTable:
 ; 0xFFFF
 	dw 0xFFFF ; Not assigned
 	dw 0xFFFF ; Escape

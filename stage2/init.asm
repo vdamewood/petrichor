@@ -26,11 +26,10 @@
 ; (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 ; OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-extern vidtxt_clear
-extern vidtxt_println
-extern IntrSetupInterrupts
-extern IntrSetupInterrupts
 extern CommandLoop
+extern IntrSetupInterrupts
+extern ScreenClear
+extern ScreenPrintLine
 
 SECTION .data
 
@@ -48,9 +47,9 @@ Init:
 	mov ebp, esp
 	call IntrSetupInterrupts
 .loop:
-	call vidtxt_clear
+	call ScreenClear
 	push Loaded
-	call vidtxt_println
+	call ScreenPrintLine
 	add esp, 4
 	call CommandLoop
 	jmp .loop

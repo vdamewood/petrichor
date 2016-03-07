@@ -1,4 +1,4 @@
-; vidtxt.asm: Video text driver
+; Screen.asm: Screen driver (text only)
 ;
 ; Copyright 2015, 2016 Vincent Damewood
 ; All rights reserved.
@@ -48,8 +48,8 @@ vidtxt_height: db  25
 section .text
 
 ; Clears the screen
-global vidtxt_clear
-vidtxt_clear:
+global ScreenClear
+ScreenClear:
 	fprolog 0, eax, ecx, edi
 .fbody:
 	mov edi, vmem
@@ -67,8 +67,7 @@ vidtxt_clear:
 .freturn:
 	freturn eax, ecx, edi
 
-global vidtxt_set_cursor
-vidtxt_set_cursor:
+SetCursor:
 	fprolog 0, eax
 .fbody:
 %define newpos [ebp+8]
@@ -78,8 +77,8 @@ vidtxt_set_cursor:
 .freturn:
 	freturn eax
 
-global vidtxt_show_cursor
-vidtxt_show_cursor:
+global ScreenShowCursor
+ScreenShowCursor:
 	fprolog 0, eax, edx, ebx
 .fbody:
 	mov ebx, cursor
@@ -108,8 +107,7 @@ vidtxt_show_cursor:
 .freturn:
 	freturn eax, edx, ebx
 
-global vidtxt_shift
-vidtxt_shift:
+Shift:
 	fprolog 0, eax, ecx, esi, edi
 .fbody:
 	; Clear register so that high bytes don't contain garbage
@@ -146,8 +144,8 @@ vidtxt_shift:
 	freturn eax, ecx, esi, edi
 
 
-global vidtxt_breakline
-vidtxt_breakline:
+global ScreenBreakLine
+ScreenBreakLine:
 .fpreamb:
 	fprolog 0, eax, edx, ebx
 .fbody:
@@ -180,7 +178,7 @@ vidtxt_breakline:
 	mov cursor, eax
 	jmp .show_cursor
 .last_line:
-	call vidtxt_shift
+	call Shift
 
 	xor eax, eax
 	mov al, height
@@ -192,13 +190,12 @@ vidtxt_breakline:
 
 	mov cursor, eax
 .show_cursor:
-	call vidtxt_show_cursor
+	call ScreenShowCursor
 .freturn:
 	freturn eax, edx, ebx
 
-; Print a string
-global vidtxt_print
-vidtxt_print:
+global ScreenPrint
+ScreenPrint:
 %define string [ebp+8]
 .fpreamb:
 	fprolog 0, esi, edi, eax
@@ -223,24 +220,24 @@ vidtxt_print:
 	freturn esi, edi, eax
 %undef string
 
-global vidtxt_println
-vidtxt_println:
+global ScreenPrintLine
+ScreenPrintLine:
 %define string dword[ebp+8]
 	fprolog 0
 .fbody:
 	push string
-	call vidtxt_print
+	call ScreenPrint
 
 	add esp, 4
 	; FIXME: Check that the cursor isn't in the
 	;   first column and skip the call if it is.
-	call vidtxt_breakline
+	call ScreenBreakLine
 .freturn:
 	freturn
 %undef string
 
-global vidtxt_putch
-vidtxt_putch:
+global ScreenPrintChar
+ScreenPrintChar:
 	fprolog 0, eax, edi
 .fbody:
 %define char byte[ebp+8] ; Only the LSB is considered
@@ -265,7 +262,7 @@ vidtxt_putch:
 	shl eax, 1
 	sub edi, eax
 
-	call vidtxt_shift
+	call Shift
 	sub edi, eax
 .save_cursor:
 	mov cursor, edi
@@ -273,8 +270,8 @@ vidtxt_putch:
 .freturn:
 	freturn eax, edi
 
-global vidtxt_space
-vidtxt_space:
+global ScreenPrintSpace
+ScreenPrintSpace:
 	fprolog 0, eax, edi
 .fbody:
 	mov ah, color
@@ -286,8 +283,8 @@ vidtxt_space:
 .freturn:
 	freturn eax, edi
 
-global vidtxt_backspace
-vidtxt_backspace:
+global ScreenDelete
+ScreenDelete:
 .fpreamb:
 	fprolog 0, eax, edi
 .fbody:
@@ -302,8 +299,7 @@ vidtxt_backspace:
 .freturn:
 	freturn eax, edi
 
-global vidtxt_print_hex
-vidtxt_print_hex:
+PrintHex:
 	fprolog 0, eax, ecx, edx
 .fbody:
 %define value [ebp+12] ; The Value to print. If fewer than 4 bytes are printed, the low-order bytes are printed
@@ -323,7 +319,7 @@ vidtxt_print_hex:
 	add al, 7
 .skip1:
 	push eax
-	call vidtxt_putch
+	call ScreenPrintChar
 	pop eax
 
 	or ecx, ecx
@@ -333,45 +329,45 @@ vidtxt_print_hex:
 .freturn:
 	freturn eax, ecx, edx
 
-global vidtxt_hprint_byte
-vidtxt_hprint_byte:
+global ScreenPrintHexByte
+ScreenPrintHexByte:
 	fprolog 0
 %define arg dword[ebp+8]
 	push arg
 	push 1
-	call vidtxt_print_hex
+	call PrintHex
 %undef arg
 	freturn
 
-global vidtxt_hprint_word
-vidtxt_hprint_word:
+global ScreenPrintHexWord
+ScreenPrintHexWord:
 	fprolog 0
 %define arg dword[ebp+8]
 	push arg
 	push 2
-	call vidtxt_print_hex
+	call PrintHex
 %undef arg
 	freturn
 
-global vidtxt_hprint_dword
-vidtxt_hprint_dword:
+global ScreenPrintHexDWord
+ScreenPrintHexDWord:
 	fprolog 0
 %define arg dword[ebp+8]
 	push arg
 	push 4
-	call vidtxt_print_hex
+	call PrintHex
 %undef arg
 	freturn
 
-global vidtxt_hprint_qword
-vidtxt_hprint_qword:
+global ScreenPrintHexQWord
+ScreenPrintHexQWord:
 	fprolog 0
 %define argl dword[ebp+8]
 %define argh dword[ebp+12]
 	push argh
 	push 4
-	call vidtxt_print_hex
+	call PrintHex
 	push argl
 	push 4
-	call vidtxt_print_hex
+	call PrintHex
 	freturn

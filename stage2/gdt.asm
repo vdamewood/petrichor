@@ -26,7 +26,6 @@
 ; (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 ; OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-
 section .data
 
 global GdtPointer
@@ -34,7 +33,6 @@ GdtPointer:
 limit: dw 23
 base:  dd GdtTable
 
-global GdtTable
 GdtTable:
 null:
 	times 8 db 0

@@ -26,21 +26,21 @@
 ; (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 ; OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-%include "functions.inc"
-
-extern keyboard_get_stroke
-extern vidtxt_show_cursor
-extern vidtxt_putch
-extern vidtxt_print
-extern vidtxt_breakline
-extern vidtxt_backspace
-extern vidtxt_clear
-extern string_match
 extern IntrTest
-extern MiscSayHi
-extern MiscShowVendor
-extern MiscShowMemory
+extern KeyboardGetStroke
 extern MiscBreakpoint
+extern MiscSayHi
+extern MiscShowMemory
+extern MiscShowVendor
+extern ScreenBreakLine
+extern ScreenClear
+extern ScreenDelete
+extern StringMatch
+extern ScreenPrint
+extern ScreenPrintChar
+extern ScreenShowCursor
+
+%include "functions.inc"
 
 %define BufferSize 32
 %define end    (Buffer+BufferSize-1)
@@ -59,7 +59,7 @@ CommandTable:
 	dd CmdHi
 	dd MiscSayHi
 	dd CmdClear
-	dd vidtxt_clear
+	dd ScreenClear
 	dd CmdVendor
 	dd MiscShowVendor
 	dd CmdMemory
@@ -82,7 +82,7 @@ CommandLoop:
 	fprolog 0, eax
 .start:
 	push Prompt
-	call vidtxt_print
+	call ScreenPrint
 	add esp, 4
 
 	call Get
@@ -95,7 +95,7 @@ CommandLoop:
 	jz .default
 
 	push eax
-	call string_match
+	call StringMatch
 	add esp, 4
 	or eax, eax
 	jnz .found_it
@@ -114,11 +114,11 @@ CommandLoop:
 Get:
 	fprolog 0, edi
 .start:
-	call vidtxt_show_cursor
+	call ScreenShowCursor
 	mov edi, Buffer
 
 .loop:
-	call keyboard_get_stroke
+	call KeyboardGetStroke
 
 .check_special:
 	cmp ah, 0x00
@@ -129,9 +129,9 @@ Get:
 	je .loop ; ignore keypress
 
 	push eax
-	call vidtxt_putch
+	call ScreenPrintChar
 	pop eax ; smaller than add esp, 4
-	call vidtxt_show_cursor
+	call ScreenShowCursor
 	stosb
 	jmp .loop
 
@@ -146,8 +146,8 @@ Get:
 	cmp edi, Buffer
 	je .loop
 
-	call vidtxt_backspace
-	call vidtxt_show_cursor
+	call ScreenDelete
+	call ScreenShowCursor
 	dec edi
 	jmp .do_esc
 .not_esc:
@@ -159,8 +159,8 @@ Get:
 	cmp edi, Buffer ; if at the beginning of the buffer
 	je .loop   ; ignore
 
-	call vidtxt_backspace
-	call vidtxt_show_cursor
+	call ScreenDelete
+	call ScreenShowCursor
 	dec edi
 	jmp .loop
 .not_bksp:
@@ -171,7 +171,7 @@ Get:
 .do_enter:
 	mov al, 0
 	stosb
-	call vidtxt_breakline
+	call ScreenBreakLine
 	jmp .done
 .not_enter:
 

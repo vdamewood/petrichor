@@ -1,4 +1,4 @@
-; idt.asm: Inturupt Descriptor Table
+; intr.asm: Interrupt handler
 ;
 ; Copyright 2016 Vincent Damewood
 ; All rights reserved.
@@ -26,17 +26,16 @@
 ; (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 ; OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-%define IdtCount 48
-%define IdtSize  (IdtCount<<3)
-%define IdtLimit (IdtSize-1)
+extern KeyboardHandleInterrupt
+extern ScreenBreakLine
+extern ScreenPrintHexDWord
+extern ScreenPrintSpace
 
 %include "functions.inc"
 
-extern keyboard_irq
-extern vidtxt_hprint_dword
-extern vidtxt_space
-extern vidtxt_breakline
-
+%define IdtCount 48
+%define IdtSize  (IdtCount<<3)
+%define IdtLimit (IdtSize-1)
 %define HexTable '0123456789ABCDEF'
 
 section .data
@@ -81,16 +80,16 @@ IntrIsrCommon:
 	je .cleanup
 	cmp eax, 0x21
 	jne .default
-	call keyboard_irq
+	call KeyboardHandleInterrupt
 	jmp .cleanup
 
 .default:
 	push Interrupt
-	call vidtxt_hprint_dword
-	call vidtxt_space
+	call ScreenPrintHexDWord
+	call ScreenPrintSpace
 	push Code
-	call vidtxt_hprint_dword
-	call vidtxt_breakline
+	call ScreenPrintHexDWord
+	call ScreenBreakLine
 	add esp, 8
 
 .cleanup:

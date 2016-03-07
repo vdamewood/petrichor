@@ -26,36 +26,27 @@
 ; (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 ; OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-extern vidtxt_clear
-extern vidtxt_show_cursor
-extern vidtxt_breakline
-extern vidtxt_print
-extern vidtxt_println
-extern vidtxt_putch
-extern vidtxt_space
-extern vidtxt_backspace
-extern vidtxt_hprint_word
-extern vidtxt_hprint_dword
-extern vidtxt_hprint_qword
-extern IntrSetupInterrupts
-extern IntrTest
-extern IntrSetupInterrupts
-extern CommandLoop
+extern ScreenBreakLine
+extern ScreenPrintHexWord
+extern ScreenPrintHexDWord
+extern ScreenPrintHexQWord
+extern ScreenPrintLine
+extern ScreenPrintSpace
+
+%include "functions.inc"
 
 SECTION .data
 
 Hello:    db 'Hello.', 0
 Vendor:
-VendorW1:    dw 0
-VendorW2:    dw 0
-VendorW3:    dw 0
+VendorW1:    dd 0
+VendorW2:    dd 0
+VendorW3:    dd 0
 term_vendor: db 0
 
 str_memory_table: db 'Base             Size             Status   Ext     ', 0
 
 SECTION .text
-
-%include "functions.inc"
 
 global MiscBreakpoint
 MiscBreakpoint:
@@ -63,17 +54,11 @@ MiscBreakpoint:
 	xchg bx, bx
 	freturn
 
-global MiscClearScreen
-MiscClearScreen:
-	fprolog 0
-	call vidtxt_clear
-	freturn
-
 global MiscSayHi
 MiscSayHi:
 	fprolog 0
 	push Hello
-	call vidtxt_println
+	call ScreenPrintLine
 	add esp, 4
 	freturn
 
@@ -82,7 +67,7 @@ MiscShowVendor:
 	fprolog 0, eax
 	call LoadVendor
 	push eax
-	call vidtxt_println
+	call ScreenPrintLine
 	add esp, 4
 	freturn eax
 
@@ -110,48 +95,42 @@ MiscShowMemory:
 
 	mov ecx, [count]
 	push ecx
-	call vidtxt_hprint_word
+	call ScreenPrintHexWord
 	add esp, 4
 
-	call vidtxt_breakline
+	call ScreenBreakLine
 
 	push str_memory_table
-	call vidtxt_println
+	call ScreenPrintLine
 	add esp, 4
 
 	mov ebx, first
 .loop:
 	push dword[ebx+4]
 	push dword[ebx]
-	call vidtxt_hprint_qword
+	call ScreenPrintHexQWord
 	add esp, 8
 
-	push dword ' '
-	call vidtxt_putch
-	add esp, 4
+	call ScreenPrintSpace
 
 	push dword[ebx+12]
 	push dword[ebx+8]
-	call vidtxt_hprint_qword
+	call ScreenPrintHexQWord
 	add esp, 8
 
-	push dword ' '
-	call vidtxt_putch
-	add esp, 4
+	call ScreenPrintSpace
 
 	push dword[ebx+16]
-	call vidtxt_hprint_dword
+	call ScreenPrintHexDWord
 	add esp, 4
 
-	push dword ' '
-	call vidtxt_putch
-	add esp, 4
+	call ScreenPrintSpace
 
 	push dword[ebx+20]
-	call vidtxt_hprint_dword
+	call ScreenPrintHexDWord
 	add esp, 4
 
-	call vidtxt_breakline
+	call ScreenBreakLine
 	add ebx, 24
 	loop .loop
 
