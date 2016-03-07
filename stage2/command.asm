@@ -28,27 +28,94 @@
 
 %include "functions.inc"
 
+extern keyboard_get_stroke
 extern vidtxt_show_cursor
 extern vidtxt_putch
-extern keyboard_get_stroke
+extern vidtxt_print
 extern vidtxt_breakline
 extern vidtxt_backspace
+extern vidtxt_clear
+extern string_match
+extern IntrTest
+extern MiscSayHi
+extern MiscShowVendor
+extern MiscShowMemory
+extern MiscBreakpoint
 
-%define command_buffer_size 32
-%define buffer command_buffer
-%define end    (command_buffer+command_buffer_size-1)
+%define BufferSize 32
+%define end    (Buffer+BufferSize-1)
+
+section .data
+
+Prompt       db '?> ', 0
+CmdHi:       db 'hi', 0       ; Display the word 'Hello' to the screen
+CmdClear:    db 'clear', 0    ; Clear the screen
+CmdVendor:   db 'vendor', 0   ; Show vendor from CPUID
+CmdMemory:   db 'memory', 0   ; Show memory map generated in real16.asm
+CmdInt:      db 'int', 0      ; Test interrupt handler
+CmdBreak:    db 'break', 0    ; Trigger a breakpoint in Bochs
+
+CommandTable:
+	dd CmdHi
+	dd MiscSayHi
+	dd CmdClear
+	dd vidtxt_clear
+	dd CmdVendor
+	dd MiscShowVendor
+	dd CmdMemory
+	dd MiscShowMemory
+	dd CmdInt
+	dd IntrTest
+	dd CmdBreak
+	dd MiscBreakpoint
+	dd 0
+	dd CommandStub
 
 section .bss
-command_buffer: resb command_buffer_size
+
+Buffer: resb BufferSize
 
 section .text
 
-global command_get
-command_get:
+global CommandLoop
+CommandLoop:
+	fprolog 0, eax
+.start:
+	push Prompt
+	call vidtxt_print
+	add esp, 4
+
+	call Get
+	push eax
+
+	mov ebx, CommandTable
+.check_next:
+	mov eax, [ebx]
+	or eax, eax
+	jz .default
+
+	push eax
+	call string_match
+	add esp, 4
+	or eax, eax
+	jnz .found_it
+	add ebx, 8
+	jmp .check_next
+.found_it:
+	add ebx, 4
+	mov eax, [ebx]
+	call eax
+.default:
+	add esp, 4
+	jmp .start
+.done:
+	freturn eax
+
+Get:
 	fprolog 0, edi
 .start:
 	call vidtxt_show_cursor
-	mov edi, command_buffer
+	mov edi, Buffer
 
 .loop:
 	call keyboard_get_stroke
@@ -76,7 +143,7 @@ command_get:
 	cmp al, 0x00 ; Escape
 	jne .not_esc
 .do_esc:
-	cmp edi, buffer
+	cmp edi, Buffer
 	je .loop
 
 	call vidtxt_backspace
@@ -89,7 +156,7 @@ command_get:
 	cmp al, 0x10 ; Backspace
 	jne .not_bksp
 .do_bksp:
-	cmp edi, buffer ; if at the beginning of the buffer
+	cmp edi, Buffer ; if at the beginning of the buffer
 	je .loop   ; ignore
 
 	call vidtxt_backspace
@@ -112,5 +179,10 @@ command_get:
 	jmp .loop ; Ignore all other keystrokes
 
 .done:
-	mov eax, buffer
+	mov eax, Buffer
 	freturn edi
+
+
+CommandStub:
+	ret
+

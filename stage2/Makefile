@@ -5,7 +5,7 @@ clean:
 
 distclean: clean
 
-OBJECTS=real16.o init.o gdt.o idt.o vidtxt.o keyboard.o keyscan.o command.o strings.o
+OBJECTS=real16.o init.o misc.o gdt.o idt.o vidtxt.o keyboard.o keyscan.o command.o strings.o
 
 %.o: %.asm functions.inc
 	nasm $< -f elf -o $@
