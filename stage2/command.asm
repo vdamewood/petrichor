@@ -28,9 +28,9 @@
 
 extern IntrTest
 extern KeyboardGetStroke
+extern memShowMap
 extern MiscBreakpoint
 extern MiscSayHi
-extern MiscShowMemory
 extern MiscShowVendor
 extern ScreenBreakLine
 extern ScreenClear
@@ -63,7 +63,7 @@ CommandTable:
 	dd CmdVendor
 	dd MiscShowVendor
 	dd CmdMemory
-	dd MiscShowMemory
+	dd memShowMap
 	dd CmdInt
 	dd IntrTest
 	dd CmdBreak

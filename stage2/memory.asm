@@ -1,4 +1,4 @@
-; misc.asm: Unsorted routines
+; memory.asm: Memory management
 ;
 ; Copyright 2015, 2016 Vincent Damewood
 ; All rights reserved.
@@ -26,61 +26,76 @@
 ; (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 ; OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+%include "functions.inc"
+
 extern ScreenBreakLine
+extern ScreenPrint
 extern ScreenPrintHexWord
 extern ScreenPrintHexDWord
 extern ScreenPrintHexQWord
 extern ScreenPrintLine
 extern ScreenPrintSpace
 
-%include "functions.inc"
-
 SECTION .data
 
-Hello:    db 'Hello.', 0
-Vendor:
-VendorW1:    dd 0
-VendorW2:    dd 0
-VendorW3:    dd 0
-term_vendor: db 0
+TableHeader: db 'Base             Size             Status', 0
+
+StatusTable: dd 0,Status1,Status2,Status3,Status4,Status5
+
+Status1: db '1:Free', 0
+Status2: db '2:Reserved', 0
+Status3: db '3:ACPI Reclaimable', 0
+Status4: db '4:ACPI Non-volatile', 0
+Status5: db '5:Bad', 0
 
 SECTION .text
 
-global MiscBreakpoint
-MiscBreakpoint:
-	fprolog 0
-	xchg bx, bx
-	freturn
+global memShowMap
+memShowMap:
+%define count 0x3300
+%define first 0x3308
+	fprolog 0, eax, ecx, ebx
 
-global MiscSayHi
-MiscSayHi:
-	fprolog 0
-	push Hello
+	mov ecx, [count]
+	push ecx
+	call ScreenPrintHexWord
+	add esp, 4
+
+	call ScreenBreakLine
+
+	push TableHeader
 	call ScreenPrintLine
 	add esp, 4
-	freturn
 
-global MiscShowVendor
-MiscShowVendor:
-	fprolog 0, eax
-	call LoadVendor
+	mov ebx, first
+.loop:
+	push dword[ebx+4]
+	push dword[ebx]
+	call ScreenPrintHexQWord
+	add esp, 8
+
+	call ScreenPrintSpace
+
+	push dword[ebx+12]
+	push dword[ebx+8]
+	call ScreenPrintHexQWord
+	add esp, 8
+
+	call ScreenPrintSpace
+
+	mov eax, dword[ebx+16]
+	shl eax, 2
+	add eax, StatusTable
+	mov eax, [eax]
+
 	push eax
-	call ScreenPrintLine
+	call ScreenPrint
 	add esp, 4
-	freturn eax
 
-LoadVendor:
-	fprolog 0, ecx, edx, ebx
-.fbody:
-	mov eax, dword[Vendor]
-	or eax, eax
-	jnz .done
+	call ScreenBreakLine
+	add ebx, 24
+	loop .loop
 
-	xor eax, eax
-	cpuid
-	mov [VendorW1], ebx
-	mov [VendorW2], edx
-	mov [VendorW3], ecx
-.done:
-	mov eax, Vendor
-	freturn ecx, edx, ebx
+	freturn eax, ecx, ebx
+%undef count
+%undef first
