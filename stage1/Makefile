@@ -6,6 +6,6 @@ clean:
 distclean: clean
 
 stage1.bin: stage1.asm
-	nasm stage1.asm -f bin -o stage1.bin
+	nasm -f bin -o stage1.bin stage1.asm
 
 .PHONY: all clean distclean
