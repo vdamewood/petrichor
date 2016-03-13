@@ -29,7 +29,6 @@
 extern IntrTest
 extern KeyboardGetStroke
 extern memShowMap
-extern MiscBreakpoint
 extern MiscSayHi
 extern MiscShowVendor
 extern ScreenBreakLine
@@ -38,6 +37,7 @@ extern ScreenDelete
 extern StringMatch
 extern ScreenPrint
 extern ScreenPrintChar
+extern ScreenPrintLine
 extern ScreenShowCursor
 
 %include "functions.inc"
@@ -53,7 +53,7 @@ CmdClear:    db 'clear', 0    ; Clear the screen
 CmdVendor:   db 'vendor', 0   ; Show vendor from CPUID
 CmdMemory:   db 'memory', 0   ; Show memory map generated in real16.asm
 CmdInt:      db 'int', 0      ; Test interrupt handler
-CmdBreak:    db 'break', 0    ; Trigger a breakpoint in Bochs
+CmdHelp:     db 'help', 0     ; Display Help Information
 
 CommandTable:
 	dd CmdHi
@@ -66,10 +66,28 @@ CommandTable:
 	dd memShowMap
 	dd CmdInt
 	dd IntrTest
-	dd CmdBreak
-	dd MiscBreakpoint
+	dd CmdHelp
+	dd CommandShowHelp
 	dd 0
 	dd CommandStub
+
+HelpLine00: db "Command   Description", 0
+HelpLine01: db "hi        Display a greeting", 0
+HelpLine02: db "clear     Clear the screen", 0
+HelpLine03: db "vendor    Display the vendor string from your CPU", 0
+HelpLine04: db "memory    Show a map of memory", 0
+HelpLine05: db "int       Test interrupts", 0
+HelpLine06: db "help      Show this help", 0
+
+HelpTable:
+	dd HelpLine00
+	dd HelpLine01
+	dd HelpLine02
+	dd HelpLine03
+	dd HelpLine04
+	dd HelpLine05
+	dd HelpLine06
+	dd 0
 
 section .bss
 
@@ -182,6 +200,20 @@ Get:
 	mov eax, Buffer
 	freturn edi
 
+CommandShowHelp:
+	fprolog 0
+	mov esi, HelpTable
+.loop:
+	mov eax, [esi]
+	or eax, eax
+	jz .done
+	push eax
+	call ScreenPrintLine
+	add esp, 4
+	add esi, 4
+	jmp .loop
+.done:
+	freturn
 
 CommandStub:
 	ret

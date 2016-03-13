@@ -46,12 +46,6 @@ term_vendor: db 0
 
 SECTION .text
 
-global MiscBreakpoint
-MiscBreakpoint:
-	fprolog 0
-	xchg bx, bx
-	freturn
-
 global MiscSayHi
 MiscSayHi:
 	fprolog 0
