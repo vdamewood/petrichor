@@ -6,7 +6,7 @@ clean:
 distclean: clean
 
 OBJECTS=real16.o init.o \
-	command.o gdt.o intr.o keyboard.o \
+	acpi.o command.o gdt.o intr.o keyboard.o \
 	keyscan.o memory.o misc.o screen.o \
 	strings.o util.o
 
