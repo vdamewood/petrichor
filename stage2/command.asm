@@ -37,6 +37,7 @@ extern ScreenDelete
 extern StringMatch
 extern ScreenPrint
 extern ScreenPrintChar
+extern ScreenPrintHexDWord
 extern ScreenPrintLine
 extern ScreenShowCursor
 
@@ -52,7 +53,7 @@ CmdHi:       db 'hi', 0       ; Display the word 'Hello' to the screen
 CmdClear:    db 'clear', 0    ; Clear the screen
 CmdVendor:   db 'vendor', 0   ; Show vendor from CPUID
 CmdMemory:   db 'memory', 0   ; Show memory map generated in real16.asm
-CmdInt:      db 'int', 0      ; Test interrupt handler
+CmdTest:     db 'test', 0     ; Test the latest function
 CmdHelp:     db 'help', 0     ; Display Help Information
 
 CommandTable:
@@ -64,8 +65,8 @@ CommandTable:
 	dd MiscShowVendor
 	dd CmdMemory
 	dd memShowMap
-	dd CmdInt
-	dd IntrTest
+	dd CmdTest
+	dd RunTest
 	dd CmdHelp
 	dd CommandShowHelp
 	dd 0
@@ -76,7 +77,7 @@ HelpLine01: db "hi        Display a greeting", 0
 HelpLine02: db "clear     Clear the screen", 0
 HelpLine03: db "vendor    Display the vendor string from your CPU", 0
 HelpLine04: db "memory    Show a map of memory", 0
-HelpLine05: db "int       Test interrupts", 0
+HelpLine05: db "test      Test the current project", 0
 HelpLine06: db "help      Show this help", 0
 
 HelpTable:
@@ -88,6 +89,8 @@ HelpTable:
 	dd HelpLine05
 	dd HelpLine06
 	dd 0
+
+TestMessage: db "Testing:...", 0
 
 section .bss
 
@@ -214,6 +217,12 @@ CommandShowHelp:
 	jmp .loop
 .done:
 	freturn
+
+extern AcpiFindRsdp
+
+RunTest:
+	fprolog 0, eax
+	freturn eax
 
 CommandStub:
 	ret
