@@ -243,13 +243,6 @@ IntrAddInterrupt:
 %undef DstAddrLo
 	freturn eax, ebx
 
-global IntrTest
-IntrTest:
-	fprolog 0
-	int 0x03
-	int 0x04
-	freturn
-
 %undef IdtCount
 %undef IdtSize
 %undef IdtLimit
