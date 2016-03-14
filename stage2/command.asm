@@ -218,8 +218,6 @@ CommandShowHelp:
 .done:
 	freturn
 
-extern AcpiFindRsdp
-
 RunTest:
 	fprolog 0, eax
 	freturn eax
