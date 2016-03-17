@@ -43,6 +43,7 @@ extern ScreenPrintHexDWord
 extern ScreenPrintLine
 extern ScreenPrintSpace
 extern ScreenShowCursor
+extern AcpiShutdown
 
 %include "functions.inc"
 
@@ -51,12 +52,13 @@ extern ScreenShowCursor
 
 section .data
 
-Prompt       db '?> ', 0
+Prompt:      db '?> ', 0
 CmdHi:       db 'hi', 0       ; Display the word 'Hello' to the screen
 CmdClear:    db 'clear', 0    ; Clear the screen
 CmdVendor:   db 'vendor', 0   ; Show vendor from CPUID
 CmdMemory:   db 'memory', 0   ; Show memory map generated in real16.asm
 CmdTest:     db 'test', 0     ; Test the latest function
+CmdShutdown: db 'shutdown', 0 ; Shutdown the system, maybe
 CmdHelp:     db 'help', 0     ; Display Help Information
 
 CommandTable:
@@ -70,6 +72,8 @@ CommandTable:
 	dd memShowMap
 	dd CmdTest
 	dd RunTest
+	dd CmdShutdown
+	dd AcpiShutdown
 	dd CmdHelp
 	dd CommandShowHelp
 	dd 0
@@ -80,8 +84,9 @@ HelpLine01: db "hi        Display a greeting", 0
 HelpLine02: db "clear     Clear the screen", 0
 HelpLine03: db "vendor    Display the vendor string from your CPU", 0
 HelpLine04: db "memory    Show a map of memory", 0
-HelpLine05: db "test      Test the current project", 0
-HelpLine06: db "help      Show this help", 0
+HelpLine05: db "shutdown  Shutdown the system, maybe", 0
+HelpLine06: db "test      Test the current project", 0
+HelpLine07: db "help      Show this help", 0
 
 HelpTable:
 	dd HelpLine00
@@ -91,6 +96,7 @@ HelpTable:
 	dd HelpLine04
 	dd HelpLine05
 	dd HelpLine06
+	dd HelpLine07
 	dd 0
 
 TestMessage: db "Testing:...", 0

@@ -30,6 +30,7 @@
 
 extern Compare
 extern ScreenPrintHexDWord
+extern ScreenPrintHexWord
 extern ScreenPrintHexByte
 extern ScreenPrintChar
 extern ScreenPrintSpace
@@ -44,6 +45,8 @@ PointerSignature:  db "RSD PTR "
 PointerHeader:     db "Addr     Sig      Ch Vendor Rv RSDTAddr", 0
 TableHeader:       db "Addr     Sig  Length   Rv Ch OEM    OEM Tbl  OEMRev   Crtr CrtrRev", 0
 PointerError:      db "Error: RSDP not found", 0
+ShutdownFailed:    db 'Error: Shutdown failed.', 0
+FacpSignature      db "FACP"
 PointerLocation:   dd 0
 
 section .text
@@ -257,6 +260,7 @@ AcpiShowTables:
 	shr ecx, 2
 	mov esi, ebx
 	add esi, 36
+
 .loop:
 	lodsd
 	push eax
@@ -266,3 +270,70 @@ AcpiShowTables:
 
 .done:
 	freturn eax, ecx, ebx
+
+FindFacp:
+	fprolog 0
+	call GetPointer
+	or eax, eax
+	jz .done ; Can't find pointer. Quit.
+.exists:
+	mov ebx, [eax+16]
+	mov ecx, [ebx+4]
+	sub ecx, 36
+	shr ecx, 2
+	mov esi, ebx
+	add esi, 36
+
+.loop:
+	lodsd
+	mov ebx, eax
+	push dword 4
+	push FacpSignature
+	push eax
+	call Compare
+	add esp, 12
+
+	or eax, eax
+	jz .found
+	loop .loop
+.notfound:
+	xor eax, eax
+	jmp .done
+.found:
+	mov eax, ebx
+.done:
+	freturn
+
+GetShutdownPort:
+	fprolog 0
+	call FindFacp
+	or eax, eax
+	jnz .exists ; FIXME
+	jmp .done
+.exists:
+	add eax, 64
+	mov eax, dword[eax]
+	push eax
+	call ScreenPrintHexDWord
+	pop eax
+.done:
+	freturn
+
+global AcpiShutdown
+AcpiShutdown:
+	fprolog 0
+	call GetShutdownPort
+	or eax, eax
+	jz .failed
+	mov dx, ax
+
+	; FIXME: 0x2000 is hard-coded, it shouldn't be.
+	mov ax, 0x2000
+	out dx, ax
+	jmp .done
+.failed:
+	push ShutdownFailed
+	call ScreenPrintLine
+	add esp, 4
+.done:
+	freturn eax, edx
