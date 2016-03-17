@@ -37,8 +37,11 @@ extern ScreenDelete
 extern StringMatch
 extern ScreenPrint
 extern ScreenPrintChar
+extern ScreenPrintHexByte
+extern ScreenPrintHexWord
 extern ScreenPrintHexDWord
 extern ScreenPrintLine
+extern ScreenPrintSpace
 extern ScreenShowCursor
 
 %include "functions.inc"
@@ -218,8 +221,14 @@ CommandShowHelp:
 .done:
 	freturn
 
+extern AcpiShowRsdp
+extern AcpiShowTables
+
 RunTest:
 	fprolog 0, eax
+	call AcpiShowRsdp
+	call ScreenBreakLine
+	call AcpiShowTables
 	freturn eax
 
 CommandStub:
