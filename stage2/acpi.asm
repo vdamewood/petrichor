@@ -149,11 +149,7 @@ AcpiShowRsdp:
 	freturn eax, ecx, esi
 
 showSdtHeader:
-	fprolog 0, eax, esi
-
-	;push TableHeader
-	;call ScreenPrintLine
-	;add esp, 4
+	fprolog 0, eax, ecx, esi
 
 	mov esi, [ebp+8]
 	push esi
@@ -232,11 +228,11 @@ showSdtHeader:
 	add esp, 4
 	call ScreenBreakLine
 .done:
-	freturn eax, esi
+	freturn eax, ecx, esi
 
 global AcpiShowTables
 AcpiShowTables:
-	fprolog 0, eax
+	fprolog 0, eax, ecx, ebx
 	call GetPointer
 	or eax, eax
 	jnz .exists
@@ -250,9 +246,23 @@ AcpiShowTables:
 	call ScreenPrintLine
 	add esp, 4
 
-	push dword[eax+16]
+	mov ebx, [eax+16]
+
+	push ebx
+	call showSdtHeader
+	pop ebx
+
+	mov ecx, [ebx+4]
+	sub ecx, 36
+	shr ecx, 2
+	mov esi, ebx
+	add esi, 36
+.loop:
+	lodsd
+	push eax
 	call showSdtHeader
 	add esp, 4
+	loop .loop
 
 .done:
-	freturn eax, ebx
+	freturn eax, ecx, ebx
