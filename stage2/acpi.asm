@@ -313,9 +313,6 @@ GetShutdownPort:
 .exists:
 	add eax, 64
 	mov eax, dword[eax]
-	push eax
-	call ScreenPrintHexDWord
-	pop eax
 .done:
 	freturn
 
