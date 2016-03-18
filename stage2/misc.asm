@@ -26,55 +26,27 @@
 ; (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 ; OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-extern ScreenBreakLine
-extern ScreenPrintHexWord
-extern ScreenPrintHexDWord
-extern ScreenPrintHexQWord
-extern ScreenPrintLine
-extern ScreenPrintSpace
-
 %include "functions.inc"
 
 SECTION .data
 
-Hello:    db 'Hello.', 0
-Vendor:
-VendorW1:    dd 0
-VendorW2:    dd 0
-VendorW3:    dd 0
-term_vendor: db 0
+global MiscVendorId
+MiscVendorId: times 13 db 0
 
 SECTION .text
 
-global MiscSayHi
-MiscSayHi:
-	fprolog 0
-	push Hello
-	call ScreenPrintLine
-	add esp, 4
-	freturn
-
-global MiscShowVendor
-MiscShowVendor:
-	fprolog 0, eax
-	call LoadVendor
-	push eax
-	call ScreenPrintLine
-	add esp, 4
-	freturn eax
-
-LoadVendor:
-	fprolog 0, ecx, edx, ebx
+global MiscLoadVendor
+MiscLoadVendor:
+	fprolog 0, eax, ecx, edx, ebx
 .fbody:
-	mov eax, dword[Vendor]
+	mov eax, dword[MiscVendorId]
 	or eax, eax
 	jnz .done
 
 	xor eax, eax
 	cpuid
-	mov [VendorW1], ebx
-	mov [VendorW2], edx
-	mov [VendorW3], ecx
+	mov dword[MiscVendorId], ebx
+	mov dword[MiscVendorId+4], edx
+	mov dword[MiscVendorId+8], ecx
 .done:
-	mov eax, Vendor
-	freturn ecx, edx, ebx
+	freturn eax, ecx, edx, ebx

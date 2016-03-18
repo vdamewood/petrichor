@@ -7,7 +7,7 @@ distclean: clean
 
 OBJECTS=real16.o init.o \
 	command.o gdt.o intr.o keyboard.o \
-	keyscan.o memory.o misc.o screen.o \
+	keyscan.o memory.o misc_c.o misc_s.o screen.o \
 	strings.o util.o
 
 %.o: %.asm functions.inc
@@ -15,6 +15,13 @@ OBJECTS=real16.o init.o \
 
 %.o: %.c
 	clang -ffreestanding -fno-builtin -nostdlib -nostdinc -c --target=i686-pc-none-elf -march=i686 -o $@ $<
+
+%_s.o: %.asm functions.inc
+	nasm -f elf -o $@ $<
+
+%_c.o: %.c
+	clang -ffreestanding -fno-builtin -nostdlib -nostdinc -c --target=i686-pc-none-elf -march=i686 -o $@ $<
+
 
 real16.o: real16.asm
 	nasm -f elf -o real16.o real16.asm
