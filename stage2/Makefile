@@ -14,7 +14,7 @@ OBJECTS=real16.o init.o \
 	nasm -f elf -o $@ $<
 
 %.o: %.c
-	clang -c --target=i686-pc-none-elf -march=i686 -o $@ $<
+	clang -ffreestanding -fno-builtin -nostdlib -nostdinc -c --target=i686-pc-none-elf -march=i686 -o $@ $<
 
 real16.o: real16.asm
 	nasm -f elf -o real16.o real16.asm
