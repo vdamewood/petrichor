@@ -349,7 +349,9 @@ ScreenPrintHexWord:
 %undef arg
 	freturn
 
+global ScreenPrintHexPointer
 global ScreenPrintHexDWord
+ScreenPrintHexPointer:
 ScreenPrintHexDWord:
 	fprolog 0
 %define arg dword[ebp+8]
