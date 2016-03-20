@@ -35,6 +35,8 @@ SECTION .data
 
 Loaded: db 'Second stage loaded.', 0
 
+SECTION .text
+
 global Init
 Init:
 	mov eax, 0x10
