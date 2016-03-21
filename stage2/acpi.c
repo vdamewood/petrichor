@@ -205,6 +205,13 @@ static unsigned int GetShutdownPort(void)
 		return 0;
 }
 
+void AcpiShowHeaders(void)
+{
+	AcpiShowRsdp();
+	ScreenBreakLine();
+	AcpiShowTables();
+}
+
 void AcpiShutdown(void)
 {
 	unsigned int port = GetShutdownPort();

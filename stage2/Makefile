@@ -6,9 +6,11 @@ clean:
 distclean: clean
 
 OBJECTS=real16.o init.o \
-	acpi.o command.o gdt.o intr.o keyboard.o \
-	keyscan.o memory.o misc_c.o misc_s.o screen.o \
-	uio.o util.o
+	cpuid.o gdt.o intr.o keyboard.o \
+	keyscan.o memory.o  screen.o \
+	uio.o util.o \
+	acpi.o command.o misc.o \
+
 
 %.o: %.asm functions.inc
 	nasm -f elf -o $@ $<

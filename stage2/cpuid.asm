@@ -1,4 +1,4 @@
-; misc.asm: Unsorted routines
+; cpuid.asm: Interface to the x86 CPUID instruction
 ;
 ; Copyright 2015, 2016 Vincent Damewood
 ; All rights reserved.
@@ -28,25 +28,24 @@
 
 %include "functions.inc"
 
-SECTION .data
+section .bss
 
-global MiscVendorId
-MiscVendorId: times 13 db 0
+vendor: resb 13
 
-SECTION .text
+section .text
 
-global MiscLoadVendor
-MiscLoadVendor:
-	fprolog 0, eax, ecx, edx, ebx
+global cpuVendor
+cpuVendor:
+	fprolog 0, ecx, edx, ebx
 .fbody:
-	mov eax, dword[MiscVendorId]
+	mov eax, dword[vendor]
 	or eax, eax
 	jnz .done
-
 	xor eax, eax
 	cpuid
-	mov dword[MiscVendorId], ebx
-	mov dword[MiscVendorId+4], edx
-	mov dword[MiscVendorId+8], ecx
+	mov dword[vendor], ebx
+	mov dword[vendor+4], edx
+	mov dword[vendor+8], ecx
 .done:
-	freturn eax, ecx, edx, ebx
+	mov eax, vendor
+	freturn ecx, edx, ebx

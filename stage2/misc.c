@@ -27,17 +27,10 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-extern void ScreenPrintLine(char*);
-extern void MiscLoadVendor(void);
-extern char MiscVendorId;
-
-void MiscSayHi(void)
-{
-	ScreenPrintLine("Hello.");
-}
+extern const char *cpuVendor(void);
+extern void ScreenPrintLine(const char *);
 
 void MiscShowVendor(void)
 {
-	MiscLoadVendor();
-	ScreenPrintLine(&MiscVendorId);
+	ScreenPrintLine(cpuVendor());
 }

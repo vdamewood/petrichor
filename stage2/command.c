@@ -27,10 +27,11 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+void  AcpiShutdown(void);
+void  AcpiShowHeaders(void);
 int   blStrCmp(const void*, const void*);
 int   blStrLen(const char*);
 void  memShowMap(void);
-void  MiscSayHi(void);
 void  MiscShowVendor(void);
 void  ScreenClear(void);
 void  ScreenPrintLine(const char*);
@@ -39,7 +40,7 @@ void  ScreenPrint(const char*);
 void  ScreenPrintChar(char);
 char *uioGetLine(void);
 
-static void  RunTest(void);
+static void  GreetUser(void);
 static void  ShowHelp(void);
 static void  Stub(void);
 
@@ -53,13 +54,14 @@ typedef struct entry entry;
 
 entry CommandTable[] =
 {
-	{"hi",    "Display a greeting",         MiscSayHi},
-	{"clear",  "Clear the screen",          ScreenClear},
-	{"vendor", "Display vendor from CPUID", MiscShowVendor},
-	{"memory", "Show a map of memory",      memShowMap},
-	{"test",   "Run an ad-hoc test",        RunTest},
-	{"help",   "Show this help",            ShowHelp},
-	{0,        0,                           Stub}
+	{"hi",       "Display a greeting",        GreetUser},
+	{"clear",    "Clear the screen",          ScreenClear},
+	{"vendor",   "Display vendor from CPUID", MiscShowVendor},
+	{"memory",   "Show a map of memory",      memShowMap},
+	{"acpi",     "Show acpi headers",         AcpiShowHeaders},
+	{"help",     "Show this help",            ShowHelp},
+	{"shutdown", "Turn the system off",       AcpiShutdown},
+	{0,        0,                             Stub}
 };
 
 void CommandLoop(void)
@@ -75,6 +77,11 @@ void CommandLoop(void)
 				break;
 			}
 	}
+}
+
+static void GreetUser(void)
+{
+	ScreenPrintLine("Hello.");
 }
 
 static void ShowHelp(void)
@@ -99,17 +106,6 @@ static void ShowHelp(void)
 		ScreenPrint(candidate->help);
 		ScreenBreakLine();
 	}
-}
-
-void AcpiShowRsdp(void);
-void AcpiShowTables(void);
-
-static void RunTest(void)
-{
-	//ScreenPrintLine("No test enabled.");
-	AcpiShowRsdp();
-	ScreenBreakLine();
-	AcpiShowTables();
 }
 
 static void Stub(void)
