@@ -58,6 +58,21 @@ blStrCmp:
 .done:
 	freturn esi, edi
 
+global blStrLen
+blStrLen:
+	fprolog 0
+	xor ecx, ecx
+	mov esi, dword[ebp+8]
+.loop:
+	lodsb
+	or al, al
+	jz .done
+	inc ecx
+	jmp .loop
+.done:
+	mov eax, ecx
+	freturn
+
 global blMemCmp
 blMemCmp:
 	fprolog 0, ecx, esi, edi

@@ -27,65 +27,46 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-void ScreenPrint(char*);
+int   blStrCmp(const void*, const void*);
+int   blStrLen(const char*);
+void  memShowMap(void);
+void  MiscSayHi(void);
+void  MiscShowVendor(void);
+void  ScreenClear(void);
+void  ScreenPrintLine(const char*);
+void  ScreenBreakLine(void);
+void  ScreenPrint(const char*);
+void  ScreenPrintChar(char);
 char *uioGetLine(void);
-int blStrCmp(const void*, const void*);
-int StringMatch(char*, char*);
-void ScreenPrintLine(char*);
-void MiscSayHi(void);
-void ScreenClear(void);
-void MiscShowVendor(void);
-void memShowMap(void);
-void RunTest(void);
-void CommandShowHelp(void);
-void CommandStub(void);
 
-#define Prompt "?> "
+static void  RunTest(void);
+static void  ShowHelp(void);
+static void  Stub(void);
 
 struct entry
 {
 	char *command;
+	char *help;
 	void (*routine)(void);
 };
 typedef struct entry entry;
 
-
 entry CommandTable[] =
 {
-	{"hi", MiscSayHi},
-	{"clear", ScreenClear},
-	{"vendor", MiscShowVendor},
-	{"memory", memShowMap},
-	{"test", RunTest},
-	{"help", CommandShowHelp},
-	{0, CommandStub}
-};
-
-char HelpLine00[] = "Command   Description";
-char HelpLine01[] = "hi        Display a greeting";
-char HelpLine02[] = "clear     Clear the screen";
-char HelpLine03[] = "vendor    Display the vendor string from your CPU";
-char HelpLine04[] = "memory    Show a map of memory";
-char HelpLine05[] = "test      Test the current project";
-char HelpLine06[] = "help      Show this help";
-
-char *HelpTable[] =
-{
-	HelpLine00,
-	HelpLine01,
-	HelpLine02,
-	HelpLine03,
-	HelpLine04,
-	HelpLine05,
-	HelpLine06,
-	0
+	{"hi",    "Display a greeting",         MiscSayHi},
+	{"clear",  "Clear the screen",          ScreenClear},
+	{"vendor", "Display vendor from CPUID", MiscShowVendor},
+	{"memory", "Show a map of memory",      memShowMap},
+	{"test",   "Run an ad-hoc test",        RunTest},
+	{"help",   "Show this help",            ShowHelp},
+	{0,        0,                           Stub}
 };
 
 void CommandLoop(void)
 {
 	while(1)
 	{
-		ScreenPrint(Prompt);
+		ScreenPrint("?> ");
 		char *command = uioGetLine();
 		for (entry *candidate = CommandTable; candidate->command != 0; candidate++)
 			if (blStrCmp(command, candidate->command) == 0)
@@ -96,18 +77,36 @@ void CommandLoop(void)
 	}
 }
 
-void CommandShowHelp(void)
+static void ShowHelp(void)
 {
-	for(char **line = HelpTable; *line != (char*)0; line++)
-		ScreenPrintLine(*line);
+	static int maxLen = 0;
+
+	if (!maxLen)
+		for (entry *candidate = CommandTable; candidate->command != 0; candidate++)
+		{
+			int current = blStrLen(candidate->command);
+			if (current > maxLen)
+				maxLen = current;
+		}
+
+	for (entry *candidate = CommandTable; candidate->command != 0; candidate++)
+	{
+		ScreenPrint(candidate->command);
+		for (int i = maxLen + 2 - blStrLen(candidate->command); i != 0; i--)
+			ScreenPrintChar(' ');
+
+		//ScreenPrint(" -- ");
+		ScreenPrint(candidate->help);
+		ScreenBreakLine();
+	}
 }
 
-void RunTest(void)
+static void RunTest(void)
 {
 	ScreenPrintLine("No test enabled.");
 }
 
-void CommandStub(void)
+static void Stub(void)
 {
 
 }
