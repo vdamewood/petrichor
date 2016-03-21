@@ -1,4 +1,4 @@
-; command.asm: Command interpreter
+; uio.asm: User interface input/output
 ;
 ; Copyright 2015, 2016 Vincent Damewood
 ; All rights reserved.
@@ -26,71 +26,18 @@
 ; (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 ; OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-extern IntrTest
-extern KeyboardGetStroke
-extern memShowMap
-extern MiscSayHi
-extern MiscShowVendor
-extern ScreenBreakLine
-extern ScreenClear
-extern ScreenDelete
-extern StringMatch
-extern ScreenPrint
-extern ScreenPrintChar
-extern ScreenPrintHexDWord
-extern ScreenPrintLine
-extern ScreenShowCursor
-
 %include "functions.inc"
+
+extern ScreenBreakLine
+extern ScreenDelete
+extern ScreenPrintChar
+extern ScreenShowCursor
+extern KeyboardGetStroke
 
 %define BufferSize 32
 %define end    (Buffer+BufferSize-1)
 
 section .data
-
-Prompt       db '?> ', 0
-CmdHi:       db 'hi', 0       ; Display the word 'Hello' to the screen
-CmdClear:    db 'clear', 0    ; Clear the screen
-CmdVendor:   db 'vendor', 0   ; Show vendor from CPUID
-CmdMemory:   db 'memory', 0   ; Show memory map generated in real16.asm
-CmdTest:     db 'test', 0     ; Test the latest function
-CmdHelp:     db 'help', 0     ; Display Help Information
-
-CommandTable:
-	dd CmdHi
-	dd MiscSayHi
-	dd CmdClear
-	dd ScreenClear
-	dd CmdVendor
-	dd MiscShowVendor
-	dd CmdMemory
-	dd memShowMap
-	dd CmdTest
-	dd RunTest
-	dd CmdHelp
-	dd CommandShowHelp
-	dd 0
-	dd CommandStub
-
-HelpLine00: db "Command   Description", 0
-HelpLine01: db "hi        Display a greeting", 0
-HelpLine02: db "clear     Clear the screen", 0
-HelpLine03: db "vendor    Display the vendor string from your CPU", 0
-HelpLine04: db "memory    Show a map of memory", 0
-HelpLine05: db "test      Test the current project", 0
-HelpLine06: db "help      Show this help", 0
-
-HelpTable:
-	dd HelpLine00
-	dd HelpLine01
-	dd HelpLine02
-	dd HelpLine03
-	dd HelpLine04
-	dd HelpLine05
-	dd HelpLine06
-	dd 0
-
-TestMessage: db "Testing:...", 0
 
 section .bss
 
@@ -98,41 +45,8 @@ Buffer: resb BufferSize
 
 section .text
 
-global CommandLoop
-CommandLoop:
-	fprolog 0, eax
-.start:
-	push Prompt
-	call ScreenPrint
-	add esp, 4
-
-	call Get
-	push eax
-
-	mov ebx, CommandTable
-.check_next:
-	mov eax, [ebx]
-	or eax, eax
-	jz .default
-
-	push eax
-	call StringMatch
-	add esp, 4
-	or eax, eax
-	jnz .found_it
-	add ebx, 8
-	jmp .check_next
-.found_it:
-	add ebx, 4
-	mov eax, [ebx]
-	call eax
-.default:
-	add esp, 4
-	jmp .start
-.done:
-	freturn eax
-
-Get:
+global uioGetLine
+uioGetLine:
 	fprolog 0, edi
 .start:
 	call ScreenShowCursor
@@ -202,26 +116,3 @@ Get:
 .done:
 	mov eax, Buffer
 	freturn edi
-
-CommandShowHelp:
-	fprolog 0
-	mov esi, HelpTable
-.loop:
-	mov eax, [esi]
-	or eax, eax
-	jz .done
-	push eax
-	call ScreenPrintLine
-	add esp, 4
-	add esi, 4
-	jmp .loop
-.done:
-	freturn
-
-RunTest:
-	fprolog 0, eax
-	freturn eax
-
-CommandStub:
-	ret
-
