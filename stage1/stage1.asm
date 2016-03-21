@@ -150,13 +150,6 @@ load_file:
 	mov ax, stg2_segment
 	mov es, ax
 
-	; Blank the segment so that the .bss section really
-	; will be zero-initiated.
-	xor ax, ax
-	mov di, 0
-	mov cx, 0xFFFF
-	rep stosb
-
 	mov cx, word[bx+26]
 	xor bx, bx
 .loadnext:
