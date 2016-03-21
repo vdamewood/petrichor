@@ -40,8 +40,8 @@ BssNotFound: db 'Warning: Unable to clear .bss.', 0
 
 SECTION .text
 
-global Init
-Init:
+global Init32
+Init32:
 	mov eax, 0x10
 	mov ds, ax
 	mov es, ax

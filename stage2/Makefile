@@ -5,12 +5,14 @@ clean:
 
 distclean: clean
 
-OBJECTS=real16.o init.o \
+OBJECTS=init16.o init32.o \
 	cpuid.o gdt.o intr.o keyboard.o \
 	keyscan.o memory.o  screen.o \
 	uio.o util.o \
 	acpi.o command.o misc.o \
 
+init%.o: init%.asm
+	nasm -f elf -o $@ $<
 
 %.o: %.asm functions.inc
 	nasm -f elf -o $@ $<
@@ -24,12 +26,6 @@ OBJECTS=real16.o init.o \
 %_c.o: %.c
 	clang -ffreestanding -fno-builtin -nostdlib -nostdinc -c --target=i686-pc-none-elf -march=i686 -o $@ $<
 
-
-real16.o: real16.asm
-	nasm -f elf -o real16.o real16.asm
-
-init.o: init.asm
-	nasm -f elf -o init.o init.asm
 
 stage2.bin: stage2.ld $(OBJECTS)
 	i686-elf-ld -s -T stage2.ld -o stage2.bin $(OBJECTS)

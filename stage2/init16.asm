@@ -27,7 +27,7 @@
 ; OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 extern GdtPointer
-extern Init
+extern Init32
 
 %define PMemTableCount  0x3300
 %define MemTableCount   dword[PMemTableCount]
@@ -36,8 +36,8 @@ extern Init
 
 section .text
 [BITS 16]
-global Real16
-Real16:
+global Init16
+Init16:
 	xor eax, eax
 	mov dx, ax
 	mov es, ax
@@ -96,4 +96,4 @@ EnterProtectedMode:
 	mov eax, cr0
 	or al, 1
 	mov cr0, eax
-	jmp dword 0x08:Init
+	jmp dword 0x08:Init32
