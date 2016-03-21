@@ -51,6 +51,15 @@ struct SdtHeader
 } __attribute__ ((__packed__));
 typedef struct SdtHeader SdtHeader;
 
+struct FacpSdt
+{
+	SdtHeader header;
+	char padding[64-36]; // I'm lazy
+	int port;
+
+} __attribute__ ((__packed__));
+typedef struct FacpSdt FacpSdt;
+
 struct RootSdt
 {
 	SdtHeader  header;
@@ -77,7 +86,7 @@ static char FacpSignature[] =    "FACP";
 static Rsdp* PointerLocation = (void*)0;
 
 
-Rsdp *GetPointer(void)
+static Rsdp *GetPointer(void)
 {
 	if (!PointerLocation)
 		for (unsigned int ecx = 0x000E0000; ecx < 0x00100000; ecx+=0x10)
@@ -119,8 +128,7 @@ void AcpiShowRsdp(void)
 	ScreenBreakLine();
 }
 
-
-void ShowSdtHeader(SdtHeader *header)
+static void ShowSdtHeader(SdtHeader *header)
 {
 	ScreenPrintHexPointer(header);
 	ScreenPrintChar(' ');
@@ -157,106 +165,51 @@ void ShowSdtHeader(SdtHeader *header)
 	ScreenBreakLine();
 }
 
-/*
-global AcpiShowTables
-AcpiShowTables:
-	fprolog 0, eax, ecx, ebx
-	call GetPointer
-	or eax, eax
-	jnz .exists
-	push PointerError
-	call ScreenPrintLine
-	add esp, 4
-	jmp .done
+void AcpiShowTables(void)
+{
+	Rsdp *p = GetPointer();
+	if(p)
+	{
+		ScreenPrintLine(TableHeader);
+		ShowSdtHeader((SdtHeader *)p->rootSdt);
 
-.exists:
-	push TableHeader
-	call ScreenPrintLine
-	add esp, 4
+		unsigned int size = (p->rootSdt->header.length - sizeof(SdtHeader)) / sizeof(SdtHeader*);
+		for (int i = 0; i < size; i++)
+			ShowSdtHeader(p->rootSdt->tables[i]);
+	}
+	else
+	{
+		ScreenPrintLine(PointerError);
+	}
+}
 
-	mov ebx, [eax+16]
+static FacpSdt *FindFacp(void)
+{
+	Rsdp *p = GetPointer();
+	if (p)
+	{
+		unsigned int size = (p->rootSdt->header.length - sizeof(SdtHeader)) / sizeof(SdtHeader*);
+		for (int i = 0; i < size; i++)
+			if (Compare (p->rootSdt->tables[i]->signature, FacpSignature, 4) == 0)
+				return (FacpSdt*)p->rootSdt->tables[i];
+	}
+	return (FacpSdt*)0;
+}
 
-	push ebx
-	call showSdtHeader
-	pop ebx
+static unsigned int GetShutdownPort(void)
+{
+	FacpSdt *p = FindFacp();
+	if (p)
+		return p->port;
+	else
+		return 0;
+}
 
-	mov ecx, [ebx+4]
-	sub ecx, 36
-	shr ecx, 2
-	mov esi, ebx
-	add esi, 36
-
-.loop:
-	lodsd
-	push eax
-	call showSdtHeader
-	add esp, 4
-	loop .loop
-
-.done:
-	freturn eax, ecx, ebx
-
-FindFacp:
-	fprolog 0
-	call GetPointer
-	or eax, eax
-	jz .done ; Can't find pointer. Quit.
-.exists:
-	mov ebx, [eax+16]
-	mov ecx, [ebx+4]
-	sub ecx, 36
-	shr ecx, 2
-	mov esi, ebx
-	add esi, 36
-
-.loop:
-	lodsd
-	mov ebx, eax
-	push dword 4
-	push FacpSignature
-	push eax
-	call Compare
-	add esp, 12
-
-	or eax, eax
-	jz .found
-	loop .loop
-.notfound:
-	xor eax, eax
-	jmp .done
-.found:
-	mov eax, ebx
-.done:
-	freturn
-
-GetShutdownPort:
-	fprolog 0
-	call FindFacp
-	or eax, eax
-	jnz .exists ; FIXME
-	jmp .done
-.exists:
-	add eax, 64
-	mov eax, dword[eax]
-.done:
-	freturn
-
-global AcpiShutdown
-AcpiShutdown:
-	fprolog 0
-	call GetShutdownPort
-	or eax, eax
-	jz .failed
-	mov dx, ax
-
-	; FIXME: 0x2000 is hard-coded, it shouldn't be.
-	mov ax, 0x2000
-	out dx, ax
-	jmp .done
-.failed:
-	push ShutdownFailed
-	call ScreenPrintLine
-	add esp, 4
-.done:
-	freturn eax, edx
-*/
+void AcpiShutdown(void)
+{
+	unsigned int port = GetShutdownPort();
+	if (port)
+		asm volatile ( "outw %0, %1" : : "a"((unsigned short)0x2000), "d"((unsigned short)port) );
+	else
+		ScreenPrintLine(ShutdownFailed);
+}
