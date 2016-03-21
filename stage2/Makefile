@@ -8,7 +8,7 @@ distclean: clean
 OBJECTS=real16.o init.o \
 	command.o gdt.o intr.o keyboard.o \
 	keyscan.o memory.o misc_c.o misc_s.o screen.o \
-	strings.o uio.o util.o
+	uio.o util.o
 
 %.o: %.asm functions.inc
 	nasm -f elf -o $@ $<

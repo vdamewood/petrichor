@@ -29,6 +29,7 @@
 
 void ScreenPrint(char*);
 char *uioGetLine(void);
+int blStrCmp(const void*, const void*);
 int StringMatch(char*, char*);
 void ScreenPrintLine(char*);
 void MiscSayHi(void);
@@ -39,7 +40,7 @@ void RunTest(void);
 void CommandShowHelp(void);
 void CommandStub(void);
 
-#define Prompt "?>"
+#define Prompt "?> "
 
 struct entry
 {
@@ -87,7 +88,7 @@ void CommandLoop(void)
 		ScreenPrint(Prompt);
 		char *command = uioGetLine();
 		for (entry *candidate = CommandTable; candidate->command != 0; candidate++)
-			if (StringMatch(command, candidate->command))
+			if (blStrCmp(command, candidate->command) == 0)
 			{
 				candidate->routine();
 				break;
