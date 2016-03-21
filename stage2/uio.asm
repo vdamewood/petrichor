@@ -1,4 +1,4 @@
-; fat12.asm: FAT12 driver
+; uio.asm: User interface input/output
 ;
 ; Copyright 2015, 2016 Vincent Damewood
 ; All rights reserved.
@@ -28,24 +28,91 @@
 
 %include "functions.inc"
 
+extern ScreenBreakLine
+extern ScreenDelete
+extern ScreenPrintChar
+extern ScreenShowCursor
+extern KeyboardGetStroke
+
+%define BufferSize 32
+%define end    (Buffer+BufferSize-1)
+
+section .data
+
+section .bss
+
+Buffer: resb BufferSize
+
 section .text
 
-; Match a filename
-match_file:
-%define source      [ebp+4]
-%define destination [ebp+6]
-	fprolog 0, ecx, esi, edi
-.fbody:
-	mov esi, source
-	mov edi, destination
-	mov ecx, 11
-	repe cmpsb
-	jne .nomatch
-.match:
-	mov ax, 0xFFFFFFFF
-	jmp .freturn
-.nomatch:
-	mov ax, 0x00000000
-%undef source
-%undef destination
-	freturn ecx, esi, edi
+global uioGetLine
+uioGetLine:
+	fprolog 0, edi
+.start:
+	call ScreenShowCursor
+	mov edi, Buffer
+
+.loop:
+	call KeyboardGetStroke
+
+.check_special:
+	cmp ah, 0x00
+	jne .special
+
+.printable:
+	cmp edi, end ; if buffer is full
+	je .loop ; ignore keypress
+
+	push eax
+	call ScreenPrintChar
+	pop eax ; smaller than add esp, 4
+	call ScreenShowCursor
+	stosb
+	jmp .loop
+
+.special:
+	cmp ah, 0x01 ; Ignore ctrl-, alt- and errors.
+	jne .loop
+
+.check_esc:
+	cmp al, 0x00 ; Escape
+	jne .not_esc
+.do_esc:
+	cmp edi, Buffer
+	je .loop
+
+	call ScreenDelete
+	call ScreenShowCursor
+	dec edi
+	jmp .do_esc
+.not_esc:
+
+.check_bksp:
+	cmp al, 0x10 ; Backspace
+	jne .not_bksp
+.do_bksp:
+	cmp edi, Buffer ; if at the beginning of the buffer
+	je .loop   ; ignore
+
+	call ScreenDelete
+	call ScreenShowCursor
+	dec edi
+	jmp .loop
+.not_bksp:
+
+.check_enter:
+	cmp al, 0x12 ; Enter
+	jne .not_enter
+.do_enter:
+	mov al, 0
+	stosb
+	call ScreenBreakLine
+	jmp .done
+.not_enter:
+
+.else:
+	jmp .loop ; Ignore all other keystrokes
+
+.done:
+	mov eax, Buffer
+	freturn edi

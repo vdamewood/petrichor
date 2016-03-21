@@ -27,7 +27,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-int Compare(const void*, const void*, unsigned int);
+int blMemCmp(const void*, const void*, unsigned int);
 void ScreenPrintHexDWord(int);
 void ScreenPrintHexWord(short);
 void ScreenPrintHexByte(char);
@@ -90,7 +90,7 @@ static Rsdp *GetPointer(void)
 {
 	if (!PointerLocation)
 		for (unsigned int ecx = 0x000E0000; ecx < 0x00100000; ecx+=0x10)
-			if (Compare((void*)ecx, PointerSignature, 8) == 0)
+			if (blMemCmp((void*)ecx, PointerSignature, 8) == 0)
 				PointerLocation = (Rsdp*)ecx;
 	return PointerLocation;
 }
@@ -190,7 +190,7 @@ static FacpSdt *FindFacp(void)
 	{
 		unsigned int size = (p->rootSdt->header.length - sizeof(SdtHeader)) / sizeof(SdtHeader*);
 		for (int i = 0; i < size; i++)
-			if (Compare (p->rootSdt->tables[i]->signature, FacpSignature, 4) == 0)
+			if (blMemCmp(p->rootSdt->tables[i]->signature, FacpSignature, 4) == 0)
 				return (FacpSdt*)p->rootSdt->tables[i];
 	}
 	return (FacpSdt*)0;

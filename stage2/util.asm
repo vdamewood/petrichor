@@ -30,9 +30,51 @@
 
 section .text
 
-global Compare:
+section .text
 
-Compare:
+global blStrCmp
+blStrCmp:
+	fprolog 0, esi, edi
+%define mem1 dword[ebp+8]
+%define mem2 dword[ebp+12]
+
+	xor eax, eax
+	mov esi, mem1
+	mov edi, mem2
+.loop:
+	lodsb
+	scasb
+	jne .nomatch
+	or al, al
+	jnz .loop
+.match:
+	xor eax, eax
+	jmp .done
+.nomatch:
+	lahf
+	movsx eax, ah
+	sar eax, 6
+	xor eax, 1
+.done:
+	freturn esi, edi
+
+global blStrLen
+blStrLen:
+	fprolog 0
+	xor ecx, ecx
+	mov esi, dword[ebp+8]
+.loop:
+	lodsb
+	or al, al
+	jz .done
+	inc ecx
+	jmp .loop
+.done:
+	mov eax, ecx
+	freturn
+
+global blMemCmp
+blMemCmp:
 	fprolog 0, ecx, esi, edi
 %define mem1 dword[ebp+8]
 %define mem2 dword[ebp+12]

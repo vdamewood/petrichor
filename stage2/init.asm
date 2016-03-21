@@ -30,7 +30,7 @@ extern CommandLoop
 extern IntrSetupInterrupts
 extern ScreenClear
 extern ScreenPrintLine
-extern Compare
+extern blMemCmp
 
 SECTION .data
 
@@ -81,7 +81,7 @@ LoadBss:
 	add eax, ebx
 	push eax
 
-	call Compare
+	call blMemCmp
 	pop eax
 	jz .BssFound
 
