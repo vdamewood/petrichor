@@ -28,14 +28,12 @@
  */
 
 int blMemCmp(const void*, const void*, unsigned int);
-void ScreenPrintHexDWord(int);
-void ScreenPrintHexWord(short);
-void ScreenPrintHexByte(char);
-void ScreenPrintChar(char);
-void ScreenPrintSpace(void);
-void ScreenBreakLine(void);
-void ScreenPrintLine(char*);
-void ScreenPrintHexPointer(void*);
+void scrPrintHexDWord(int);
+void scrPrintHexWord(short);
+void scrPrintHexByte(char);
+void scrPrintChar(char);
+void scrBreakLine(void);
+void scrPrintLine(char*);
 
 struct SdtHeader
 {
@@ -101,68 +99,68 @@ void AcpiShowRsdp(void)
 	Rsdp *p;
 	if(!(p = GetPointer()))
 	{
-		ScreenPrintLine(PointerError);
+		scrPrintLine(PointerError);
 		return;
 	}
 
-	ScreenPrintLine(PointerHeader);
-	ScreenPrintHexPointer(p);
-	ScreenPrintChar(' ');
+	scrPrintLine(PointerHeader);
+	scrPrintHexDWord((int)p);
+	scrPrintChar(' ');
 
 	for (int i = 0; i < 8; i++)
-		ScreenPrintChar(p->signature[i]);
-	ScreenPrintChar(' ');
+		scrPrintChar(p->signature[i]);
+	scrPrintChar(' ');
 
-	ScreenPrintHexByte(p->checksum);
-	ScreenPrintChar(' ');
+	scrPrintHexByte(p->checksum);
+	scrPrintChar(' ');
 
 	for (int i = 0; i < 6; i++)
-		ScreenPrintChar(p->vendor[i]);
-	ScreenPrintChar(' ');
+		scrPrintChar(p->vendor[i]);
+	scrPrintChar(' ');
 
-	ScreenPrintHexByte(p->revision);
-	ScreenPrintChar(' ');
+	scrPrintHexByte(p->revision);
+	scrPrintChar(' ');
 
-	ScreenPrintHexPointer(p->rootSdt);
-	ScreenPrintChar(' ');
-	ScreenBreakLine();
+	scrPrintHexDWord((int)p->rootSdt);
+	scrPrintChar(' ');
+	scrBreakLine();
 }
 
 static void ShowSdtHeader(SdtHeader *header)
 {
-	ScreenPrintHexPointer(header);
-	ScreenPrintChar(' ');
+	scrPrintHexDWord((int)header);
+	scrPrintChar(' ');
 
 	for (int i = 0; i < 4; i++)
-		ScreenPrintChar(header->signature[i]);
-	ScreenPrintChar(' ');
+		scrPrintChar(header->signature[i]);
+	scrPrintChar(' ');
 
-	ScreenPrintHexDWord(header->length);
-	ScreenPrintChar(' ');
+	scrPrintHexDWord(header->length);
+	scrPrintChar(' ');
 
-	ScreenPrintHexByte(header->revision);
-	ScreenPrintChar(' ');
+	scrPrintHexByte(header->revision);
+	scrPrintChar(' ');
 
-	ScreenPrintHexByte(header->checksum);
-	ScreenPrintChar(' ');
+	scrPrintHexByte(header->checksum);
+	scrPrintChar(' ');
 
 	for (int i = 0; i < 6; i++)
-		ScreenPrintChar(header->oem[i]);
-	ScreenPrintChar(' ');
+		scrPrintChar(header->oem[i]);
+	scrPrintChar(' ');
 
 	for (int i = 0; i < 8; i++)
-		ScreenPrintChar(header->oemTable[i]);
-	ScreenPrintChar(' ');
+		scrPrintChar(header->oemTable[i]);
+	scrPrintChar(' ');
 
-	ScreenPrintHexDWord(header->oemRevision);
-	ScreenPrintChar(' ');
+	scrPrintHexDWord(header->oemRevision);
+	scrPrintChar(' ');
 
 	for (int i = 0; i < 4; i++)
-		ScreenPrintChar(header->creator[i]);
-	ScreenPrintChar(' ');
+		scrPrintChar(header->creator[i]);
+	scrPrintChar(' ');
 
-	ScreenPrintHexDWord(header->creatorRevision);
-	ScreenBreakLine();
+	scrPrintHexDWord(header->creatorRevision);
+	scrBreakLine();
 }
 
 void AcpiShowTables(void)
@@ -170,7 +168,7 @@ void AcpiShowTables(void)
 	Rsdp *p = GetPointer();
 	if(p)
 	{
-		ScreenPrintLine(TableHeader);
+		scrPrintLine(TableHeader);
 		ShowSdtHeader((SdtHeader *)p->rootSdt);
 
 		unsigned int size = (p->rootSdt->header.length - sizeof(SdtHeader)) / sizeof(SdtHeader*);
@@ -179,7 +177,7 @@ void AcpiShowTables(void)
 	}
 	else
 	{
-		ScreenPrintLine(PointerError);
+		scrPrintLine(PointerError);
 	}
 }
 
@@ -208,7 +206,7 @@ static unsigned int GetShutdownPort(void)
 void AcpiShowHeaders(void)
 {
 	AcpiShowRsdp();
-	ScreenBreakLine();
+	scrBreakLine();
 	AcpiShowTables();
 }
 
@@ -218,5 +216,5 @@ void AcpiShutdown(void)
 	if (port)
 		asm volatile ( "outw %0, %1" : : "a"((unsigned short)0x2000), "d"((unsigned short)port) );
 	else
-		ScreenPrintLine(ShutdownFailed);
+		scrPrintLine(ShutdownFailed);
 }

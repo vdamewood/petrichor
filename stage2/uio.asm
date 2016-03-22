@@ -28,11 +28,11 @@
 
 %include "functions.inc"
 
-extern ScreenBreakLine
-extern ScreenDelete
-extern ScreenPrintChar
-extern ScreenShowCursor
 extern KeyboardGetStroke
+extern scrBreakLine
+extern scrDelete
+extern scrPrintChar
+extern scrShowCursor
 
 %define BufferSize 32
 %define end    (Buffer+BufferSize-1)
@@ -49,7 +49,7 @@ global uioGetLine
 uioGetLine:
 	fprolog 0, edi
 .start:
-	call ScreenShowCursor
+	call scrShowCursor
 	mov edi, Buffer
 
 .loop:
@@ -64,9 +64,9 @@ uioGetLine:
 	je .loop ; ignore keypress
 
 	push eax
-	call ScreenPrintChar
-	pop eax ; smaller than add esp, 4
-	call ScreenShowCursor
+	call scrPrintChar
+	call scrShowCursor
+	pop eax
 	stosb
 	jmp .loop
 
@@ -81,8 +81,8 @@ uioGetLine:
 	cmp edi, Buffer
 	je .loop
 
-	call ScreenDelete
-	call ScreenShowCursor
+	call scrDelete
+	call scrShowCursor
 	dec edi
 	jmp .do_esc
 .not_esc:
@@ -94,8 +94,8 @@ uioGetLine:
 	cmp edi, Buffer ; if at the beginning of the buffer
 	je .loop   ; ignore
 
-	call ScreenDelete
-	call ScreenShowCursor
+	call scrDelete
+	call scrShowCursor
 	dec edi
 	jmp .loop
 .not_bksp:
@@ -106,7 +106,7 @@ uioGetLine:
 .do_enter:
 	mov al, 0
 	stosb
-	call ScreenBreakLine
+	call scrBreakLine
 	jmp .done
 .not_enter:
 

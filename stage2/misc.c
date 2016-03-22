@@ -28,9 +28,9 @@
  */
 
 extern const char *cpuVendor(void);
-extern void ScreenPrintLine(const char *);
+extern void scrPrintLine(const char *);
 
 void MiscShowVendor(void)
 {
-	ScreenPrintLine(cpuVendor());
+	scrPrintLine(cpuVendor());
 }

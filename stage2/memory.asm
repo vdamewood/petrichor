@@ -28,17 +28,17 @@
 
 %include "functions.inc"
 
-extern ScreenBreakLine
-extern ScreenPrint
-extern ScreenPrintHexWord
-extern ScreenPrintHexDWord
-extern ScreenPrintHexQWord
-extern ScreenPrintLine
-extern ScreenPrintSpace
+extern scrBreakLine
+extern scrPrint
+extern scrPrintHexWord
+extern scrPrintHexDWord
+extern scrPrintHexQWord
+extern scrPrintLine
+extern scrPrintSpace
 
 SECTION .data
 
-TableHeader: db 'Base             Size             Status', 0
+TableHeader: db 'Base     Size     Status', 0
 
 StatusTable: dd 0,Status1,Status2,Status3,Status4,Status5
 
@@ -55,33 +55,30 @@ memShowMap:
 %define count 0x3300
 %define first 0x3308
 	fprolog 0, eax, ecx, ebx
+	push TableHeader
+	call scrPrintLine
+	add esp, 4
 
 	mov ecx, [count]
-	push ecx
-	call ScreenPrintHexWord
-	add esp, 4
-
-	call ScreenBreakLine
-
-	push TableHeader
-	call ScreenPrintLine
-	add esp, 4
-
 	mov ebx, first
 .loop:
-	push dword[ebx+4]
+	push ecx
+
+	push ebx
 	push dword[ebx]
-	call ScreenPrintHexQWord
-	add esp, 8
+	call scrPrintHexDWord
+	call scrPrintSpace
+	pop ebx
+	pop ebx
 
-	call ScreenPrintSpace
 
-	push dword[ebx+12]
+	push ebx
 	push dword[ebx+8]
-	call ScreenPrintHexQWord
-	add esp, 8
+	call scrPrintHexDWord
+	call scrPrintSpace
+	pop ebx
+	pop ebx
 
-	call ScreenPrintSpace
 
 	mov eax, dword[ebx+16]
 	shl eax, 2
@@ -89,11 +86,14 @@ memShowMap:
 	mov eax, [eax]
 
 	push eax
-	call ScreenPrint
-	add esp, 4
+	call scrPrint
+	pop eax
 
-	call ScreenBreakLine
+	push ebx
+	call scrBreakLine
+	pop ebx
 	add ebx, 24
+	pop ecx
 	loop .loop
 
 	freturn eax, ecx, ebx

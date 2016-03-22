@@ -7,9 +7,10 @@ distclean: clean
 
 OBJECTS=init16.o init32.o \
 	cpuid.o gdt.o intr.o keyboard.o \
-	keyscan.o memory.o  screen.o \
+	keyscan.o memory.o screen.o \
 	uio.o util.o \
 	acpi.o command.o misc.o \
+
 
 init%.o: init%.asm
 	nasm -f elf -o $@ $<
@@ -27,7 +28,7 @@ init%.o: init%.asm
 	clang -ffreestanding -fno-builtin -nostdlib -nostdinc -c --target=i686-pc-none-elf -march=i686 -o $@ $<
 
 
-stage2.bin: stage2.ld $(OBJECTS)
+stage2.bin: Makefile stage2.ld $(OBJECTS)
 	i686-elf-ld -s -T stage2.ld -o stage2.bin $(OBJECTS)
 
 .PHONY: all clean distclean

@@ -27,9 +27,9 @@
 ; OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 extern KeyboardHandleInterrupt
-extern ScreenBreakLine
-extern ScreenPrintHexDWord
-extern ScreenPrintSpace
+extern scrBreakLine
+extern scrPrintHexDWord
+extern scrPrintSpace
 
 %include "functions.inc"
 
@@ -85,11 +85,11 @@ IntrIsrCommon:
 
 .default:
 	push Interrupt
-	call ScreenPrintHexDWord
-	call ScreenPrintSpace
+	call scrPrintHexDWord
+	call scrPrintSpace
 	push Code
-	call ScreenPrintHexDWord
-	call ScreenBreakLine
+	call scrPrintHexDWord
+	call scrBreakLine
 	add esp, 8
 
 .cleanup:

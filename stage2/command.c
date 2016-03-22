@@ -33,11 +33,11 @@ int   blStrCmp(const void*, const void*);
 int   blStrLen(const char*);
 void  memShowMap(void);
 void  MiscShowVendor(void);
-void  ScreenClear(void);
-void  ScreenPrintLine(const char*);
-void  ScreenBreakLine(void);
-void  ScreenPrint(const char*);
-void  ScreenPrintChar(char);
+void  scrClear(void);
+void  scrPrintLine(const char*);
+void  scrBreakLine(void);
+void  scrPrint(const char*);
+void  scrPrintChar(char);
 char *uioGetLine(void);
 
 static void  GreetUser(void);
@@ -55,7 +55,7 @@ typedef struct entry entry;
 entry CommandTable[] =
 {
 	{"hi",       "Display a greeting",        GreetUser},
-	{"clear",    "Clear the screen",          ScreenClear},
+	{"clear",    "Clear the screen",          scrClear},
 	{"vendor",   "Display vendor from CPUID", MiscShowVendor},
 	{"memory",   "Show a map of memory",      memShowMap},
 	{"acpi",     "Show acpi headers",         AcpiShowHeaders},
@@ -68,7 +68,7 @@ void CommandLoop(void)
 {
 	while(1)
 	{
-		ScreenPrint("?> ");
+		scrPrint("?> ");
 		char *command = uioGetLine();
 		for (entry *candidate = CommandTable; candidate->command != 0; candidate++)
 			if (blStrCmp(command, candidate->command) == 0)
@@ -81,7 +81,7 @@ void CommandLoop(void)
 
 static void GreetUser(void)
 {
-	ScreenPrintLine("Hello.");
+	scrPrintLine("Hello.");
 }
 
 static void ShowHelp(void)
@@ -98,13 +98,13 @@ static void ShowHelp(void)
 
 	for (entry *candidate = CommandTable; candidate->command != 0; candidate++)
 	{
-		ScreenPrint(candidate->command);
+		scrPrint(candidate->command);
 		for (int i = maxLen + 2 - blStrLen(candidate->command); i != 0; i--)
-			ScreenPrintChar(' ');
+			scrPrintChar(' ');
 
-		//ScreenPrint(" -- ");
-		ScreenPrint(candidate->help);
-		ScreenBreakLine();
+		//scrPrint(" -- ");
+		scrPrint(candidate->help);
+		scrBreakLine();
 	}
 }
 

@@ -28,8 +28,8 @@
 
 extern CommandLoop
 extern IntrSetupInterrupts
-extern ScreenClear
-extern ScreenPrintLine
+extern scrClear
+extern scrPrintLine
 extern blMemCmp
 
 SECTION .data
@@ -89,7 +89,7 @@ LoadBss:
 	loop .BssScanLoop
 .BssNotFound:
 	push BssNotFound
-	call ScreenPrintLine
+	call scrPrintLine
 	add esp, 12
 	jmp .BssDone
 .BssFound:
@@ -107,9 +107,9 @@ LoadBss:
 
 	call IntrSetupInterrupts
 .loop:
-	call ScreenClear
+	call scrClear
 	push Loaded
-	call ScreenPrintLine
+	call scrPrintLine
 	add esp, 4
 	call CommandLoop
 	jmp .loop
