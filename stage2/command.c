@@ -40,51 +40,122 @@ void  scrPrint(const char*);
 void  scrPrintChar(char);
 char *uioGetLine(void);
 
-static void  GreetUser(void);
-static void  ShowHelp(void);
-static void  Stub(void);
+static void  ClearScreen(int argc, char *argv[]);
+static void  GreetUser(int argc, char *argv[]);
+static void  ShowHelp(int argc, char *argv[]);
+static void  Stub(int argc, char *argv[]);
+static void  Vendor(int argc, char *argv[]);
+static void  MemoryMap(int argc, char *argv[]);
+static void  AcpiHeaders(int argc, char *argv[]);
+static void  Shutdown(int argc, char *argv[]);
+static void  TestArgs(int argc, char *argv[]);
 
 struct entry
 {
 	char *command;
 	char *help;
-	void (*routine)(void);
+	void (*routine)(int,char*[]);
 };
 typedef struct entry entry;
 
 entry CommandTable[] =
 {
 	{"hi",       "Display a greeting",        GreetUser},
-	{"clear",    "Clear the screen",          scrClear},
-	{"vendor",   "Display vendor from CPUID", cpuidShowVendor},
-	{"memory",   "Show a map of memory",      memShowMap},
-	{"acpi",     "Show acpi headers",         AcpiShowHeaders},
+	{"clear",    "Clear the screen",          ClearScreen},
+	{"vendor",   "Display vendor from CPUID", Vendor},
+	{"memory",   "Show a map of memory",      MemoryMap},
+	{"acpi",     "Show acpi headers",         AcpiHeaders},
 	{"help",     "Show this help",            ShowHelp},
-	{"shutdown", "Turn the system off",       AcpiShutdown},
+	{"shutdown", "Turn the system off",       Shutdown},
+	{"test",     "test arguments",            TestArgs},
 	{0,        0,                             Stub}
 };
 
+
+// FIXME: Implement memory allocation
+#define argMax 8
+#define argSize 24
+static char argumentBuffer[argMax][argSize];
+char *argumentPointers[argMax];
+
 void CommandLoop(void)
 {
+	for (int i = 0; i < argMax; i++)
+		argumentPointers[i] = argumentBuffer[i];
+
 	while(1)
 	{
 		scrPrint("?> ");
 		char *command = uioGetLine();
-		for (entry *candidate = CommandTable; candidate->command != 0; candidate++)
-			if (blStrCmp(command, candidate->command) == 0)
+
+		int inChar = 0;
+		int outChar = 0;
+		int count = 0;
+
+		do
+		{
+			if (command[inChar] != ' ' && command[inChar] != '\0')
 			{
-				candidate->routine();
+				ignoreSpace = 0;
+				if (outChar < argSize-1)
+					argumentPointers[count][outChar++] = command[inChar];
+			}
+			else
+			{
+				argumentPointers[count++][outChar] = '\0';
+				outChar = 0;
+			}
+
+			if (count == argMax)
+				break;
+		} while(command[inChar++] != '\0');
+
+		for (entry *candidate = CommandTable; candidate->command != 0; candidate++)
+			if (blStrCmp(argumentPointers[0], candidate->command) == 0)
+			{
+				candidate->routine(count, argumentPointers);
 				break;
 			}
 	}
 }
 
-static void GreetUser(void)
+static void GreetUser(int argc, char *argv[])
 {
 	scrPrintLine("Hello.");
 }
 
-static void ShowHelp(void)
+static void TestArgs(int argc, char *argv[])
+{
+	for (int i=0; i<argc; i++)
+		scrPrintLine(argv[i]);
+}
+
+static void ClearScreen(int argc, char *argv[])
+{
+	scrClear();
+}
+
+static void Vendor(int argc, char *argv[])
+{
+	cpuidShowVendor();
+}
+
+static void MemoryMap(int argc, char *argv[])
+{
+	memShowMap();
+}
+
+static void AcpiHeaders(int argc, char *argv[])
+{
+	AcpiShowHeaders();
+}
+
+static void Shutdown(int argc, char *argv[])
+{
+	AcpiShutdown();
+}
+
+static void ShowHelp(int argc, char *argv[])
 {
 	static int maxLen = 0;
 
@@ -108,7 +179,7 @@ static void ShowHelp(void)
 	}
 }
 
-static void Stub(void)
+static void Stub(int argc, char *argv[])
 {
 
 }
