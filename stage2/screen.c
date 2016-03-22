@@ -39,6 +39,21 @@ unsigned int cursor = 0;
 #define width 80
 #define height 25
 
+void scrSetForgroundColor(unsigned char newColor)
+{
+	color = (color & 0xF0) | (newColor & 0x0F); 
+}
+
+void scrSetBackgroundColor(unsigned char newColor)
+{
+	color = (newColor & 0xF0) | (color & 0x0F); 
+}
+
+void scrSetColor(unsigned char newColor)
+{
+	color = newColor;
+}
+
 void scrClear(void)
 {
 	short fill = (color << 8);

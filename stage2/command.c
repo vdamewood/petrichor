@@ -49,6 +49,7 @@ static void  MemoryMap(int argc, char *argv[]);
 static void  AcpiHeaders(int argc, char *argv[]);
 static void  Shutdown(int argc, char *argv[]);
 static void  TestArgs(int argc, char *argv[]);
+static void  Color(int argc, char *argv[]);
 
 struct entry
 {
@@ -68,7 +69,8 @@ entry CommandTable[] =
 	{"help",     "Show this help",            ShowHelp},
 	{"shutdown", "Turn the system off",       Shutdown},
 	{"test",     "test arguments",            TestArgs},
-	{0,        0,                             Stub}
+	{"color",    "change color",              Color},
+	{0,          0,                           Stub}
 };
 
 
@@ -96,7 +98,6 @@ void CommandLoop(void)
 		{
 			if (command[inChar] != ' ' && command[inChar] != '\0')
 			{
-				ignoreSpace = 0;
 				if (outChar < argSize-1)
 					argumentPointers[count][outChar++] = command[inChar];
 			}
@@ -153,6 +154,64 @@ static void AcpiHeaders(int argc, char *argv[])
 static void Shutdown(int argc, char *argv[])
 {
 	AcpiShutdown();
+}
+
+void scrSetColor(unsigned char newColor);
+void scrSetForgroundColor(unsigned char newColor);
+void scrSetBackgroundColor(unsigned char newColor);
+
+struct colorTableEntry
+{
+	char *name;
+	unsigned char value;
+};
+
+struct colorTableEntry colors[] =
+{
+	{"black",      0x00},
+	{"darkblue",   0x11},
+	{"darkgreen",  0x22},
+	{"darkcyan",   0x33},
+	{"darkred",    0x44},
+	{"darkpurple", 0x55},
+	{"darkyellow", 0x66},
+	{"lightgray",  0x77},
+	{"darkgrey",   0x78},
+	{"blue",       0x19},
+	{"green",      0x2A},
+	{"cyan",       0x3B},
+	{"red",        0x4C},
+	{"purple",     0x5D},
+	{"yellow",     0x6E},
+	{"white",      0x7F},
+	{0,            0xFF}
+};
+
+static void Color(int argc, char *argv[])
+{
+	if (argc == 3)
+	{
+		unsigned char setColor = 0xFF;
+
+		for (struct colorTableEntry *candidate = colors; candidate->name != 0; candidate++)
+			if (blStrCmp(candidate->name, argv[2]) == 0)
+				setColor = candidate->value;
+
+		if (setColor != 0xFF)
+			if (blStrCmp(argv[1], "text") == 0)
+				scrSetForgroundColor(setColor);
+
+			else if (blStrCmp(argv[1], "highlight") == 0)
+				scrSetBackgroundColor(setColor);
+			else
+				scrPrintLine("Bad color target");
+		else
+			scrPrintLine("Bad color");
+	}
+	else
+	{
+		scrPrintLine("bad arguments");
+	}
 }
 
 static void ShowHelp(int argc, char *argv[])
