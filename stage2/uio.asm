@@ -34,7 +34,7 @@ extern scrDelete
 extern scrPrintChar
 extern scrShowCursor
 
-%define BufferSize 32
+%define BufferSize 76
 %define end    (Buffer+BufferSize-1)
 
 section .data
