@@ -27,12 +27,12 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-extern void scrBreakLine(void);
-extern void scrPrint(const char *);
-extern void scrPrintHexWord(short);
-extern void scrPrintHexDWord(int);
-extern void scrPrintLine(const char *);
-extern void scrPrintChar(char);
+void scrBreakLine(void);
+void scrPrint(const char *);
+void scrPrintHexWord(short);
+void scrPrintHexDWord(int);
+void scrPrintLine(const char *);
+void scrPrintChar(char);
 
 char *StatusTable[] =
 {

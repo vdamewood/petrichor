@@ -27,7 +27,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-extern void scrPrintLine(const char *);
+void scrPrintLine(const char *);
 
 char vendor[13];
 
