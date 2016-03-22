@@ -32,7 +32,7 @@ void  AcpiShowHeaders(void);
 int   blStrCmp(const void*, const void*);
 int   blStrLen(const char*);
 void  memShowMap(void);
-void  MiscShowVendor(void);
+void  cpuidShowVendor(void);
 void  scrClear(void);
 void  scrPrintLine(const char*);
 void  scrBreakLine(void);
@@ -56,7 +56,7 @@ entry CommandTable[] =
 {
 	{"hi",       "Display a greeting",        GreetUser},
 	{"clear",    "Clear the screen",          scrClear},
-	{"vendor",   "Display vendor from CPUID", MiscShowVendor},
+	{"vendor",   "Display vendor from CPUID", cpuidShowVendor},
 	{"memory",   "Show a map of memory",      memShowMap},
 	{"acpi",     "Show acpi headers",         AcpiShowHeaders},
 	{"help",     "Show this help",            ShowHelp},

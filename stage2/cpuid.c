@@ -1,4 +1,4 @@
-/* misc.asm: Unsorted routines
+/* cpuid.c: Interface to the x86 CPUID instruction
  *
  * Copyright 2015, 2016 Vincent Damewood
  * All rights reserved.
@@ -27,10 +27,22 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-extern const char *cpuVendor(void);
 extern void scrPrintLine(const char *);
 
-void MiscShowVendor(void)
+char vendor[13];
+
+char *cpuidVendor()
 {
-	scrPrintLine(cpuVendor());
+	if (!vendor[0])
+	{
+		asm ("xor %%eax, %%eax; cpuid; movl %%ebx, %0; movl %%edx, %1; movl %%ecx, %2;"
+			: : "m"(vendor[0]), "m"(vendor[4]), "m"(vendor[8])
+			: "eax", "ecx", "edx", "ebx");
+	}
+	return vendor;
+}
+
+void cpuidShowVendor(void)
+{
+	scrPrintLine(cpuidVendor());
 }

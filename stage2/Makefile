@@ -9,7 +9,7 @@ OBJECTS=init16.o init32.o \
 	cpuid.o gdt.o intr.o keyboard.o \
 	keyscan.o memory.o screen.o \
 	uio.o util.o \
-	acpi.o command.o misc.o \
+	acpi.o command.o \
 
 
 init%.o: init%.asm
