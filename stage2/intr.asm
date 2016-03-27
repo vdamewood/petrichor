@@ -30,6 +30,7 @@ extern KeyboardHandleInterrupt
 extern scrBreakLine
 extern scrPrintHexDWord
 extern scrPrintSpace
+extern fdHandleInterrupt
 
 %include "functions.inc"
 
@@ -78,10 +79,24 @@ IntrIsrCommon:
 	mov eax, Interrupt
 	cmp eax, 0x20
 	je .cleanup
+
+.try_keyboard:
 	cmp eax, 0x21
-	jne .default
+	jne .not_keyboard
+.yes_keyboard:
 	call KeyboardHandleInterrupt
 	jmp .cleanup
+.not_keyboard:
+
+.try_floppy:
+	cmp eax, 0x26
+	jne .not_floppy
+.yes_floppy:
+	call fdHandleInterrupt
+	jmp .cleanup
+.not_floppy:
+
+
 
 .default:
 	push Interrupt

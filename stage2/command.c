@@ -50,6 +50,7 @@ static void  AcpiHeaders(int argc, char *argv[]);
 static void  Shutdown(int argc, char *argv[]);
 static void  TestArgs(int argc, char *argv[]);
 static void  Color(int argc, char *argv[]);
+static void TestFloppy(int, char*[]);
 
 struct entry
 {
@@ -70,6 +71,7 @@ entry CommandTable[] =
 	{"shutdown", "Turn the system off",       Shutdown},
 	{"test",     "test arguments",            TestArgs},
 	{"color",    "change color",              Color},
+	{"floppy",   "test floppy drive",         TestFloppy},
 	{0,          0,                           Stub}
 };
 
@@ -212,6 +214,58 @@ static void Color(int argc, char *argv[])
 	{
 		scrPrintLine("bad arguments");
 	}
+}
+
+void fdInit(void);
+void fdRead(void);
+void *fdGetBuffer(void);
+void scrPrintHexByte(char);
+
+static void TestFloppy(int argc, char *argv[])
+{
+	if (argc == 2)
+	{
+		if (blStrCmp("init", argv[1]) == 0)
+		{
+			scrPrintLine("Testing flopy drive initialization.");
+			fdInit();
+		}
+		else if (blStrCmp("read", argv[1]) == 0)
+		{
+			scrPrintLine("Testing flopy drive read.");
+			fdRead();
+		}
+		else if (blStrCmp("verify", argv[1]) == 0)
+		{
+			char *byte = fdGetBuffer();
+			do
+			{
+				scrPrintHexByte(*byte++);
+				scrPrintChar(' ');
+			}
+			while(byte < (char*)fdGetBuffer() + 0x18);
+			scrBreakLine();
+
+			byte = (char*)0x7C00;
+			do
+			{
+				scrPrintHexByte(*byte++);
+				scrPrintChar(' ');
+			}
+			while(byte < (char*)0x7C18);
+			scrBreakLine();
+		}
+		else
+		{
+			scrPrint("-floppy: Error: Invalid sub-command: ");
+			scrPrintLine(argv[1]);
+		}
+	}
+	else
+	{
+		scrPrintLine("-floppy: Error: Sub-command required");
+	}
+
 }
 
 static void ShowHelp(int argc, char *argv[])
