@@ -32,6 +32,10 @@
 void scrPrint(char *);
 void scrPrintLine(char *);
 
+void scrPrintHexByte();
+void scrPrintChar(char);
+void scrBreakLine();
+
 static void InitDma(void);
 static void ReadDma(void);
 static void WriteDma(void);
@@ -115,27 +119,35 @@ void *fdGetBuffer(void)
 static volatile char interrupt = 0x00;
 void fdHandleInterrupt(void)
 {
-	scrPrintLine("--Floppy IRQ--");
+	scrPrintLine("Floppy: IRQ6 emitted");
 	interrupt = 0xFF;
 }
 
 static void ResetInterrupt(void)
 {
+	scrPrintLine("Floppy: IRQ6 resetting");
 	interrupt = 0x00;
 }
 
 static int WaitForInterrupt(int timeout)
 {
+	scrPrintLine("Floppy: IRQ6 waiting");
 	int i = 0;
+
 	while (!interrupt)
 		if (timeout)
 			if (++i == timeout)
+			{
+				scrPrintLine("Floppy: IRQ6 timeout");
 				return 0;
+			}
+	scrPrintLine("Floppy: IRQ6 detected");
 	return 1;
 }
 
 static void ResetController(void)
 {
+	scrPrintLine("Floppy: Resetting Controller");
 	unsigned char byte = inb(DOR);
 	outb(DOR, byte & (~RESET));
 	outb(DOR, byte);
@@ -157,6 +169,7 @@ static int SendByte(unsigned char signal)
 // Reccomended by datasheet
 static int ReadByte(unsigned char *signal)
 {
+
 	int timeout = 0x8000; // FIXME: use a time-based method to timeout
 	while ((inb(MSR) & 0xC0) != 0xC0)
 		if (--timeout == 0)
@@ -183,7 +196,7 @@ static void Initialize(void)
 		ReadByte(0);
 	}
 
-	// FIXME: The white paper says:
+	// FIXME: The datasheet says:
 	// if (Parameters are different from default)
 	// {
 	//    issue configure command
@@ -233,18 +246,19 @@ static int Read(void)
 {
 	outb(DOR, ENABLE_0);
 	outb(CCR, 0x00);
-	//ReadDma();
 
 	for (int seeks = 3; seeks > 0; seeks--)
 	{
+		scrPrintLine("Seeking...");
 		Seek(0);
-		// FIXME: ensure motor has been running for 500 ms
+
+		// FIXME: Datasheet says ensure motor has been running for 500 ms
 
 		for (int tries = 3; tries > 0; tries--)
 		{
 			ReadDma();
 
-			// Issue Read or Write Command
+			scrPrintLine("Trying to read...");
 			ResetInterrupt();
 			SendByte(READ_DATA);
 			SendByte(0x00);
@@ -256,15 +270,32 @@ static int Read(void)
 			SendByte(0x1B);
 			SendByte(0xFF);
 			if (!WaitForInterrupt(20000))
+			{
+				outb(DOR, RESET|DMA_GATE);
 				return 0;
+			}
 
-			// FIXME: Read Result bytes
-			// return -1 on success
-			// continue loop on failure
-			return -1;
+			unsigned char result[7];
+			for (int i = 0; i < 7; i++)
+			{
+				ReadByte(&result[i]);
+				scrPrintHexByte(result[i]);
+				scrPrintChar(' ');
+			}
+			scrBreakLine();
+			// At this point result has these bytes:
+			//ST0 ST1 ST2 Cyl Head Sector sector-size
+
+			if((result[0] & 0xC0) == 0)
+			{
+				outb(DOR, RESET|DMA_GATE);
+				return -1;
+			}
 		}
 		Recalibrate();
 	}
+
+	outb(DOR, RESET|DMA_GATE);
 	return 0;
 }
 
