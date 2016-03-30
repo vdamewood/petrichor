@@ -39,6 +39,7 @@ void  scrBreakLine(void);
 void  scrPrint(const char*);
 void  scrPrintChar(char);
 char *uioGetLine(void);
+void tmrSetInterval(unsigned short);
 
 static void  ClearScreen(int argc, char *argv[]);
 static void  GreetUser(int argc, char *argv[]);
@@ -82,8 +83,11 @@ entry CommandTable[] =
 static char argumentBuffer[argMax][argSize];
 char *argumentPointers[argMax];
 
+
 void CommandLoop(void)
 {
+	// This approximates 1000 ticks = 1 second.
+	tmrSetInterval(1193);
 	for (int i = 0; i < argMax; i++)
 		argumentPointers[i] = argumentBuffer[i];
 

@@ -8,7 +8,7 @@ distclean: clean
 OBJECTS=init16.o init32.o \
 	cpuid.o gdt.o intr.o keyboard.o \
 	keyscan.o memory.o screen.o \
-	uio.o util.o \
+	uio.o util.o timer.o \
 	acpi.o command.o floppy.o \
 
 
@@ -16,7 +16,7 @@ init%.o: init%.asm
 	nasm -f elf -o $@ $<
 
 floppy.o: floppy.c x86asm.h
-	clang -O2 -ffreestanding -fno-builtin -nostdlib -nostdinc -c --target=i686-pc-none-elf -march=i686 -o floppy.o floppy.c
+	clang -ffreestanding -fno-builtin -nostdlib -nostdinc -c --target=i686-pc-none-elf -march=i686 -o floppy.o floppy.c
 
 %.o: %.asm functions.inc
 	nasm -f elf -o $@ $<
