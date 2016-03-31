@@ -36,6 +36,8 @@ void scrPrintHexByte();
 void scrPrintChar(char);
 void scrBreakLine();
 
+void tmrWait(unsigned int);
+
 static void InitDma(void);
 static void ReadDma(void);
 static void WriteDma(void);
@@ -129,18 +131,17 @@ static void ResetInterrupt(void)
 	interrupt = 0x00;
 }
 
-static int WaitForInterrupt(int timeout)
+int WaitForInterrupt(int timeout)
 {
 	scrPrintLine("Floppy: IRQ6 waiting");
 	int i = 0;
 
 	while (!interrupt)
-		if (timeout)
-			if (++i == timeout)
-			{
-				scrPrintLine("Floppy: IRQ6 timeout");
-				return 0;
-			}
+		if (timeout && (++i == timeout))
+		{
+			scrPrintLine("Floppy: IRQ6 timeout");
+			return 0;
+		}
 	scrPrintLine("Floppy: IRQ6 detected");
 	return 1;
 }
@@ -157,10 +158,13 @@ static void ResetController(void)
 
 static int SendByte(unsigned char signal)
 {
-	int timeout = 0x8000; // FIXME: use a time-based method to timeout
+	int timeout = 0x50;
 	while ((inb(MSR) & 0xC0) != 0x80)
+	{
 		if (--timeout == 0)
 			return 0;
+		tmrWait(10);
+	}
 
 	outb(FIFO, signal);
 	return -1;
@@ -170,10 +174,13 @@ static int SendByte(unsigned char signal)
 static int ReadByte(unsigned char *signal)
 {
 
-	int timeout = 0x8000; // FIXME: use a time-based method to timeout
+	int timeout = 0x50;
 	while ((inb(MSR) & 0xC0) != 0xC0)
+	{
 		if (--timeout == 0)
 			return 0;
+		tmrWait(10);
+	}
 
 	char c = inb(FIFO);
 	if (signal) *signal = c;
@@ -188,7 +195,7 @@ static void Initialize(void)
 	ResetInterrupt();
 	ResetController();
 	outb(CCR, 0x00);
-	WaitForInterrupt(0);
+	WaitForInterrupt(500);
 	for (int i = 0; i < 4; i++)
 	{
 		SendByte(SENSE_INTERRUPT_STATUS);
@@ -215,7 +222,7 @@ static int Seek(unsigned char cylinder)
 	SendByte(SEEK);
 	SendByte(0x00);
 	SendByte(0x00);
-	WaitForInterrupt(0);
+	WaitForInterrupt(500);
 
 	unsigned char ST0, PCN;
 	SendByte(SENSE_INTERRUPT_STATUS);
@@ -232,7 +239,7 @@ static int Recalibrate(void)
 
 	SendByte(RECALIBRATE);
 	SendByte(0x00);
-	WaitForInterrupt(0);
+	WaitForInterrupt(500);
 
 	unsigned char ST0, PCN;
 	SendByte(SENSE_INTERRUPT_STATUS);
@@ -252,7 +259,7 @@ static int Read(void)
 		scrPrintLine("Seeking...");
 		Seek(0);
 
-		// FIXME: Datasheet says ensure motor has been running for 500 ms
+		tmrWait(500);
 
 		for (int tries = 3; tries > 0; tries--)
 		{
@@ -260,15 +267,16 @@ static int Read(void)
 
 			scrPrintLine("Trying to read...");
 			ResetInterrupt();
-			SendByte(READ_DATA);
-			SendByte(0x00);
-			SendByte(0x00);
-			SendByte(0x00);
-			SendByte(0x01);
-			SendByte(0x02);
-			SendByte(0x01);
-			SendByte(0x1B);
-			SendByte(0xFF);
+			if (!SendByte(READ_DATA)) { scrPrintLine("Fail Command"); continue; }
+			else if (!SendByte(0x00)) { scrPrintLine("Fail Parameter 1"); continue; }
+			else if (!SendByte(0x00)) { scrPrintLine("Fail Parameter 2"); continue; }
+			else if (!SendByte(0x00)) { scrPrintLine("Fail Parameter 3"); continue; }
+			else if (!SendByte(0x01)) { scrPrintLine("Fail Parameter 4"); continue; }
+			else if (!SendByte(0x02)) { scrPrintLine("Fail Parameter 5"); continue; }
+			else if (!SendByte(0x01)) { scrPrintLine("Fail Parameter 6"); continue; }
+			else if (!SendByte(0x1B)) { scrPrintLine("Fail Parameter 7"); continue; }
+			else if (!SendByte(0xFF)) { scrPrintLine("Fail Parameter 8"); continue; }
+
 			if (!WaitForInterrupt(20000))
 			{
 				outb(DOR, RESET|DMA_GATE);
