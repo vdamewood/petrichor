@@ -30,10 +30,10 @@
 #include "x86asm.h"
 
 void scrPrint(char *);
-void scrPrintLine(char *);
-
-void scrPrintHexByte();
 void scrPrintChar(char);
+void scrPrintLine(char *);
+void scrPrintHexByte(char);
+void scrPrintHexDWord(int);
 void scrBreakLine();
 
 void tmrWait(unsigned int);
@@ -116,8 +116,6 @@ void *fdGetBuffer(void)
 	return (void*)0x1000;
 }
 
-// IRQ
-
 static volatile char interrupt = 0x00;
 void fdHandleInterrupt(void)
 {
@@ -154,8 +152,6 @@ static void ResetController(void)
 	outb(DOR, byte);
 }
 
-// Send/Receive
-
 static int SendByte(unsigned char signal)
 {
 	int timeout = 0x50;
@@ -170,7 +166,6 @@ static int SendByte(unsigned char signal)
 	return -1;
 }
 
-// Reccomended by datasheet
 static int ReadByte(unsigned char *signal)
 {
 
@@ -187,31 +182,35 @@ static int ReadByte(unsigned char *signal)
 	return -1;
 }
 
-// Suggested routines
-
-static void Initialize(void)
+static int Initialize(void)
 {
 	InitDma();
 	ResetInterrupt();
 	ResetController();
 	outb(CCR, 0x00);
-	WaitForInterrupt(500);
+	if (!WaitForInterrupt(1000))
+		return 0;
+
 	for (int i = 0; i < 4; i++)
 	{
-		SendByte(SENSE_INTERRUPT_STATUS);
-		ReadByte(0);
-		ReadByte(0);
+		if (!(SendByte(SENSE_INTERRUPT_STATUS)
+			&& ReadByte(0)
+			&& ReadByte(0)))
+		{
+			scrPrint("Sense failed ");
+			scrPrintHexDWord(i);
+			scrBreakLine();
+			return 0;
+		}
 	}
 
-	// FIXME: The datasheet says:
-	// if (Parameters are different from default)
-	// {
-	//    issue configure command
-	// }
-
-	SendByte(SPECIFY);
-	SendByte(0x80);
-	SendByte(0x8A);
+	if (!(SendByte(SPECIFY)
+		&& SendByte(0x80)
+		&& SendByte(0x8A)))
+	{
+		scrPrintLine("Speficy failed.");
+	}
+	return -1;
 }
 
 static int Seek(unsigned char cylinder)
@@ -277,7 +276,7 @@ static int Read(void)
 			else if (!SendByte(0x1B)) { scrPrintLine("Fail Parameter 7"); continue; }
 			else if (!SendByte(0xFF)) { scrPrintLine("Fail Parameter 8"); continue; }
 
-			if (!WaitForInterrupt(20000))
+			if (!WaitForInterrupt(500))
 			{
 				outb(DOR, RESET|DMA_GATE);
 				return 0;
@@ -310,13 +309,19 @@ static int Read(void)
 
 void fdInit(void)
 {
-	Initialize();
+	int status = Initialize();
+	scrPrint("Init Status: ");
+	scrPrintHexDWord(status);
+	scrBreakLine();
 }
 
 
 void fdRead(void)
 {
-	Read();
+	int status = Read();
+	scrPrint("Read Status: ");
+	scrPrintHexDWord(status);
+	scrBreakLine();
 }
 
 static void InitDma(void)
