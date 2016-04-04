@@ -111,6 +111,13 @@ enum Commands
 	LOCK                   = 0x14
 };
 
+enum CommandParameters
+{
+	MT                     = 0x80, // Multi Track; OR into Read/Write
+	MFT                    = 0x40, // Double Density; OR into Read/Write
+	SK                     = 0x20  // Skip; OR into Read
+};
+
 void *fdGetBuffer(void)
 {
 	return (void*)0x1000;
@@ -266,7 +273,7 @@ static int Read(void)
 
 			scrPrintLine("Trying to read...");
 			ResetInterrupt();
-			if (!SendByte(READ_DATA)) { scrPrintLine("Fail Command"); continue; }
+			if (!SendByte(READ_DATA | MFT)) { scrPrintLine("Fail Command"); continue; }
 			else if (!SendByte(0x00)) { scrPrintLine("Fail Parameter 1"); continue; }
 			else if (!SendByte(0x00)) { scrPrintLine("Fail Parameter 2"); continue; }
 			else if (!SendByte(0x00)) { scrPrintLine("Fail Parameter 3"); continue; }
@@ -276,11 +283,7 @@ static int Read(void)
 			else if (!SendByte(0x1B)) { scrPrintLine("Fail Parameter 7"); continue; }
 			else if (!SendByte(0xFF)) { scrPrintLine("Fail Parameter 8"); continue; }
 
-			if (!WaitForInterrupt(500))
-			{
-				outb(DOR, RESET|DMA_GATE);
-				return 0;
-			}
+			WaitForInterrupt(0);
 
 			unsigned char result[7];
 			for (int i = 0; i < 7; i++)
