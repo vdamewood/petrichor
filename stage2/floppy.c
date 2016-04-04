@@ -326,16 +326,14 @@ static int Initialize(void)
 	{
 		if (!SenseInterruptStatus(NULL))
 		{
-			scrPrint("Sense failed ");
-			scrPrintHexDWord(i);
-			scrBreakLine();
+			scrPrintLine("fd: sense failed.");
 			return 0;
 		}
 	}
 
 	if (!Specify(0x08, 0x00, 0x45, 0x00))
 	{
-		scrPrintLine("Specify failed.");
+		scrPrintLine("fd: specify failed.");
 		return 0;
 	}
 	return -1;
