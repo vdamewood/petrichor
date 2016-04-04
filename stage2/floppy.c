@@ -147,11 +147,13 @@ static void ResetInterrupt(void)
 
 int WaitForInterrupt(int timeout)
 {
-	// FIXME: add asm("hlt") somewhere!
 	int i = 0;
 	while (!interrupt)
+	{
+		tmrWait(1);
 		if (timeout && (++i == timeout))
 			return 0;
+	}
 	return -1;
 }
 
@@ -164,12 +166,12 @@ static void ResetController(void)
 
 static int SendByte(unsigned char signal)
 {
-	int timeout = 0x50;
+	int timeout = 0x500;
 	while ((inb(MSR) & 0xC0) != 0x80)
 	{
 		if (--timeout == 0)
 			return 0;
-		tmrWait(10);
+		tmrWait(1);
 	}
 
 	outb(FIFO, signal);
@@ -179,12 +181,12 @@ static int SendByte(unsigned char signal)
 static int ReadByte(unsigned char *signal)
 {
 
-	int timeout = 0x50;
+	int timeout = 0x500;
 	while ((inb(MSR) & 0xC0) != 0xC0)
 	{
 		if (--timeout == 0)
 			return 0;
-		tmrWait(10);
+		tmrWait(1);
 	}
 
 	char c = inb(FIFO);
@@ -288,7 +290,7 @@ static int ReadData(uint8_t drive, uint8_t cyl, uint8_t head, uint8_t sector, ui
 			{
 				continue;
 			}
-			WaitForInterrupt(0);
+			WaitForInterrupt(1000);
 
 			unsigned char result[7];
 			for (int i = 0; i < 7; i++)
