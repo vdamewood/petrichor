@@ -231,12 +231,12 @@ static void TestFloppy(int argc, char *argv[])
 	{
 		if (blStrCmp("init", argv[1]) == 0)
 		{
-			scrPrintLine("Testing flopy drive initialization.");
+			scrPrintLine("Testing floppy drive initialization.");
 			fdInit();
 		}
 		else if (blStrCmp("read", argv[1]) == 0)
 		{
-			scrPrintLine("Testing flopy drive read.");
+			scrPrintLine("Testing floppy drive read.");
 			fdRead();
 		}
 		else if (blStrCmp("verify", argv[1]) == 0)

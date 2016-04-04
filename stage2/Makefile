@@ -16,7 +16,7 @@ init%.o: init%.asm
 	nasm -f elf -o $@ $<
 
 floppy.o: floppy.c x86asm.h
-	clang -ffreestanding -fno-builtin -nostdlib -nostdinc -c --target=i686-pc-none-elf -march=i686 -o floppy.o floppy.c
+	clang -ffreestanding -fno-builtin -nostdlib -c --target=i686-pc-none-elf -march=i686 -o floppy.o floppy.c
 
 %.o: %.asm functions.inc
 	nasm -f elf -o $@ $<

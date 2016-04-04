@@ -27,6 +27,9 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <stddef.h>
+#include <stdint.h>
+
 #include "x86asm.h"
 
 void scrPrint(char *);
@@ -41,6 +44,14 @@ void tmrWait(unsigned int);
 static void InitDma(void);
 static void ReadDma(void);
 static void WriteDma(void);
+
+enum Drives
+{
+	Drive_0 = 0x00,
+	Drive_1 = 0x01,
+	Drive_2 = 0x10,
+	Drive_3 = 0x11
+};
 
 enum Ports
 {
@@ -126,34 +137,26 @@ void *fdGetBuffer(void)
 static volatile char interrupt = 0x00;
 void fdHandleInterrupt(void)
 {
-	scrPrintLine("Floppy: IRQ6 emitted");
 	interrupt = 0xFF;
 }
 
 static void ResetInterrupt(void)
 {
-	scrPrintLine("Floppy: IRQ6 resetting");
 	interrupt = 0x00;
 }
 
 int WaitForInterrupt(int timeout)
 {
-	scrPrintLine("Floppy: IRQ6 waiting");
+	// FIXME: add asm("hlt") somewhere!
 	int i = 0;
-
 	while (!interrupt)
 		if (timeout && (++i == timeout))
-		{
-			scrPrintLine("Floppy: IRQ6 timeout");
 			return 0;
-		}
-	scrPrintLine("Floppy: IRQ6 detected");
-	return 1;
+	return -1;
 }
 
 static void ResetController(void)
 {
-	scrPrintLine("Floppy: Resetting Controller");
 	unsigned char byte = inb(DOR);
 	outb(DOR, byte & (~RESET));
 	outb(DOR, byte);
@@ -189,20 +192,137 @@ static int ReadByte(unsigned char *signal)
 	return -1;
 }
 
+static void EnableDrive(unsigned char drive)
+{
+	outb(DOR, drive | RESET | DMA_GATE | (0x10 << drive));	
+}
+
+static void DisableDrive(unsigned char drive)
+{
+	outb(DOR, RESET | DMA_GATE);
+}
+
+static int Specify(uint8_t srt, uint8_t hut, uint8_t hlt, uint8_t nd);
+static int SenseInterruptStatus(uint8_t *result);
+static int Seek(uint8_t drive, uint8_t head, uint8_t cyl);
+static int Recalibrate(uint8_t drive);
+
+static int Specify(uint8_t srt, uint8_t hut, uint8_t hlt, uint8_t nd)
+{
+	return SendByte(SPECIFY)
+		&& SendByte(srt<<4 | (hut & 0x0F))
+		&& SendByte(hlt<<1 | (nd & 0x01));
+}
+
+static int SenseInterruptStatus(uint8_t *result)
+{
+	return SendByte(SENSE_INTERRUPT_STATUS)
+		&& ReadByte(result ? result + 0 : NULL)
+		&& ReadByte(result ? result + 1 : NULL);
+}
+
+static int Seek(uint8_t drive, uint8_t head, uint8_t cyl)
+{
+	EnableDrive(drive);
+	ResetInterrupt();
+
+	if (!(SendByte(SEEK)
+		&& SendByte((head & 0x01) << 2 | (drive & 0x03))
+		&& SendByte(cyl)))
+	{
+		return 0;
+	}
+	WaitForInterrupt(500);
+
+	unsigned char result[2];
+	if (!SenseInterruptStatus(result))
+		return 0;
+
+	return result[0] != 0x80;
+}
+
+static int Recalibrate(uint8_t drive)
+{
+	EnableDrive(drive);
+	ResetInterrupt();
+
+	if (!(SendByte(RECALIBRATE)
+		&& SendByte(drive & 0x03)))
+	{
+		return 0;
+	}
+	WaitForInterrupt(500);
+
+	unsigned char result[2];
+	if (!SenseInterruptStatus(result))
+		return 0;
+
+	return result[0] != 0x80;
+}
+
+static int ReadData(uint8_t drive, uint8_t cyl, uint8_t head, uint8_t sector, uint8_t length)
+{
+	EnableDrive(drive);
+	outb(CCR, 0x00); // Set Data Rate to 1M
+
+	for (int seeks = 3; seeks > 0; seeks--)
+	{
+		Seek(drive, 0, 0);
+
+		tmrWait(500);
+
+		for (int tries = 3; tries > 0; tries--)
+		{
+			ReadDma();
+
+			ResetInterrupt();
+			if (!(SendByte(READ_DATA | MFT)
+				&& SendByte((head&1) << 2 | (drive&3))
+				&& SendByte(cyl)
+				&& SendByte(head)
+				&& SendByte(sector)
+				&& SendByte(0x02) // sector size
+				&& SendByte(length)
+				&& SendByte(0x1B) // Gap Length
+				&& SendByte(0xFF))) // data length; Always 0xFF when Sector Size != 128 bytes
+			{
+				continue;
+			}
+			WaitForInterrupt(0);
+
+			unsigned char result[7];
+			for (int i = 0; i < 7; i++)
+				ReadByte(&result[i]);
+
+			// At this point result has these bytes:
+			//ST0 ST1 ST2 Cyl Head Sector sector-size
+			if((result[0] & 0xC0) == 0)
+			{
+				DisableDrive(drive);
+				return -1;
+			}
+		}
+		Recalibrate(drive);
+	}
+
+	DisableDrive(drive);
+	return 0;
+}
+
 static int Initialize(void)
 {
 	InitDma();
 	ResetInterrupt();
 	ResetController();
-	outb(CCR, 0x00);
+
+	outb(CCR, 0x00); // Set Data Rate to 1M
+
 	if (!WaitForInterrupt(1000))
 		return 0;
 
 	for (int i = 0; i < 4; i++)
 	{
-		if (!(SendByte(SENSE_INTERRUPT_STATUS)
-			&& ReadByte(0)
-			&& ReadByte(0)))
+		if (!SenseInterruptStatus(NULL))
 		{
 			scrPrint("Sense failed ");
 			scrPrintHexDWord(i);
@@ -211,120 +331,25 @@ static int Initialize(void)
 		}
 	}
 
-	if (!(SendByte(SPECIFY)
-		&& SendByte(0x80)
-		&& SendByte(0x8A)))
+	if (!Specify(0x08, 0x00, 0x45, 0x00))
 	{
-		scrPrintLine("Speficy failed.");
+		scrPrintLine("Specify failed.");
+		return 0;
 	}
 	return -1;
 }
 
-static int Seek(unsigned char cylinder)
-{
-	outb(DOR, ENABLE_0);
-	ResetInterrupt();
-
-	SendByte(SEEK);
-	SendByte(0x00);
-	SendByte(0x00);
-	WaitForInterrupt(500);
-
-	unsigned char ST0, PCN;
-	SendByte(SENSE_INTERRUPT_STATUS);
-	ReadByte(&ST0);
-	ReadByte(&PCN);
-
-	return (ST0 != 0x80);
-}
-
-static int Recalibrate(void)
-{
-	outb(DOR, ENABLE_0);
-	ResetInterrupt();
-
-	SendByte(RECALIBRATE);
-	SendByte(0x00);
-	WaitForInterrupt(500);
-
-	unsigned char ST0, PCN;
-	SendByte(SENSE_INTERRUPT_STATUS);
-	ReadByte(&ST0);
-	ReadByte(&PCN);
-
-	return (ST0 != 0x80);
-}
-
-static int Read(void)
-{
-	outb(DOR, ENABLE_0);
-	outb(CCR, 0x00);
-
-	for (int seeks = 3; seeks > 0; seeks--)
-	{
-		scrPrintLine("Seeking...");
-		Seek(0);
-
-		tmrWait(500);
-
-		for (int tries = 3; tries > 0; tries--)
-		{
-			ReadDma();
-
-			scrPrintLine("Trying to read...");
-			ResetInterrupt();
-			if (!SendByte(READ_DATA | MFT)) { scrPrintLine("Fail Command"); continue; }
-			else if (!SendByte(0x00)) { scrPrintLine("Fail Parameter 1"); continue; }
-			else if (!SendByte(0x00)) { scrPrintLine("Fail Parameter 2"); continue; }
-			else if (!SendByte(0x00)) { scrPrintLine("Fail Parameter 3"); continue; }
-			else if (!SendByte(0x01)) { scrPrintLine("Fail Parameter 4"); continue; }
-			else if (!SendByte(0x02)) { scrPrintLine("Fail Parameter 5"); continue; }
-			else if (!SendByte(0x01)) { scrPrintLine("Fail Parameter 6"); continue; }
-			else if (!SendByte(0x1B)) { scrPrintLine("Fail Parameter 7"); continue; }
-			else if (!SendByte(0xFF)) { scrPrintLine("Fail Parameter 8"); continue; }
-
-			WaitForInterrupt(0);
-
-			unsigned char result[7];
-			for (int i = 0; i < 7; i++)
-			{
-				ReadByte(&result[i]);
-				scrPrintHexByte(result[i]);
-				scrPrintChar(' ');
-			}
-			scrBreakLine();
-			// At this point result has these bytes:
-			//ST0 ST1 ST2 Cyl Head Sector sector-size
-
-			if((result[0] & 0xC0) == 0)
-			{
-				outb(DOR, RESET|DMA_GATE);
-				return -1;
-			}
-		}
-		Recalibrate();
-	}
-
-	outb(DOR, RESET|DMA_GATE);
-	return 0;
-}
-
-
 void fdInit(void)
 {
-	int status = Initialize();
-	scrPrint("Init Status: ");
-	scrPrintHexDWord(status);
-	scrBreakLine();
+	if (!Initialize())
+		scrPrintLine("fd: Init failed.");
 }
 
 
 void fdRead(void)
 {
-	int status = Read();
-	scrPrint("Read Status: ");
-	scrPrintHexDWord(status);
-	scrBreakLine();
+	if (!ReadData(Drive_0, 0, 0, 1, 1))
+		scrPrintLine("fd: Read failed.");
 }
 
 static void InitDma(void)
