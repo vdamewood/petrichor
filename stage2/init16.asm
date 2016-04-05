@@ -1,4 +1,4 @@
-; init16.asm: 16-bit initialization
+; init16.asm: 16-bit, real-mode initialization
 ;
 ; Copyright 2015, 2016 Vincent Damewood
 ; All rights reserved.

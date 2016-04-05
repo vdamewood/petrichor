@@ -6,6 +6,7 @@ ASMFLAGS=-f elf
 OBJECTS= \
 	init16.o \
 	init32.o \
+	init32c.o \
 	acpi.o \
 	command.o \
 	cpuid.o \

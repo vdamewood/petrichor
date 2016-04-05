@@ -1,4 +1,4 @@
-; init.asm: Protected-mode, secont-stage initialization
+; init32.asm: 32-bit, protected-mode initialization
 ;
 ; Copyright 2015, 2016 Vincent Damewood
 ; All rights reserved.
@@ -26,16 +26,12 @@
 ; (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 ; OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-extern CommandLoop
-extern scrClear
-extern scrPrintLine
+extern Init32c
 extern blMemCmp
 
 SECTION .data
 
-Loaded: db 'Second stage loaded.', 0
 BssSignature: db '.bss', 0
-BssNotFound: db 'Warning: Unable to clear .bss.', 0
 
 SECTION .text
 
@@ -80,6 +76,7 @@ LoadBss:
 	add eax, ebx
 	push eax
 
+	; FIXME: eliminate call to blMemCmp
 	call blMemCmp
 	pop eax
 	jz .BssFound
@@ -87,13 +84,10 @@ LoadBss:
 	add esi, edx
 	loop .BssScanLoop
 .BssNotFound:
-	push BssNotFound
-	call scrPrintLine
-	add esp, 12
+	add esp, 8
 	jmp .BssDone
 .BssFound:
 	add esp, 8
-
 	mov eax, [esi]
 	add eax, ebx
 
@@ -103,15 +97,9 @@ LoadBss:
 	rep stosb
 .BssDone:
 
-
 	call IntrSetupInterrupts
-.loop:
-	call scrClear
-	push Loaded
-	call scrPrintLine
-	add esp, 4
-	call CommandLoop
-	jmp .loop
+JumpToC:
+	jmp Init32c
 
 extern KeyboardHandleInterrupt
 extern scrBreakLine
@@ -166,9 +154,6 @@ IntrIsrCommon:
 	pusha
 
 	mov eax, Interrupt
-	;cmp eax, 0x20
-	;je .cleanup
-
 .try_timer:
 	cmp eax, 0x20
 	jne .not_timer
