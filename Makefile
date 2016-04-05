@@ -20,4 +20,4 @@ stage1/stage1.bin:
 stage2/stage2.bin:
 	make -C stage2 stage2.bin
 
-.PHONY: all clean distclean
+.PHONY: all clean distclean stage1/stage1.bin stage2/stage2.bin

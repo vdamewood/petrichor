@@ -27,17 +27,14 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "screen.h"
+
 void  AcpiShutdown(void);
 void  AcpiShowHeaders(void);
 int   blStrCmp(const void*, const void*);
 int   blStrLen(const char*);
 void  memShowMap(void);
 void  cpuidShowVendor(void);
-void  scrClear(void);
-void  scrPrintLine(const char*);
-void  scrBreakLine(void);
-void  scrPrint(const char*);
-void  scrPrintChar(char);
 char *uioGetLine(void);
 void tmrSetInterval(unsigned short);
 
@@ -172,25 +169,26 @@ struct colorTableEntry
 	unsigned char value;
 };
 
+
 struct colorTableEntry colors[] =
 {
-	{"black",      0x00},
-	{"darkblue",   0x11},
-	{"darkgreen",  0x22},
-	{"darkcyan",   0x33},
-	{"darkred",    0x44},
-	{"darkpurple", 0x55},
-	{"darkyellow", 0x66},
-	{"lightgray",  0x77},
-	{"darkgrey",   0x78},
-	{"blue",       0x19},
-	{"green",      0x2A},
-	{"cyan",       0x3B},
-	{"red",        0x4C},
-	{"purple",     0x5D},
-	{"yellow",     0x6E},
-	{"white",      0x7F},
-	{0,            0xFF}
+	{"black",   scrBlack},
+	{"blue",    scrBlue},
+	{"green",   scrGreen},
+	{"cyan",    scrCyan},
+	{"red",     scrRed},
+	{"purple",  scrPurple},
+	{"yellow",  scrYellow},
+	{"white",   scrWhite},
+	{"black+",  scrBright | scrBlack},
+	{"blue+",   scrBright | scrBlue},
+	{"green+",  scrBright | scrGreen},
+	{"cyan+",   scrBright | scrCyan},
+	{"red+",    scrBright | scrRed},
+	{"purple+", scrBright | scrPurple},
+	{"yellow+", scrBright | scrYellow},
+	{"white+",  scrBright | scrWhite},
+	{0,         0xFF}
 };
 
 static void Color(int argc, char *argv[])
@@ -223,7 +221,6 @@ static void Color(int argc, char *argv[])
 void fdInit(void);
 void fdRead(void);
 void *fdGetBuffer(void);
-void scrPrintHexByte(char);
 
 static void TestFloppy(int argc, char *argv[])
 {
@@ -293,6 +290,8 @@ static void ShowHelp(int argc, char *argv[])
 		//scrPrint(" -- ");
 		scrPrint(candidate->help);
 		scrBreakLine();
+		//asm("int 0x21");
+		//scrBreakLine();
 	}
 }
 

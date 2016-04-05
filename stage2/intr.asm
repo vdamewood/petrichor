@@ -30,6 +30,7 @@ extern KeyboardHandleInterrupt
 extern scrBreakLine
 extern scrPrintHexDWord
 extern scrPrintSpace
+extern scrPrintChar
 extern fdHandleInterrupt
 extern tmrHandleInterrupt
 
@@ -108,11 +109,13 @@ IntrIsrCommon:
 .default:
 	push Interrupt
 	call scrPrintHexDWord
-	call scrPrintSpace
+	push 0x20
+	push scrPrintChar
+	;call scrPrintSpace
 	push Code
 	call scrPrintHexDWord
 	call scrBreakLine
-	add esp, 8
+	add esp, 12
 
 .cleanup:
 	mov ecx, Interrupt

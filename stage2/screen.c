@@ -27,29 +27,27 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "screen.h"
+#include "x86asm.h"
 
-#define vmem    ((volatile unsigned short*)0x000B8000)
-
-
-// When placing, LSB is character in CP437, MSB is Forground/Backgorund color
-
-unsigned char color = 0x07;
-unsigned int cursor = 0;
+static uint8_t  color  = 0x07;
+static uint16_t cursor = 0;
+static volatile uint16_t *vmem = (uint16_t*) 0x000B8000;
 
 #define width 80
 #define height 25
 
-void scrSetForgroundColor(unsigned char newColor)
+void scrSetForgroundColor(const uint8_t newColor)
 {
 	color = (color & 0xF0) | (newColor & 0x0F); 
 }
 
-void scrSetBackgroundColor(unsigned char newColor)
+void scrSetBackgroundColor(const uint8_t newColor)
 {
-	color = (newColor & 0xF0) | (color & 0x0F); 
+	color = ((newColor<<4) & 0xF0) | (color & 0x0F); 
 }
 
-void scrSetColor(unsigned char newColor)
+void scrSetColor(const uint8_t newColor)
 {
 	color = newColor;
 }
@@ -62,33 +60,17 @@ void scrClear(void)
 	cursor = 0;
 }
 
-void scrSetCursor(unsigned int newPos)
+void scrSetCursor(const uint16_t newPos)
 {
-	cursor = newPos;
-}
-
-int GetRealCursor(void)
-{
-	return cursor * 2 + 0x000B8000;
-}
-
-void SetRealCursor(unsigned int newPos)
-{
-	newPos -= 0x000B8000;
-	newPos >>= 1;
 	cursor = newPos;
 }
 
 void scrShowCursor(void)
 {
-    // out 0x3D4, 0x0F
-	asm volatile ("outb %0, %1" : : "a" ((unsigned char)0x0F), "d" ((unsigned short)0x3D4) );
-    // out 0x3D5, bl
-	asm volatile ("outb %0, %1" : : "a" ((unsigned char)(cursor&0xFF)), "d" ((unsigned short)0x3D5) );
-    // out 0x3D4, 0x0E
-	asm volatile ("outb %0, %1" : : "a" ((unsigned char)0x0E), "d" ((unsigned short)0x3D4) );
-    // out 0x3D5, bh
-	asm volatile ("outb %0, %1" : : "a" ((unsigned char)(cursor>>8)), "d" ((unsigned short)0x3D5) );
+    outb(0x3D4, 0x0F);
+    outb(0x3D5, cursor & 0xFF);
+    outb(0x3D4, 0x0E);
+    outb(0x3D5, cursor>>8);
 }
 
 void scrShift(void)
@@ -114,13 +96,11 @@ void scrBreakLine(void)
 	scrShowCursor();
 }
 
-void scrPrint(char *string)
+void scrPrint(const char *string)
 {
-	for (char *p = string; *p; p++)
+	for (const char *p = string; *p; p++)
 	{
-		vmem[cursor++] = ((unsigned short)color << 8) | *p;
-
-		// vmem[cursor++] = (color << 8) & *p;
+		vmem[cursor++] = ((uint16_t)color << 8) | *p;
 		if (cursor > height*width)
 		{
 			scrShift();
@@ -129,16 +109,16 @@ void scrPrint(char *string)
 	}
 }
 
-void scrPrintLine(char *string)
+void scrPrintLine(const char *string)
 {
 	scrPrint(string);
 	scrBreakLine();
 
 }
 
-void scrPrintChar(char c)
+void scrPrintChar(const char c)
 {
-	vmem[cursor++] = ((unsigned short)color << 8) | c;
+	vmem[cursor++] = ((uint16_t)color << 8) | c;
 
 	if (cursor > height*width)
 	{
@@ -147,17 +127,12 @@ void scrPrintChar(char c)
 	}
 }
 
-void scrPrintSpace(void)
-{
-	scrPrintChar(' ');
-}
-
 void scrDelete(void)
 {
 	vmem[--cursor] &= 0xFF00;
 }
 
-void scrPrintHex(const int count, const int value)
+static void scrPrintHex(const int count, const int value)
 {
 	const unsigned char *v = (const unsigned char *)(&value);
 	for (int i = count-1; i >= 0; i--)
@@ -167,22 +142,22 @@ void scrPrintHex(const int count, const int value)
 	}
 }
 
-void scrPrintHexByte(char value)
+void scrPrintHexByte(uint8_t value)
 {
 	scrPrintHex(1, (int)value);
 }
 
-void scrPrintHexWord(short value)
+void scrPrintHexWord(uint16_t value)
 {
 	scrPrintHex(2, (int)value);
 }
 
-void scrPrintHexDWord(int value)
+void scrPrintHexDWord(uint32_t value)
 {
 	scrPrintHex(4, value);
 }
 
-void scrPrintHexPointer(void *value)
+void scrPrintHexPointer(const void *value)
 {
-	scrPrintHex(4, (int)value);
+	scrPrintHex(4, (uint32_t)value);
 }
