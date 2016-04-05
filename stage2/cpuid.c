@@ -27,7 +27,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-void scrPrintLine(const char *);
+#include "screen.h"
 
 char vendor[13];
 

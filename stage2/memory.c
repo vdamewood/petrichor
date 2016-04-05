@@ -27,12 +27,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-void scrBreakLine(void);
-void scrPrint(const char *);
-void scrPrintHexWord(short);
-void scrPrintHexDWord(int);
-void scrPrintLine(const char *);
-void scrPrintChar(char);
+#include "screen.h"
 
 char *StatusTable[] =
 {

@@ -27,13 +27,9 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "screen.h"
+
 int blMemCmp(const void*, const void*, unsigned int);
-void scrPrintHexDWord(int);
-void scrPrintHexWord(short);
-void scrPrintHexByte(char);
-void scrPrintChar(char);
-void scrBreakLine(void);
-void scrPrintLine(char*);
 
 struct SdtHeader
 {

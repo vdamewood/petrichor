@@ -30,14 +30,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "screen.h"
 #include "x86asm.h"
-
-void scrPrint(char *);
-void scrPrintChar(char);
-void scrPrintLine(char *);
-void scrPrintHexByte(char);
-void scrPrintHexDWord(int);
-void scrBreakLine();
 
 void tmrWait(unsigned int);
 

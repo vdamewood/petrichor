@@ -159,10 +159,6 @@ static void Shutdown(int argc, char *argv[])
 	AcpiShutdown();
 }
 
-void scrSetColor(unsigned char newColor);
-void scrSetForgroundColor(unsigned char newColor);
-void scrSetBackgroundColor(unsigned char newColor);
-
 struct colorTableEntry
 {
 	char *name;
