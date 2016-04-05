@@ -10,7 +10,6 @@ OBJECTS= \
 	command.o \
 	cpuid.o \
 	floppy.o \
-	intr.o \
 	keyboard.o \
 	keyscan.o \
 	memory.o \
