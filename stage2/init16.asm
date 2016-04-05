@@ -1,4 +1,4 @@
-; real16.asm: Real-mode, second-stage initialization
+; init16.asm: 16-bit initialization
 ;
 ; Copyright 2015, 2016 Vincent Damewood
 ; All rights reserved.
@@ -26,13 +26,54 @@
 ; (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 ; OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-extern GdtPointer
 extern Init32
 
 %define PMemTableCount  0x3300
 %define MemTableCount   dword[PMemTableCount]
 %define MemTableCountHi [PMemTableCount+4]
 %define PMemTable       (PMemTableCount+8)
+
+section .data
+
+GdtPointer:
+limit: dw 23
+base:  dd GdtTable
+
+GdtTable:
+null:
+	times 8 db 0
+
+sys_code:
+.limit_low:   dw 0xFFFF ; lower 16 bits of limit
+.base_low:    dw 0x0000 ; Low 16 bits of the base
+.base_middle: db 0x00   ; Next 8 bytes of the base.
+.access       db 0x9A   ; Access flags, ring, etc
+.granularity  db 0xCF   ; Example code set all to 0xCF
+.base_high    db 0x00   ; highest 0 bits of base
+
+sys_data:
+.limit_low:   dw 0xFFFF ; lower 16 bits of limit
+.base_low:    dw 0x0000 ; Low 16 bits of the base
+.base_middle: db 0x00   ; Next 8 bytes of the base.
+.access       db 0x92   ; Access flags, ring, etc
+.granularity  db 0xCF   ; Example code set all to 0xCF
+.base_high    db 0x00   ; highest 0 bits of base
+
+usr_code:
+.limit_low:   dw 0xFFFF ; lower 16 bits of limit
+.base_low:    dw 0x0000 ; Low 16 bits of the base
+.base_middle: db 0x00   ; Next 8 bytes of the base.
+.access       db 0xFA   ; Access flags, ring, etc
+.granularity  db 0xCF   ; Example code set all to 0xCF
+.base_high    db 0x00   ; highest 0 bits of base
+
+usr_data:
+.limit_low:   dw 0xFFFF ; lower 16 bits of limit
+.base_low:    dw 0x0000 ; Low 16 bits of the base
+.base_middle: db 0x00   ; Next 8 bytes of the base.
+.access       db 0xF2   ; Access flags, ring, etc
+.granularity  db 0xCF   ; Example code set all to 0xCF
+.base_high    db 0x00   ; highest 0 bits of base
 
 section .text
 [BITS 16]
@@ -72,6 +113,7 @@ LoadMemoryTable:
 EnableA20:
 	mov ax, 0x2401
 	int 0x15
+
 
 LoadGdt:
 	; GdtPointer will be a 32-bit address, so here
