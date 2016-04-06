@@ -15,6 +15,7 @@ OBJECTS= \
 	keyscan.o \
 	memory.o \
 	screen.o \
+	shell.o \
 	timer.o \
 	uio.o \
 	util.o \
@@ -31,6 +32,9 @@ init16.o: init16.asm
 init32.o: init32.asm
 	$(ASM) $(ASMFLAGS) -o $@ $<
 
+init32c.o: init32c.c screen.h shell.h
+	clang $(CFLAGS) -o $@ $<
+
 acpi.o: acpi.c screen.h
 	$(CC) $(CFLAGS) -o acpi.o acpi.c
 
@@ -40,14 +44,17 @@ command.o: command.c screen.h
 cpuid.o: cpuid.c screen.h
 	$(CC) $(CFLAGS) -o cpuid.o cpuid.c
 
-floppy.o: floppy.c x86asm.h
+floppy.o: floppy.c screen.h x86asm.h
 	$(CC) $(CFLAGS) -o floppy.o floppy.c
 
 memory.o: screen.c screen.h
 	$(CC) $(CFLAGS) -o memory.o memory.c
 
-screen.o: screen.c screen.h
+screen.o: screen.c screen.h x86asm.h
 	$(CC) $(CFLAGS) -o screen.o screen.c
+
+shell.o: shell.c command.h screen.h shell.h uio.h
+	$(CC) $(CFLAGS) -o shell.o shell.c
 
 %.o: %.asm functions.inc
 	$(ASM) $(ASMFLAGS) -o $@ $<

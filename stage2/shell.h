@@ -1,4 +1,4 @@
-/* init32c.c: 32-bit, protected-mode C-safe initialization
+/* shell.h: Command interpreter
  *
  * Copyright 2015, 2016 Vincent Damewood
  * All rights reserved.
@@ -27,18 +27,9 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "shell.h"
-#include "screen.h"
+#ifndef SHELL_H
+#define SHELL_H
 
-void CommandLoop(void);
-void tmrSetInterval(int);
+void shLoop(void);
 
-void Init32c(void)
-{
-	// This approximates 1000 ticks = 1 second.
-	tmrSetInterval(1193);
-	scrClear();
-	scrPrintLine("Petrichor" " loaded.");
-	while (-1)
-		shLoop();		
-}
+#endif /* SHELL_H */

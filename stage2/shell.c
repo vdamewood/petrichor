@@ -1,4 +1,4 @@
-/* init32c.c: 32-bit, protected-mode C-safe initialization
+/* shell.c: Command interpreter
  *
  * Copyright 2015, 2016 Vincent Damewood
  * All rights reserved.
@@ -27,18 +27,55 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "shell.h"
+#include "command.h"
 #include "screen.h"
+#include "shell.h"
+#include "uio.h"
 
-void CommandLoop(void);
-void tmrSetInterval(int);
+// FIXME: Implement memory allocation
+#define argMax 7
+#define argSize 24
+static char argumentBuffer[argMax+1][argSize];
+static char *argumentPointers[argMax];
 
-void Init32c(void)
+void shLoop(void)
 {
-	// This approximates 1000 ticks = 1 second.
-	tmrSetInterval(1193);
-	scrClear();
-	scrPrintLine("Petrichor" " loaded.");
-	while (-1)
-		shLoop();		
+	for (int i = 0; i < argMax; i++)
+		argumentPointers[i] = argumentBuffer[i];
+
+	while(1)
+	{
+		scrPrint("?> ");
+		char *command = uioGetLine();
+
+		int inChar = 0;
+		int outChar = 0;
+		int count = 0;
+
+		// FIXME: This can be replaced with something that understands escapes and
+		//        quotes.
+		do
+		{
+			if (command[inChar] != ' ' && command[inChar] != '\0')
+			{
+				if (outChar < argSize-1)
+					argumentPointers[count][outChar++] = command[inChar];
+			}
+			else
+			{
+				argumentPointers[count++][outChar] = '\0';
+				outChar = 0;
+			}
+
+			if (count == argMax)
+				break;
+		}
+		while(command[inChar++] != '\0');
+		argumentPointers[count][0] = '\0';
+
+		void (*function)(int,char*[]) = cmdGet(argumentPointers[0]);
+		if (function)
+			function(count, argumentPointers);
+	}
 }
+

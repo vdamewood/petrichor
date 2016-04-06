@@ -27,18 +27,9 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "shell.h"
-#include "screen.h"
+#ifndef UIO_H
+#define UIO_H
 
-void CommandLoop(void);
-void tmrSetInterval(int);
+char *uioGetLine(void);
 
-void Init32c(void)
-{
-	// This approximates 1000 ticks = 1 second.
-	tmrSetInterval(1193);
-	scrClear();
-	scrPrintLine("Petrichor" " loaded.");
-	while (-1)
-		shLoop();		
-}
+#endif /* UIO_H */

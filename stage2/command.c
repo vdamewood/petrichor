@@ -27,6 +27,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <stddef.h>
+
 #include "screen.h"
 
 void  AcpiShutdown(void);
@@ -48,7 +50,7 @@ static void  AcpiHeaders(int argc, char *argv[]);
 static void  Shutdown(int argc, char *argv[]);
 static void  TestArgs(int argc, char *argv[]);
 static void  Color(int argc, char *argv[]);
-static void TestFloppy(int, char*[]);
+static void  TestFloppy(int, char*[]);
 
 struct entry
 {
@@ -81,46 +83,12 @@ static char argumentBuffer[argMax][argSize];
 char *argumentPointers[argMax];
 
 
-void CommandLoop(void)
+void (*cmdGet(const char *in))(int,char*[])
 {
-	// This approximates 1000 ticks = 1 second.
-	tmrSetInterval(1193);
-	for (int i = 0; i < argMax; i++)
-		argumentPointers[i] = argumentBuffer[i];
-
-	while(1)
-	{
-		scrPrint("?> ");
-		char *command = uioGetLine();
-
-		int inChar = 0;
-		int outChar = 0;
-		int count = 0;
-
-		do
-		{
-			if (command[inChar] != ' ' && command[inChar] != '\0')
-			{
-				if (outChar < argSize-1)
-					argumentPointers[count][outChar++] = command[inChar];
-			}
-			else
-			{
-				argumentPointers[count++][outChar] = '\0';
-				outChar = 0;
-			}
-
-			if (count == argMax)
-				break;
-		} while(command[inChar++] != '\0');
-
-		for (entry *candidate = CommandTable; candidate->command != 0; candidate++)
-			if (blStrCmp(argumentPointers[0], candidate->command) == 0)
-			{
-				candidate->routine(count, argumentPointers);
-				break;
-			}
-	}
+	for (entry *candidate = CommandTable; candidate->command != NULL; candidate++)
+			if (blStrCmp(in, candidate->command) == 0)
+				return candidate->routine;
+	return NULL;
 }
 
 static void GreetUser(int argc, char *argv[])
