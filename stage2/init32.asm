@@ -27,11 +27,43 @@
 ; OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 extern Init32c
-extern blMemCmp
+extern KeyboardHandleInterrupt
+extern fdHandleInterrupt
+extern tmrHandleInterrupt
+
+%include "functions.inc"
+
+%define IdtCount 48
+%define IdtSize  (IdtCount<<3)
+%define IdtLimit (IdtSize-1)
+%define HexTable '0123456789ABCDEF'
 
 SECTION .data
 
 BssSignature: db '.bss', 0
+
+IntrTableReference:
+	.Limit: dw IdtLimit
+	.Base:  dd IntrTable
+
+; This makes a table of references to the ISRs so
+; that it can be looped through to create the real IDT.
+IntrSimpleTable:
+%assign i 0
+%rep IdtCount
+	%substr IsrDigit1 HexTable ((i / 16 + 1))
+	%substr IsrDigit2 HexTable ((i % 16 + 1))
+	%strcat IsrHexString '0x' IsrDigit1 IsrDigit2
+	%deftok IsrHexToken IsrHexString
+	dd IntrIsr%[IsrHexToken]
+	%assign i i+1
+%endrep
+
+%undef IsrHexToken
+%undef IsrHexString
+%undef IsrDigit2
+%undef IsrDigit1
+%undef IntrHexTable
 
 SECTION .text
 
@@ -69,25 +101,31 @@ LoadBss:
 	mov dx, word[0x1002E] ; Load Entry size... again
 	mov cx, word[0x10030] ; Count
 
-	push 4
-	push BssSignature
-.BssScanLoop:
-	mov eax, [esi]
-	add eax, ebx
-	push eax
+	; eax
+	; ecx -- Number of Sectons
+	; edx -- Size of a Section Entry
+	; ebx -- Address of .shstrtab
+	; esi -- Current Table Entry
+	; edi
 
-	; FIXME: eliminate call to blMemCmp
-	call blMemCmp
-	pop eax
+.BssScanLoop:
+	push esi
+	push ecx
+
+	mov edi, [esi] ; Read first word in entry (offset in .shstrtab)
+	add edi, ebx   ; Add offset to base
+	mov esi, BssSignature
+	mov ecx, 5
+	repe cmpsb
+
+	pop ecx
+	pop esi
 	jz .BssFound
 
 	add esi, edx
 	loop .BssScanLoop
-.BssNotFound:
-	add esp, 8
 	jmp .BssDone
 .BssFound:
-	add esp, 8
 	mov eax, [esi]
 	add eax, ebx
 
@@ -101,45 +139,6 @@ LoadBss:
 JumpToC:
 	jmp Init32c
 
-extern KeyboardHandleInterrupt
-extern scrBreakLine
-extern scrPrintHexDWord
-extern scrPrintSpace
-extern scrPrintChar
-extern fdHandleInterrupt
-extern tmrHandleInterrupt
-
-%include "functions.inc"
-
-%define IdtCount 48
-%define IdtSize  (IdtCount<<3)
-%define IdtLimit (IdtSize-1)
-%define HexTable '0123456789ABCDEF'
-
-section .data
-
-IntrTableReference:
-	.Limit: dw IdtLimit
-	.Base:  dd IntrTable
-
-; This makes a table of references to the ISRs so
-; that it can be looped through to create the real IDT.
-IntrSimpleTable:
-%assign i 0
-%rep IdtCount
-	%substr IsrDigit1 HexTable ((i / 16 + 1))
-	%substr IsrDigit2 HexTable ((i % 16 + 1))
-	%strcat IsrHexString '0x' IsrDigit1 IsrDigit2
-	%deftok IsrHexToken IsrHexString
-	dd IntrIsr%[IsrHexToken]
-	%assign i i+1
-%endrep
-
-%undef IsrHexToken
-%undef IsrHexString
-%undef IsrDigit2
-%undef IsrDigit1
-%undef IntrHexTable
 
 section .bss
 IntrTable: resb IdtSize
@@ -177,17 +176,6 @@ IntrIsrCommon:
 	call fdHandleInterrupt
 	jmp .cleanup
 .not_floppy:
-
-.default:
-	push Interrupt
-	call scrPrintHexDWord
-	push 0x20
-	push scrPrintChar
-	;call scrPrintSpace
-	push Code
-	call scrPrintHexDWord
-	call scrBreakLine
-	add esp, 12
 
 .cleanup:
 	mov ecx, Interrupt
@@ -230,7 +218,6 @@ IntrIsr%[IsrHexToken]:
 %endrep
 
 
-global IntrSetupInterrupts
 IntrSetupInterrupts:
 	fprolog 0, eax, edx, ebx
 	mov eax, 0
