@@ -30,6 +30,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "driver.h"
 #include "screen.h"
 #include "x86asm.h"
 

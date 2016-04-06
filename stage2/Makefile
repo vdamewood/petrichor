@@ -44,7 +44,7 @@ command.o: command.c screen.h
 cpuid.o: cpuid.c screen.h
 	$(CC) $(CFLAGS) -o cpuid.o cpuid.c
 
-floppy.o: floppy.c screen.h x86asm.h
+floppy.o: floppy.c driver.h screen.h x86asm.h
 	$(CC) $(CFLAGS) -o floppy.o floppy.c
 
 memory.o: screen.c screen.h
