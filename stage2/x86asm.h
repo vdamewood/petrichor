@@ -30,16 +30,18 @@
 #ifndef X86ASM_H
 #define X86ASM_H
 
+#include <stdint.h>
+
 #define bochsBreak asm("xchg %bx, %bx");
 
-static inline void outb(unsigned short port, unsigned char value)
+static inline void outb(uint16_t port, uint8_t value)
 {
 	asm ("outb %0, %1" :: "a"(value), "Nd"(port));
 }
 
-static inline unsigned char inb(unsigned short port)
+static inline unsigned char inb(uint16_t port)
 {
-	register unsigned char value;
+	register uint8_t value;
 	asm volatile ("inb %1, %0" :"=a"(value): "Nd"(port));
 	return value;
 }

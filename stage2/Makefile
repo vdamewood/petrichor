@@ -12,7 +12,6 @@ OBJECTS= \
 	cpuid.o \
 	floppy.o \
 	keyboard.o \
-	keyscan.o \
 	memory.o \
 	screen.o \
 	shell.o \
