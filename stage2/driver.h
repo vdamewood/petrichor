@@ -30,9 +30,8 @@
 struct drvDriver
 {
 	unsigned int Type;
-	void *State;
-		// Opaque data used by the driver. 
-	int (*GetName)(struct drvDriver *Me, char *Buffer, unsigned int BufferSize);
+	void *State; // Opaque data used by the driver. 
+	int (*GetName)(void *Me, char *Buffer, int BufferSize);
 		// Buffer is a buffer to store the name into
 		// BufferSize is the number of characters it is safe to write
 		// to, including the null terminator.
@@ -42,11 +41,11 @@ struct drvDriver
 		//   needed, then the return value is 0. If BufferSize is
 		//   greater than the required space, then the return value
 		//   is negative.
-		// If Buffer size is not zero, then the string written to Buffer will
+		// If BufferSize is not zero, then the string written to Buffer will
 		//   be null terminated.
 		// Calling this function with BufferSize = 0 will result in Buffer never
 		//   being written to. Calling with Buffer=NULL and BufferSize=0 is safe.
-	uint32_t (*GetVersion)(struct drvDriver *me);
+	uint32_t (*GetVersion)(void *Me);
 		// Integer in form byte[Major] byte[Minor] word[Patch], thus version 2.11.1022
 		//   returns 0x020B03FE.
 };
@@ -56,16 +55,18 @@ struct drvDriver
 struct drvStorageDevice
 {
 	struct drvDriver Driver;
-	unsigned char (*SectorSize)(struct drvStorageDevice *Me);
+	uint8_t (*SectorSize)(void *Me);
 		// Return value is the base-2 logorithm of the size of a sector on the device
 		// Common examples:
 		//   512 bytes -> 9;
 		//   4096 bytes -> 12
-	int (*ReadSectors)(struct drvStorageDevice *Me, unsigned int Start, unsigned int Length, void *Memory);
+	int (*ReadSectors)(void *Me, unsigned int Start, unsigned int Length, void *Memory);
 		// Start: First sector to read
 		// Length: Number of sectors to read
 		// Memory: Location to which to copy
 };
+typedef struct drvStorageDevice drvStorageDevice;
+
 
 struct FileInfo
 {
@@ -76,6 +77,7 @@ struct FileInfo
 struct drvStorageVolume
 {
 	struct drvDriver Driver;
-	int (*GetFileList)(struct drvStorageVolume *Me, struct FileInfo *Buffer, int BufferSize);
-	int (*LoadFile)(struct drvStorageVolume *Me, char *Filename, void *Memory);
+	int (*GetFileList)(void *Me, struct FileInfo *Buffer, int BufferSize);
+	int (*LoadFile)(void *Me, char *Filename, void *Memory);
 };
+typedef struct drvStorageVolume drvStorageVolume;

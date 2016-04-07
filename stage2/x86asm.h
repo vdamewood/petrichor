@@ -44,4 +44,9 @@ static inline unsigned char inb(unsigned short port)
 	return value;
 }
 
+static inline void rep_movsb(void *src, void *dest, uint16_t size)
+{
+	asm("rep movsb" :: "S"(src), "D"(dest), "c"(size));
+}
+
 #endif /* X86ASM_H */

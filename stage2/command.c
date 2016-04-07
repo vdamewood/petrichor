@@ -186,51 +186,34 @@ void fdInit(void);
 void fdRead(void);
 void *fdGetBuffer(void);
 
+#include "driver.h"
+drvStorageDevice fdGetDriver(void);
+
+char buffer[80] = "";
+
 static void TestFloppy(int argc, char *argv[])
 {
-	if (argc == 2)
-	{
-		if (blStrCmp("init", argv[1]) == 0)
-		{
-			scrPrintLine("Testing floppy drive initialization.");
-			fdInit();
-		}
-		else if (blStrCmp("read", argv[1]) == 0)
-		{
-			scrPrintLine("Testing floppy drive read.");
-			fdRead();
-		}
-		else if (blStrCmp("verify", argv[1]) == 0)
-		{
-			char *byte = fdGetBuffer();
-			do
-			{
-				scrPrintHexByte(*byte++);
-				scrPrintChar(' ');
-			}
-			while(byte < (char*)fdGetBuffer() + 0x18);
-			scrBreakLine();
+	scrPrintLine("Testing floppy drive initialization.");
+	drvStorageDevice floppy = fdGetDriver();
+	scrPrintLine("Testing floppy drive read.");
+	floppy.ReadSectors(floppy.Driver.State, 0, 1, (void*)0x500);
 
-			byte = (char*)0x7C00;
-			do
-			{
-				scrPrintHexByte(*byte++);
-				scrPrintChar(' ');
-			}
-			while(byte < (char*)0x7C18);
-			scrBreakLine();
-		}
-		else
-		{
-			scrPrint("-floppy: Error: Invalid sub-command: ");
-			scrPrintLine(argv[1]);
-		}
-	}
-	else
-	{
-		scrPrintLine("-floppy: Error: Sub-command required");
-	}
+	scrPrintLine("Checking values:");
 
+	char *buffers[3] = {(char*)0x7C00, fdGetBuffer(), (char*)0x500};
+
+	for (int i = 0; i < 3; i++)
+	{
+		char *byte = buffers[i];
+		char *limit = byte+0x18;
+		do
+		{
+			scrPrintHexByte(*byte++);
+			scrPrintChar(' ');
+		}
+		while(byte < limit);
+		scrBreakLine();
+	}
 }
 
 static void ShowHelp(int argc, char *argv[])

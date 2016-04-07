@@ -30,8 +30,9 @@
 #include <stddef.h>
 #include <stdint.h>
 
+// FIXME: Implement driver interface
 #include "driver.h"
-#include "screen.h"
+//#include "screen.h"
 #include "x86asm.h"
 
 void tmrWait(unsigned int);
@@ -124,6 +125,8 @@ enum CommandParameters
 	SK                     = 0x20  // Skip; OR into Read
 };
 
+static char Initialized = 0x00;
+
 void *fdGetBuffer(void)
 {
 	return (void*)0x1000;
@@ -140,7 +143,7 @@ static void ResetInterrupt(void)
 	interrupt = 0x00;
 }
 
-int WaitForInterrupt(int timeout)
+static int WaitForInterrupt(int timeout)
 {
 	int i = 0;
 	while (!interrupt)
@@ -264,7 +267,7 @@ static int ReadData(uint8_t drive, uint8_t cyl, uint8_t head, uint8_t sector, ui
 
 	for (int seeks = 3; seeks > 0; seeks--)
 	{
-		Seek(drive, 0, 0);
+		Seek(drive, head, cyl);
 
 		tmrWait(500);
 
@@ -318,33 +321,84 @@ static int Initialize(void)
 		return 0;
 
 	for (int i = 0; i < 4; i++)
-	{
 		if (!SenseInterruptStatus(NULL))
-		{
-			scrPrintLine("fd: sense failed.");
 			return 0;
-		}
-	}
 
 	if (!Specify(0x08, 0x00, 0x45, 0x00))
-	{
-		scrPrintLine("fd: specify failed.");
 		return 0;
-	}
+
+	Initialized = 0xFF;
 	return -1;
 }
 
-void fdInit(void)
+struct fdState
 {
-	if (!Initialize())
-		scrPrintLine("fd: Init failed.");
+	uint16_t controller;
+	enum Drives drive;
+};
+
+static struct fdState singleton =
+{
+	0x3F0,
+	Drive_0
+};
+
+static char driverName[] = "FLOPPY DISK::82077AA";
+
+static int fdGetName(void *VoidMe, char *Buffer, int BufferSize)
+{
+	int i = 0;
+	for (; driverName[i] != 0 && i < BufferSize-1; i++)
+		Buffer[i] = driverName[i];
+	if (BufferSize != 0)
+		Buffer[i++] = '\0';
+	return sizeof(driverName) - (int)BufferSize;
 }
 
-
-void fdRead(void)
+static uint32_t fdGetVersion(void *VoidMe)
 {
-	if (!ReadData(Drive_0, 0, 0, 1, 1))
-		scrPrintLine("fd: Read failed.");
+	return 0x00000000;
+}
+
+static uint8_t fdSectorSize(void *VoidMe)
+{
+	return 9; // 2^9 = 512 bytes
+}
+
+static void chs(uint16_t LinearSector, unsigned char *values)
+{
+	values[2] = LinearSector / (2*18);
+	LinearSector %= (2*18);
+	values[1] = LinearSector / (18);
+	LinearSector %= (18);
+	values[0] = LinearSector + 1;
+}
+
+static int fdReadSectors(void *VoidMe, unsigned int Start, unsigned int Length, void *Memory)
+{
+	if (Start + Length > 2880)
+		return 0;
+	//ReadData(uint8_t drive, uint8_t cyl, uint8_t head, uint8_t sector, uint8_t length)
+	struct fdState *Me = (struct fdState*)VoidMe;
+
+	unsigned char secinfo[3];
+	chs(Start, secinfo);
+
+	ReadData(Me->drive, secinfo[2], secinfo[1], secinfo[0], Length);
+	rep_movsb(fdGetBuffer(), Memory, Length<<9);
+	return -1;
+
+}
+
+drvStorageDevice fdGetDriver(void)
+{
+	if (!Initialized)
+		Initialize();
+
+	// FIXME: Make this function take an input indicating which drive
+	// Save that value in the status structure
+	struct drvStorageDevice rVal = {{0, &singleton, fdGetName,fdGetVersion}, fdSectorSize, fdReadSectors};
+	return rVal;
 }
 
 static void InitDma(void)
