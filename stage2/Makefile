@@ -47,6 +47,9 @@ cpuid.o: cpuid.c screen.h
 floppy.o: floppy.c driver.h screen.h x86asm.h
 	$(CC) $(CFLAGS) -o floppy.o floppy.c
 
+keyboard.o: keyboard.c x86asm.h
+	$(CC) $(CFLAGS) -o keyboard.o keyboard.c
+
 memory.o: screen.c screen.h
 	$(CC) $(CFLAGS) -o memory.o memory.c
 
