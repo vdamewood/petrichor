@@ -27,6 +27,11 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifndef DRIVER_H
+#define DRIVER_H
+
+#include <stdint.h>
+
 struct drvDriver
 {
 	unsigned int Type;
@@ -81,3 +86,5 @@ struct drvStorageVolume
 	int (*LoadFile)(void *Me, char *Filename, void *Memory);
 };
 typedef struct drvStorageVolume drvStorageVolume;
+
+#endif /* DRIVER_H */

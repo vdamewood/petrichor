@@ -30,9 +30,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-// FIXME: Implement driver interface
-#include "driver.h"
-//#include "screen.h"
+#include "floppy.h"
 #include "x86asm.h"
 
 void tmrWait(unsigned int);
@@ -384,6 +382,7 @@ static int fdReadSectors(void *VoidMe, unsigned int Start, unsigned int Length, 
 	unsigned char secinfo[3];
 	chs(Start, secinfo);
 
+	// FIXME: Read across cylinder boundaries
 	ReadData(Me->drive, secinfo[2], secinfo[1], secinfo[0], Length);
 	rep_movsb(fdGetBuffer(), Memory, Length<<9);
 	return -1;

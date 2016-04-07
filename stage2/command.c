@@ -29,6 +29,7 @@
 
 #include <stddef.h>
 
+#include "floppy.h"
 #include "screen.h"
 
 void  AcpiShutdown(void);
@@ -182,15 +183,8 @@ static void Color(int argc, char *argv[])
 	}
 }
 
-void fdInit(void);
-void fdRead(void);
-void *fdGetBuffer(void);
-
-#include "driver.h"
-drvStorageDevice fdGetDriver(void);
 
 char buffer[80] = "";
-
 static void TestFloppy(int argc, char *argv[])
 {
 	scrPrintLine("Testing floppy drive initialization.");
