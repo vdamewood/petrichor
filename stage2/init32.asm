@@ -31,7 +31,41 @@ extern KeyboardHandleInterrupt
 extern fdHandleInterrupt
 extern tmrHandleInterrupt
 
-%include "functions.inc"
+%macro  fprolog 1-*
+	push ebp 
+	mov ebp, esp 
+	%if %1
+		sub esp, (%1*4)
+	%endif
+	%if %0 > 2
+		%rotate 1
+		%rep  %0-1
+			push    %1
+			%rotate 1
+		%endrep
+	%endif
+%endmacro
+
+%macro  freturn 0-*
+	%rep %0
+		%rotate -1
+		pop %1
+	%endrep
+	mov esp, ebp
+	pop ebp
+	ret
+%endmacro
+
+%macro  intrfreturn 0-*
+	%rep %0
+		%rotate -1
+		pop %1
+	%endrep
+	mov esp, ebp
+	pop ebp
+	sti
+	ret
+%endmacro
 
 %define IdtCount 48
 %define IdtSize  (IdtCount<<3)

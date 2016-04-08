@@ -37,16 +37,16 @@ init32c.o: init32c.c screen.h shell.h
 acpi.o: acpi.c screen.h
 	$(CC) $(CFLAGS) -o acpi.o acpi.c
 
-command.o: command.c screen.h
+command.o: command.c driver.h floppy.h screen.h
 	$(CC) $(CFLAGS) -o command.o command.c
 
 cpuid.o: cpuid.c screen.h
 	$(CC) $(CFLAGS) -o cpuid.o cpuid.c
 
-floppy.o: floppy.c driver.h screen.h x86asm.h
+floppy.o: floppy.c driver.h floppy.h screen.h x86asm.h
 	$(CC) $(CFLAGS) -o floppy.o floppy.c
 
-keyboard.o: keyboard.c x86asm.h
+keyboard.o: keyboard.c keyboard.h x86asm.h
 	$(CC) $(CFLAGS) -o keyboard.o keyboard.c
 
 memory.o: screen.c screen.h
@@ -58,11 +58,14 @@ screen.o: screen.c screen.h x86asm.h
 shell.o: shell.c command.h screen.h shell.h uio.h
 	$(CC) $(CFLAGS) -o shell.o shell.c
 
-%.o: %.asm functions.inc
-	$(ASM) $(ASMFLAGS) -o $@ $<
+timer.o: timer.c x86asm.h
+	$(CC) $(CFLAGS) -o timer.o timer.c
 
-%.o: %.c
-	clang $(CFLAGS) -o $@ $<
+uio.o: uio.c keyboard.h screen.h
+	$(CC) $(CFLAGS) -o uio.o uio.c
+
+util.o: util.c keybaord.h screen.h
+	$(CC) $(CFLAGS) -o util.o util.c
 
 distclean: clean
 
