@@ -39,23 +39,23 @@
 #include "uio.h"
 #include "util.h"
 
-static void  ClearScreen(int argc, char *argv[]);
-static void  GreetUser(int argc, char *argv[]);
-static void  ShowHelp(int argc, char *argv[]);
-static void  Stub(int argc, char *argv[]);
-static void  Vendor(int argc, char *argv[]);
-static void  MemoryMap(int argc, char *argv[]);
-static void  AcpiHeaders(int argc, char *argv[]);
-static void  Shutdown(int argc, char *argv[]);
-static void  TestArgs(int argc, char *argv[]);
-static void  Color(int argc, char *argv[]);
-static void  TestFloppy(int, char*[]);
+static int ClearScreen(int, char *[]);
+static int GreetUser(int, char *[]);
+static int ShowHelp(int, char *[]);
+static int Stub(int, char *[]);
+static int Vendor(int, char *[]);
+static int MemoryMap(int, char *[]);
+static int AcpiHeaders(int, char *[]);
+static int Shutdown(int, char *[]);
+static int TestArgs(int, char *[]);
+static int Color(int, char *[]);
+static int TestFloppy(int, char*[]);
 
 struct entry
 {
 	char *command;
 	char *help;
-	void (*routine)(int,char*[]);
+	int (*routine)(int,char*[]);
 };
 typedef struct entry entry;
 
@@ -82,7 +82,7 @@ static char argumentBuffer[argMax][argSize];
 char *argumentPointers[argMax];
 
 
-void (*cmdGet(const char *in))(int,char*[])
+int (*cmdGet(const char *in))(int,char*[])
 {
 	for (entry *candidate = CommandTable; candidate->command != NULL; candidate++)
 			if (blStrCmp(in, candidate->command) == 0)
@@ -90,40 +90,47 @@ void (*cmdGet(const char *in))(int,char*[])
 	return NULL;
 }
 
-static void GreetUser(int argc, char *argv[])
+static int GreetUser(int argc, char *argv[])
 {
 	scrPrintLine("Hello.");
+	return 0;
 }
 
-static void TestArgs(int argc, char *argv[])
+static int TestArgs(int argc, char *argv[])
 {
 	for (int i=0; i<argc; i++)
 		scrPrintLine(argv[i]);
+	return 0;
 }
 
-static void ClearScreen(int argc, char *argv[])
+static int ClearScreen(int argc, char *argv[])
 {
 	scrClear();
+	return 0;
 }
 
-static void Vendor(int argc, char *argv[])
+static int Vendor(int argc, char *argv[])
 {
 	cpuidShowVendor();
+	return 0;
 }
 
-static void MemoryMap(int argc, char *argv[])
+static int MemoryMap(int argc, char *argv[])
 {
 	memShowMap();
+	return 0;
 }
 
-static void AcpiHeaders(int argc, char *argv[])
+static int AcpiHeaders(int argc, char *argv[])
 {
 	AcpiShowHeaders();
+	return 0;
 }
 
-static void Shutdown(int argc, char *argv[])
+static int Shutdown(int argc, char *argv[])
 {
 	AcpiShutdown();
+	return 0;
 }
 
 struct colorTableEntry
@@ -154,7 +161,7 @@ struct colorTableEntry colors[] =
 	{0,         0xFF}
 };
 
-static void Color(int argc, char *argv[])
+static int Color(int argc, char *argv[])
 {
 	if (argc == 3)
 	{
@@ -179,11 +186,12 @@ static void Color(int argc, char *argv[])
 	{
 		scrPrintLine("bad arguments");
 	}
+	return 0;
 }
 
 
 char buffer[80] = "";
-static void TestFloppy(int argc, char *argv[])
+static int TestFloppy(int argc, char *argv[])
 {
 	scrPrintLine("Testing floppy drive initialization.");
 	drvStorageDevice floppy = fdGetDriver();
@@ -206,9 +214,10 @@ static void TestFloppy(int argc, char *argv[])
 		while(byte < limit);
 		scrBreakLine();
 	}
+	return 0;
 }
 
-static void ShowHelp(int argc, char *argv[])
+static int ShowHelp(int argc, char *argv[])
 {
 	static int maxLen = 0;
 
@@ -226,15 +235,14 @@ static void ShowHelp(int argc, char *argv[])
 		for (int i = maxLen + 2 - blStrLen(candidate->command); i != 0; i--)
 			scrPrintChar(' ');
 
-		//scrPrint(" -- ");
+		scrPrint(" -- ");
 		scrPrint(candidate->help);
 		scrBreakLine();
-		//asm("int 0x21");
-		//scrBreakLine();
 	}
+	return 0;
 }
 
-static void Stub(int argc, char *argv[])
+static int Stub(int argc, char *argv[])
 {
-
+	return 0;
 }

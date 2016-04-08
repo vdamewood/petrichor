@@ -73,7 +73,7 @@ void shLoop(void)
 		while(command[inChar++] != '\0');
 		argumentPointers[count][0] = '\0';
 
-		void (*function)(int,char*[]) = cmdGet(argumentPointers[0]);
+		int (*function)(int,char*[]) = cmdGet(argumentPointers[0]);
 		if (function)
 			function(count, argumentPointers);
 	}

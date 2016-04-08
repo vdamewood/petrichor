@@ -30,7 +30,9 @@
 #ifndef COMMAND_H
 #define COMMAND_H
 
-int cmdRegister(const char *, int (*)(int,char*[]));
-void (*cmdGet(const char*))(int,char*[]);
+// FIXME: Once memory allocation is implemented, allow commands
+// to be registered. 
+//int cmdRegister(const char *, int (*)(int,char*[]));
+int (*cmdGet(const char*))(int,char*[]);
 
 #endif /* COMMAND_H */
