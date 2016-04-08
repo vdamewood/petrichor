@@ -199,7 +199,7 @@ void KeyboardHandleInterrupt(void)
 
 }
 
-unsigned short KeyboardGetStroke()
+unsigned short KeyboardGetStroke(void)
 {
 	while (!KeyboardBuffer)
 		asm("hlt");
