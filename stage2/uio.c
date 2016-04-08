@@ -68,6 +68,7 @@ char *uioGetLine(void)
 				{
 					scrDelete();
 					scrShowCursor();
+					edi--;
 				}
 				break;
 			case 0x0012: // Enter
