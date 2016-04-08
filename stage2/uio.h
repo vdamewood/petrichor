@@ -1,4 +1,4 @@
-/* init32c.c: 32-bit, protected-mode C-safe initialization
+/* uio.h: User interface input/output
  *
  * Copyright 2015, 2016 Vincent Damewood
  * All rights reserved.

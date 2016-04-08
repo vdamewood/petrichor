@@ -1,4 +1,4 @@
-/* command.c: Command interpreter
+/* command.c: Command lookup
  *
  * Copyright 2015, 2016 Vincent Damewood
  * All rights reserved.
@@ -29,17 +29,15 @@
 
 #include <stddef.h>
 
+#include "acpi.h"
+#include "command.h"
+#include "cpuid.h"
 #include "floppy.h"
+#include "memory.h"
 #include "screen.h"
-
-void  AcpiShutdown(void);
-void  AcpiShowHeaders(void);
-int   blStrCmp(const void*, const void*);
-int   blStrLen(const char*);
-void  memShowMap(void);
-void  cpuidShowVendor(void);
-char *uioGetLine(void);
-void tmrSetInterval(unsigned short);
+#include "timer.h"
+#include "uio.h"
+#include "util.h"
 
 static void  ClearScreen(int argc, char *argv[]);
 static void  GreetUser(int argc, char *argv[]);

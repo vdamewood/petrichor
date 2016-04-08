@@ -1,4 +1,4 @@
-/* floppy.c: Floppy disk interface
+/* floppy.h: Floppy disk interface
  *
  * Copyright 2016 Vincent Damewood
  * All rights reserved.

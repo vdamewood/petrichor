@@ -27,6 +27,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "util.h"
 
 int blStrCmp(const char *mem1, const char *mem2)
 {

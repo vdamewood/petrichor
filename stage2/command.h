@@ -27,5 +27,10 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifndef COMMAND_H
+#define COMMAND_H
+
 int cmdRegister(const char *, int (*)(int,char*[]));
 void (*cmdGet(const char*))(int,char*[]);
+
+#endif /* COMMAND_H */

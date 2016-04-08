@@ -1,4 +1,4 @@
-/* x86asm.h: Inline assembly language conveniences
+/* util.h: Utility routines
  *
  * Copyright 2016 Vincent Damewood
  * All rights reserved.
@@ -27,28 +27,11 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef X86ASM_H
-#define X86ASM_H
+#ifndef UTIL_H
+#define UTIL_H
 
-#include <stdint.h>
+int blStrCmp(const char*, const char*);
+int blStrLen(const char*);
+int blMemCmp(void *src, void *dst, int count);
 
-#define bochsBreak asm("xchg %bx, %bx");
-
-static inline void outb(uint16_t port, uint8_t value)
-{
-	asm ("outb %0, %1" :: "a"(value), "Nd"(port));
-}
-
-static inline unsigned char inb(uint16_t port)
-{
-	register uint8_t value;
-	asm volatile ("inb %1, %0" :"=a"(value): "Nd"(port));
-	return value;
-}
-
-static inline void rep_movsb(void *src, void *dest, uint16_t size)
-{
-	asm("rep movsb" :: "S"(src), "D"(dest), "c"(size));
-}
-
-#endif /* X86ASM_H */
+#endif /* UTIL_H */

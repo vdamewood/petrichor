@@ -31,9 +31,8 @@
 #include <stdint.h>
 
 #include "floppy.h"
+#include "timer.h"
 #include "x86asm.h"
-
-void tmrWait(unsigned int);
 
 static void InitDma(void);
 static void ReadDma(void);

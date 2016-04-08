@@ -29,9 +29,7 @@
 
 #include "shell.h"
 #include "screen.h"
-
-void CommandLoop(void);
-void tmrSetInterval(int);
+#include "timer.h"
 
 void Init32c(void)
 {

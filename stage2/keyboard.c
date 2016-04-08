@@ -27,7 +27,9 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "stdint.h"
+#include <stdint.h>
+
+#include "keyboard.h"
 #include "x86asm.h"
 
 volatile uint16_t KeyboardBuffer = 0;

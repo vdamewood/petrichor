@@ -27,9 +27,9 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "acpi.h"
 #include "screen.h"
-
-int blMemCmp(const void*, const void*, unsigned int);
+#include "util.h"
 
 struct SdtHeader
 {

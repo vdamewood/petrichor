@@ -27,5 +27,12 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifndef KEYBOARD_H
+#define KEYBOARD_H
+
+#include <stdint.h>
+
 void KeyboardHandleInterrupt(void);
-unsigned short KeyboardGetStroke(void);
+uint16_t KeyboardGetStroke(void);
+
+#endif /* KEYBOARD_H */

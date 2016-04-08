@@ -1,4 +1,4 @@
-/* memory.asm: Memory management
+/* memory.c: Memory management
  *
  * Copyright 2015, 2016 Vincent Damewood
  * All rights reserved.
@@ -28,7 +28,8 @@
  */
 
 #include "screen.h"
-
+#include "memory.h"
+ 
 char *StatusTable[] =
 {
 	"",

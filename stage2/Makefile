@@ -31,25 +31,25 @@ init16.o: init16.asm
 init32.o: init32.asm
 	$(ASM) $(ASMFLAGS) -o $@ $<
 
-init32c.o: init32c.c screen.h shell.h
+init32c.o: init32c.c screen.h shell.h timer.h
 	clang $(CFLAGS) -o $@ $<
 
-acpi.o: acpi.c screen.h
+acpi.o: acpi.c acpi.h screen.h util.h
 	$(CC) $(CFLAGS) -o acpi.o acpi.c
 
-command.o: command.c driver.h floppy.h screen.h
+command.o: command.c acpi.h command.h cpuid.h driver.h floppy.h memory.h screen.h timer.h uio.h util.h
 	$(CC) $(CFLAGS) -o command.o command.c
 
-cpuid.o: cpuid.c screen.h
+cpuid.o: cpuid.c cpuid.h screen.h
 	$(CC) $(CFLAGS) -o cpuid.o cpuid.c
 
-floppy.o: floppy.c driver.h floppy.h screen.h x86asm.h
+floppy.o: floppy.c driver.h floppy.h timer.h x86asm.h
 	$(CC) $(CFLAGS) -o floppy.o floppy.c
 
 keyboard.o: keyboard.c keyboard.h x86asm.h
 	$(CC) $(CFLAGS) -o keyboard.o keyboard.c
 
-memory.o: screen.c screen.h
+memory.o: memory.c memory.h screen.h
 	$(CC) $(CFLAGS) -o memory.o memory.c
 
 screen.o: screen.c screen.h x86asm.h
@@ -58,13 +58,13 @@ screen.o: screen.c screen.h x86asm.h
 shell.o: shell.c command.h screen.h shell.h uio.h
 	$(CC) $(CFLAGS) -o shell.o shell.c
 
-timer.o: timer.c x86asm.h
+timer.o: timer.c timer.h x86asm.h
 	$(CC) $(CFLAGS) -o timer.o timer.c
 
-uio.o: uio.c keyboard.h screen.h
+uio.o: uio.c keyboard.h screen.h uio.h
 	$(CC) $(CFLAGS) -o uio.o uio.c
 
-util.o: util.c keybaord.h screen.h
+util.o: util.c util.h
 	$(CC) $(CFLAGS) -o util.o util.c
 
 distclean: clean

@@ -1,4 +1,4 @@
-/* uio.asm: User interface input/output
+/* uio.c: User interface input/output
  *
  * Copyright 2015, 2016 Vincent Damewood
  * All rights reserved.
@@ -29,6 +29,7 @@
 
 #include "keyboard.h"
 #include "screen.h"
+#include "uio.h"
 
 #define BufferSize 76
 char Buffer[BufferSize];
