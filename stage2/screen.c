@@ -37,14 +37,19 @@ static volatile uint16_t *vmem = (uint16_t*) 0x000B8000;
 #define width 80
 #define height 25
 
+uint8_t scrCacheColor(void)
+{
+	return color;
+}
+
 void scrSetForgroundColor(const uint8_t newColor)
 {
-	color = (color & 0xF0) | (newColor & 0x0F); 
+	color = (color & 0xF0) | (newColor & 0x0F);
 }
 
 void scrSetBackgroundColor(const uint8_t newColor)
 {
-	color = ((newColor<<4) & 0xF0) | (color & 0x0F); 
+	color = ((newColor<<4) & 0xF0) | (color & 0x0F);
 }
 
 void scrSetColor(const uint8_t newColor)
@@ -108,6 +113,20 @@ void scrPrint(const char *string)
 		}
 	}
 }
+
+void scrPrintN(int length, const char *string)
+{
+	for (int i = 0; i < length; i++)
+	{
+		vmem[cursor++] = ((uint16_t)color << 8) | string[i];
+		if (cursor > height*width)
+		{
+			scrShift();
+			cursor = (height-1) * width;
+		}
+	}
+}
+
 
 void scrPrintLine(const char *string)
 {

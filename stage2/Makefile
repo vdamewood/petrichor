@@ -10,6 +10,7 @@ OBJECTS= \
 	acpi.o \
 	command.o \
 	cpuid.o \
+	fat12.o \
 	floppy.o \
 	keyboard.o \
 	memory.o \
@@ -42,6 +43,9 @@ command.o: command.c acpi.h command.h cpuid.h driver.h floppy.h memory.h screen.
 
 cpuid.o: cpuid.c cpuid.h screen.h
 	$(CC) $(CFLAGS) -o cpuid.o cpuid.c
+
+fat12.o: fat12.c driver.h fat12.h
+	$(CC) $(CFLAGS) -o fat12.o fat12.c
 
 floppy.o: floppy.c driver.h floppy.h timer.h x86asm.h
 	$(CC) $(CFLAGS) -o floppy.o floppy.c

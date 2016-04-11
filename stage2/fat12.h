@@ -1,6 +1,6 @@
-/* screen.h: Screen driver (text only)
+/* fat12.h: FAT12 interface
  *
- * Copyright 2015, 2016 Vincent Damewood
+ * Copyright 2016 Vincent Damewood
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,39 +27,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef SCREEN_H
-#define SCREEN_H
+#include "driver.h"
 
-#include <stdint.h>
-
-#define scrBlack  0x00
-#define scrBlue   0x01
-#define scrGreen  0x02
-#define scrCyan   0x03
-#define scrRed    0x04
-#define scrPurple 0x05
-#define scrYellow 0x06
-#define scrWhite  0x07
-#define scrBright 0x08
-
-uint8_t scrCacheColor(void);
-void scrSetForgroundColor(uint8_t);
-void scrSetBackgroundColor(uint8_t);
-void scrSetColor(uint8_t);
-
-void scrClear(void);
-void scrSetCursor(uint16_t);
-void scrShowCursor(void);
-void scrBreakLine(void);
-void scrDelete(void);
-
-void scrPrint(const char *);
-void scrPrintN(int length, const char *string);
-void scrPrintLine(const char *);
-void scrPrintChar(char);
-void scrPrintHexByte(uint8_t);
-void scrPrintHexWord(uint16_t);
-void scrPrintHexDWord(uint32_t);
-void scrPrintHexPointer(const void *);
-
-#endif /* SCREEN_H */
+void ShowDirectory(drvStorageDevice *device, const char *directory);
+void LoadFile(const char *);

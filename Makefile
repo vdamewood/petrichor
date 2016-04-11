@@ -10,9 +10,15 @@ distclean: clean
 	make -C stage2 distclean
 	rm -rf bootdisk.img
 
-bootdisk.img: stage1/stage1.bin stage2/stage2.bin
+bootdisk.img: stage1/stage1.bin stage2/stage2.bin License.txt Readme.md
 	mformat -i bootdisk.img -v BOOTDISK -f 1440  -C -B stage1/stage1.bin ::
 	mcopy -i bootdisk.img stage2/stage2.bin ::/STAGE2.BIN
+	mattrib -i bootdisk.img +s ::/STAGE2.BIN
+	mcopy -i bootdisk.img License.txt ::/LICENSE.TXT
+	mattrib -i bootdisk.img +r ::/LICENSE.TXT
+	mcopy -i bootdisk.img Readme.md ::/README.MD
+	mattrib -i bootdisk.img +r ::/README.MD
+	mmd -i bootdisk.img ::/STUFF
 
 stage1/stage1.bin:
 	make -C stage1 stage1.bin
