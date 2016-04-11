@@ -29,7 +29,7 @@
 
 #include "screen.h"
 #include "memory.h"
- 
+
 char *StatusTable[] =
 {
 	"",
@@ -66,4 +66,29 @@ void memShowMap(void)
 		scrPrint(StatusTable[i->status]);
 		scrBreakLine();
 	}
+}
+
+#define PoolBase 0x30000
+#define PoolSize 0x10000
+
+void *freeSpace = (void*)PoolBase;
+
+void *memAlloc(size_t size)
+{
+	char *tmp = freeSpace;
+	if (tmp + size >= (char*)PoolBase + PoolSize)
+		return NULL;
+
+	freeSpace = tmp + size;
+	return tmp;
+}
+
+void memFree(void *location)
+{
+	// Placeholder for when memory allocation actually works.
+}
+\
+void memReset(void)
+{
+	freeSpace = (void*)PoolBase;
 }

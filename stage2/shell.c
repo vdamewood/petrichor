@@ -28,6 +28,7 @@
  */
 
 #include "command.h"
+#include "memory.h"
 #include "screen.h"
 #include "shell.h"
 #include "uio.h"
@@ -76,6 +77,8 @@ void shLoop(void)
 		int (*function)(int,char*[]) = cmdGet(argumentPointers[0]);
 		if (function)
 			function(count, argumentPointers);
+
+		memReset();
 	}
 }
 

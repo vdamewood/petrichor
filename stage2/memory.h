@@ -30,6 +30,11 @@
 #ifndef MEMORY_H
 #define MEMORY_H
 
+#include <stddef.h>
+
 void memShowMap(void);
+void *memAlloc(size_t);
+void memFree(void *);
+void memReset(void);
 
 #endif /* MEMORY_H */
