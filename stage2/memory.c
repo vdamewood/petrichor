@@ -87,7 +87,7 @@ void memFree(void *location)
 {
 	// Placeholder for when memory allocation actually works.
 }
-\
+
 void memReset(void)
 {
 	freeSpace = (void*)PoolBase;
