@@ -28,6 +28,7 @@
  */
 
 #include "fat12.h"
+#include "memory.h"
 #include "screen.h"
 
 #define AttrReadOnly  0x01
@@ -78,18 +79,83 @@ struct DirectoryEntry
 
 } __attribute__((__packed__));
 
-#define BlockBuffer     0x30000
-#define DirectoryBuffer 0x30200
+static int match(char *EntryName, char *filename)
+{
+	int loc = 0;
+	for (int i = 0; i < 11; i++)
+	{
+		switch(filename[loc])
+		{
+			case '\0':
+				if (EntryName[i] != ' ')
+					return 0;
+				break;
+			case '.':
+				scrPrintChar(EntryName[i]);
+				scrPrintHexByte((unsigned char)i);
+				if(i < 8)
+				{
+					if (EntryName[i] != ' ')
+						return 0;
+				}
+
+				if (i == 7)
+					loc++;
+
+				if (i >= 8)
+					return 0;
+				break;
+			case '"':
+			case '*':
+			case '+':
+			case ',':
+			case '/':
+			case ':':
+			case ';':
+			case '<':
+			case '=':
+			case '>':
+			case '?':
+			case '[':
+			case '\\':
+			case ']':
+			case '|':
+				return 0;
+			default:
+				if (EntryName[i] != filename[loc])
+					return 0;
+				loc++;
+
+				if (i == 7 && filename[loc] == '.')
+					loc++;
+		}
+	}
+	return filename[loc] == '\0';
+}
 
 void ShowDirectory(drvStorageDevice *device, const char*directory)
 {
-	device->ReadSectors(device->Driver.State, 0, 1, (void*)BlockBuffer);
-	struct BootBlock *block = (void*)BlockBuffer;
+	struct BootBlock *block = NULL;
+	struct DirectoryEntry *RootDir = NULL;
 
-	int root_sector = block->ReservedSectorCount + block->FatSize16 * block->FatCount;
-	device->ReadSectors(device->Driver.State, root_sector, 1, (void*)DirectoryBuffer);
 
-	for(struct DirectoryEntry *dir = (void*)DirectoryBuffer;
+	block = memAlloc(1 << device->SectorSize(device->Driver.State));
+
+	if (!block)
+		goto cleanup;
+
+	device->ReadSectors(device->Driver.State, 0, 1, block);
+
+	int RootSector = block->ReservedSectorCount + block->FatSize16 * block->FatCount;
+
+	uint32_t RootSize = sizeof(struct DirectoryEntry) * block->RootEntryCount;
+	RootDir = memAlloc(RootSize);
+
+	int RootSectorCount = RootSize >> device->SectorSize(device->Driver.State);
+
+	device->ReadSectors(device->Driver.State, RootSector, RootSectorCount, RootDir);
+
+	for(struct DirectoryEntry *dir = RootDir;
 		dir->Name[0] != 0;
 		dir++)
 	{
@@ -111,6 +177,10 @@ void ShowDirectory(drvStorageDevice *device, const char*directory)
 		scrSetColor(oldColor);
 		scrBreakLine();
 	}
+
+cleanup:
+	memFree(RootDir);
+	memFree(block);
 }
 
 void LoadFile()
