@@ -117,14 +117,14 @@ void scrPrint(const char *string)
 void scrPrintN(int length, const char *string)
 {
 	for (int i = 0; i < length; i++)
-	{
+	scrPrintChar(string[i]); /*{
 		vmem[cursor++] = ((uint16_t)color << 8) | string[i];
 		if (cursor > height*width)
 		{
 			scrShift();
 			cursor = (height-1) * width;
 		}
-	}
+	}*/
 }
 
 
@@ -137,12 +137,29 @@ void scrPrintLine(const char *string)
 
 void scrPrintChar(const char c)
 {
-	vmem[cursor++] = ((uint16_t)color << 8) | c;
-
-	if (cursor > height*width)
+	if (c == '\n')
 	{
-		scrShift();
-		cursor = (height-1) * width;
+		if (cursor < (height-1) * width)
+		{
+			cursor -= cursor % width;
+			cursor += width;
+		}
+		else
+		{
+			scrShift();
+			cursor = (height-1) * width;
+		}
+		scrShowCursor();
+	}
+	else
+	{
+		vmem[cursor++] = ((uint16_t)color << 8) | c;
+
+		if (cursor > height*width)
+		{
+			scrShift();
+			cursor = (height-1) * width;
+		}
 	}
 }
 

@@ -412,6 +412,18 @@ cleanup:
 
 void fat12LoadFile(drvStorageDevice *device, const char *filename, void *destination)
 {
+	FileSystem *fs = fat12Initialize(device);
+	if (!fs)
+	{
+		scrPrint("Error loading file system.");
+		return;
+	}
 
+	DirectoryEntry *entry = SeekFile(fs, filename);
+	char *Buffer = LoadFile(fs, entry);
+	scrPrintN(entry->FileSize, Buffer);
+	scrBreakLine();
+	scrPrintHexDWord(entry->FileSize);
+	scrBreakLine();
 }
 

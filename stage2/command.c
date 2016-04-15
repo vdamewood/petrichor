@@ -51,6 +51,7 @@ static int TestArgs(int, char *[]);
 static int Color(int, char *[]);
 static int TestFloppy(int, char*[]);
 static int Dir(int, char*[]);
+static int Load(int, char*[]);
 
 struct entry
 {
@@ -73,6 +74,7 @@ entry CommandTable[] =
 	{"color",    "change color",              Color},
 	{"floppy",   "test floppy drive",         TestFloppy},
 	{"dir",      "Show a directory",          Dir},
+	{"load",     "Load a file",               Load},
 	{0,          0,                           Stub}
 };
 
@@ -256,6 +258,12 @@ static int Dir(int argc, char *argv[])
 
 	fat12ShowDirectory(&floppy, directory);
 	return 0;
+}
+
+static int Load(int argc, char *argv[])
+{
+	drvStorageDevice floppy = fdGetDriver();
+	fat12LoadFile(&floppy, "LICENSE.TXT", 0x500);
 }
 
 static int Stub(int argc, char *argv[])
