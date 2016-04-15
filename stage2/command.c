@@ -268,7 +268,7 @@ static int Load(int argc, char *argv[])
 		return 1;
 	}
 	drvStorageDevice floppy = fdGetDriver();
-	fat12LoadFile(&floppy, argv[1], 0x500);
+	fat12LoadFile(&floppy, argv[1], (void*)0x500);
 	return 0;
 }
 
