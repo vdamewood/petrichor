@@ -168,7 +168,16 @@ static DirectoryEntry *LoadRootDirectory(drvStorageDevice *device, BootBlock *bl
 
 static uint8_t *LoadFat(drvStorageDevice *device, BootBlock *block)
 {
-	return NULL;
+	uint8_t *rVal = NULL;
+	int allocSize = block->FatSize16 * block->BytesPerSector;
+	rVal = memAlloc(allocSize);
+	if (rVal)
+		device->ReadSectors(
+				device->Driver.State,
+				block->ReservedSectorCount,
+				block->FatSize16,
+				rVal);
+	return rVal;
 }
 
 FileSystem *fat12Initialize(drvStorageDevice *device)
@@ -183,6 +192,7 @@ FileSystem *fat12Initialize(drvStorageDevice *device)
 	if (rVal->BootBlock)
 	{
 		rVal->RootDirectory = LoadRootDirectory(device, rVal->BootBlock);
+		rVal->FileAllocationTable = LoadFat(device, rVal->BootBlock);
 		rVal->FileAllocationTable = LoadFat(device, rVal->BootBlock);
 	}
 
@@ -214,8 +224,9 @@ static uint32_t ClusterToSector(FileSystem *fs, uint16_t Cluster)
 
 static void *LoadFile(FileSystem *fs, DirectoryEntry *entry)
 {
-	uint32_t allocSize = entry->FileSize;
 	uint32_t clusterSize = fs->BootBlock->BytesPerSector * fs->BootBlock->SectorsPerCluster;
+
+	uint32_t allocSize = (entry->Attr & AttrDirectory) ? clusterSize : entry->FileSize;
 
 	if (allocSize % clusterSize != 0)
 	{
@@ -234,7 +245,20 @@ static void *LoadFile(FileSystem *fs, DirectoryEntry *entry)
 			ClusterToSector(fs, currentCluster),
 			fs->BootBlock->SectorsPerCluster,
 			position);
-		// currentCluster == NextCluster
+
+		uint16_t fatEntry = currentCluster + (currentCluster >> 1);
+		uint16_t nextCluster = 0;
+
+		nextCluster =
+			(fs->FileAllocationTable[fatEntry+1] << 8)
+			| fs->FileAllocationTable[fatEntry];
+
+		if (currentCluster % 2)
+			nextCluster >>= 4; // Low-order bits are garbage
+		else
+			nextCluster &= 0xFFF; // High-order bits are garbage
+
+		currentCluster = nextCluster;
 	}
 
 
@@ -259,16 +283,10 @@ static DirectoryEntry *SeekFile(FileSystem *fs, const char *file)
 
 	while(*CurrentName)
 	{
-		scrPrint("Now Seeking: ");
-		scrPrintLine(CurrentName);
-
 		DirectoryEntry *NextEntry = NULL;
 
 		for(DirectoryEntry *entry = CurrentDirectory; entry->Name[0] != '\0'; entry++)
 		{
-			//scrPrint("Comparing with: ");
-			scrPrintN(11, entry->Name);
-			scrBreakLine();
 
 			if (Match(entry->Name, CurrentName))
 			{
@@ -283,10 +301,6 @@ static DirectoryEntry *SeekFile(FileSystem *fs, const char *file)
 		while(*CurrentName != '/' && *CurrentName != '\0')
 			CurrentName++;
 
-		scrPrint("Found: ");
-		scrPrintN(11, NextEntry->Name);
-		scrBreakLine();
-
 		// If the NextEntry is not a directory but the path
 		// uses it as such.
 		if (*CurrentName == '/' && !(NextEntry->Attr & 0x10))
@@ -297,7 +311,6 @@ static DirectoryEntry *SeekFile(FileSystem *fs, const char *file)
 
 		if (*CurrentName != '\0')
 		{
-			scrPrintLine("Still More to Go");
 			DirectoryEntry *NextDirectory = LoadFile(fs, NextEntry);
 			if (CurrentDirectory != fs->RootDirectory)
 				memFree(CurrentDirectory);
@@ -305,7 +318,6 @@ static DirectoryEntry *SeekFile(FileSystem *fs, const char *file)
 		}
 		else
 		{
-			scrPrintLine("End of the line");
 			rVal = memAlloc(sizeof(DirectoryEntry));
 			rep_movsb(NextEntry, rVal, sizeof(DirectoryEntry));
 			if (CurrentDirectory != fs->RootDirectory)
@@ -353,55 +365,20 @@ void fat12ShowDirectory(drvStorageDevice *device, const char *directory)
 	else
 	{
 		DirectoryEntry *entry = SeekFile(fs, directory);
-
-		if (!entry)
+		if (entry->Attr & AttrDirectory)
 		{
-			scrPrintLine("Directory not Found.");
-			goto cleanup;
+			BaseDir = LoadFile(fs, entry);
 		}
-
-		if (!(entry->Attr & 0x10))
+		else
 		{
-			scrPrintLine("Not a directory.");
-			memFree(entry);
-			goto cleanup;
+			scrPrint("Not a directory");
+			return;
 		}
-
-		BaseDir = LoadFile(fs, entry);
-		if (!BaseDir)
-		{
-			scrPrintLine("Error Loading!");
-			memFree(entry);
-			goto cleanup;
-		}
-		memFree(entry);
 	}
-	asm("xchg %%bx, %%bx" : : "a"(BaseDir));
 
+	for (DirectoryEntry *subEntry = BaseDir; subEntry->Name[0] != '\0'; subEntry++)
+		PrintEntry(subEntry);
 
-	/*for(DirectoryEntry *dir = BaseDir;
-		dir->Name[0] != 0;
-		dir++)
-	{
-		if (dir->Name[0] == -27 || (dir->Attr&0x08))
-			continue;
-
-		uint8_t oldColor = scrCacheColor();
-
-		if (dir->Attr & AttrDirectory)
-			scrSetColor(scrBlue);
-		else if (dir->Attr & (AttrSystem|AttrHidden))
-			scrSetColor(scrRed);
-
-		scrPrintN(11,dir->Name);
-		scrPrintChar(' ');
-		scrPrintHexByte(dir->Attr);
-		scrPrintChar(' ');
-		scrPrintHexDWord(dir->FileSize);
-		scrSetColor(oldColor);
-		scrBreakLine();
-	}
-	*/
 
 cleanup:
 	if (BaseDir != fs->RootDirectory)
@@ -420,10 +397,17 @@ void fat12LoadFile(drvStorageDevice *device, const char *filename, void *destina
 	}
 
 	DirectoryEntry *entry = SeekFile(fs, filename);
-	char *Buffer = LoadFile(fs, entry);
-	scrPrintN(entry->FileSize, Buffer);
-	scrBreakLine();
-	scrPrintHexDWord(entry->FileSize);
-	scrBreakLine();
+
+	void *Buffer = LoadFile(fs, entry);
+
+	if (entry->Attr & AttrDirectory)
+	{
+		for (DirectoryEntry *subEntry = Buffer; subEntry->Name[0] != '\0'; subEntry++)
+			PrintEntry(subEntry);
+	}
+	else
+	{
+		scrPrintN(entry->FileSize, Buffer);
+	}
 }
 

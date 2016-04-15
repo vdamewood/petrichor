@@ -262,8 +262,14 @@ static int Dir(int argc, char *argv[])
 
 static int Load(int argc, char *argv[])
 {
+	if (argc != 2)
+	{
+		scrPrint("Specify file");
+		return 1;
+	}
 	drvStorageDevice floppy = fdGetDriver();
-	fat12LoadFile(&floppy, "LICENSE.TXT", 0x500);
+	fat12LoadFile(&floppy, argv[1], 0x500);
+	return 0;
 }
 
 static int Stub(int argc, char *argv[])
