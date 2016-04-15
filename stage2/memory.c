@@ -75,9 +75,19 @@ void *freeSpace = (void*)PoolBase;
 
 void *memAlloc(size_t size)
 {
+	scrPrint("Allocate: ");
+	scrPrintHexDWord((uint32_t) size);
+
 	char *tmp = freeSpace;
 	if (tmp + size >= (char*)PoolBase + PoolSize)
+	{
+		scrPrintLine(" (failed).");
 		return NULL;
+	}
+
+	scrPrint(" at ");
+	scrPrintHexDWord((uint32_t) freeSpace);
+	scrBreakLine();
 
 	freeSpace = tmp + size;
 	return tmp;
@@ -85,7 +95,12 @@ void *memAlloc(size_t size)
 
 void memFree(void *location)
 {
-	// Placeholder for when memory allocation actually works.
+	if (location)
+	{
+		scrPrint("Free: ");
+		scrPrintHexDWord((uint32_t) location);
+		scrBreakLine();
+	}
 }
 
 void memReset(void)

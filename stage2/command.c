@@ -50,7 +50,7 @@ static int Shutdown(int, char *[]);
 static int TestArgs(int, char *[]);
 static int Color(int, char *[]);
 static int TestFloppy(int, char*[]);
-static int File(int, char*[]);
+static int Dir(int, char*[]);
 
 struct entry
 {
@@ -72,7 +72,7 @@ entry CommandTable[] =
 	{"test",     "test arguments",            TestArgs},
 	{"color",    "change color",              Color},
 	{"floppy",   "test floppy drive",         TestFloppy},
-	{"file",     "test file system",          File},
+	{"dir",      "Show a directory",          Dir},
 	{0,          0,                           Stub}
 };
 
@@ -246,10 +246,15 @@ static int ShowHelp(int argc, char *argv[])
 
 #include "fat12.h"
 
-static int File(int argc, char *argv[])
+static int Dir(int argc, char *argv[])
 {
+	const char *directory = "/";
 	drvStorageDevice floppy = fdGetDriver();
-	ShowDirectory(&floppy, "/");
+
+	if (argc == 2)
+		directory = argv[1];
+
+	fat12ShowDirectory(&floppy, directory);
 	return 0;
 }
 

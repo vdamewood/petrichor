@@ -29,5 +29,5 @@
 
 #include "driver.h"
 
-void ShowDirectory(drvStorageDevice *device, const char *directory);
-void LoadFile(const char *);
+void fat12ShowDirectory(drvStorageDevice *device, const char *directory);
+void fat12LoadFile(drvStorageDevice *device, const char *filename, void *destination);

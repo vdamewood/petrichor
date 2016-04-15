@@ -19,6 +19,17 @@ bootdisk.img: stage1/stage1.bin stage2/stage2.bin License.txt Readme.md
 	mcopy -i bootdisk.img Readme.md ::/README.MD
 	mattrib -i bootdisk.img +r ::/README.MD
 	mmd -i bootdisk.img ::/STUFF
+	mmd -i bootdisk.img ::/STUFF/DOCS
+	mcopy -i bootdisk.img License.txt ::/STUFF/DOCS/LICENSE.TXT
+	mattrib -i bootdisk.img +r ::/STUFF/DOCS/LICENSE.TXT
+	mcopy -i bootdisk.img Readme.md ::/STUFF/DOCS/README.MD
+	mattrib -i bootdisk.img +r ::/STUFF/DOCS/README.MD
+	mmd -i bootdisk.img ::/STUFF/THINGS
+	mmd -i bootdisk.img ::/STUFF/THINGS/FOO
+	mmd -i bootdisk.img ::/STUFF/THINGS/BAR
+	mmd -i bootdisk.img ::/STUFF/THINGS/BAR/QUUX
+	mmd -i bootdisk.img ::/STUFF/THINGS/BAZ
+
 
 stage1/stage1.bin:
 	make -C stage1 stage1.bin

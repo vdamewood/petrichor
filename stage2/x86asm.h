@@ -46,7 +46,7 @@ static inline unsigned char inb(uint16_t port)
 	return value;
 }
 
-static inline void rep_movsb(void *src, void *dest, uint16_t size)
+static inline void rep_movsb(void *src, void *dest, uint32_t size)
 {
 	asm("rep movsb" :: "S"(src), "D"(dest), "c"(size));
 }
