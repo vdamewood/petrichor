@@ -204,9 +204,41 @@ void fat12Delete(FileSystem *fs)
 		memFree(fs);
 }
 
+static uint32_t ClusterToSector(FileSystem *fs, uint16_t Cluster)
+{
+	return fs->BootBlock->ReservedSectorCount
+		+ fs->BootBlock->FatCount * fs->BootBlock->FatSize16
+		+ (fs->BootBlock->RootEntryCount * sizeof(DirectoryEntry))/fs->BootBlock->BytesPerSector
+		+ fs->BootBlock->SectorsPerCluster*(Cluster-2);
+}
+
 static void *LoadFile(FileSystem *fs, DirectoryEntry *entry)
 {
-	return NULL;
+	uint32_t allocSize = entry->FileSize;
+	uint32_t clusterSize = fs->BootBlock->BytesPerSector * fs->BootBlock->SectorsPerCluster;
+
+	if (allocSize % clusterSize != 0)
+	{
+		allocSize /= clusterSize;
+		allocSize++;
+		allocSize *= clusterSize;
+	}
+
+	char *buffer = memAlloc(allocSize);
+
+	uint16_t currentCluster = entry->ClusterLo;
+	for (char *position = buffer; position < (buffer+allocSize); position += clusterSize)
+	{
+		fs->Device->ReadSectors(
+			fs->Device->Driver.State,
+			ClusterToSector(fs, currentCluster),
+			fs->BootBlock->SectorsPerCluster,
+			position);
+		// currentCluster == NextCluster
+	}
+
+
+	return buffer;
 }
 
 static int IsRootDirectory(const char *file)
@@ -234,7 +266,7 @@ static DirectoryEntry *SeekFile(FileSystem *fs, const char *file)
 
 		for(DirectoryEntry *entry = CurrentDirectory; entry->Name[0] != '\0'; entry++)
 		{
-			scrPrint("Comparing with: ");
+			//scrPrint("Comparing with: ");
 			scrPrintN(11, entry->Name);
 			scrBreakLine();
 
@@ -344,8 +376,10 @@ void fat12ShowDirectory(drvStorageDevice *device, const char *directory)
 		}
 		memFree(entry);
 	}
+	asm("xchg %%bx, %%bx" : : "a"(BaseDir));
 
-	for(DirectoryEntry *dir = BaseDir;
+
+	/*for(DirectoryEntry *dir = BaseDir;
 		dir->Name[0] != 0;
 		dir++)
 	{
@@ -367,6 +401,7 @@ void fat12ShowDirectory(drvStorageDevice *device, const char *directory)
 		scrSetColor(oldColor);
 		scrBreakLine();
 	}
+	*/
 
 cleanup:
 	if (BaseDir != fs->RootDirectory)
