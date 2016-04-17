@@ -36,7 +36,7 @@ void Init32c(void)
 	// This approximates 1000 ticks = 1 second.
 	tmrSetInterval(1193);
 	scrClear();
-	scrPrintLine("Petrichor" " loaded.");
+	uioPrint("Petrichor loaded.\n");
 	while (-1)
-		shLoop();		
+		shLoop();
 }

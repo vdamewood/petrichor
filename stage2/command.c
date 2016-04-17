@@ -32,6 +32,7 @@
 #include "acpi.h"
 #include "command.h"
 #include "cpuid.h"
+#include "fat12.h"
 #include "floppy.h"
 #include "memory.h"
 #include "screen.h"
@@ -96,14 +97,18 @@ int (*cmdGet(const char *in))(int,char*[])
 
 static int GreetUser(int argc, char *argv[])
 {
-	scrPrintLine("Hello.");
+	uioPrint("Hello.\n");
 	return 0;
 }
 
 static int TestArgs(int argc, char *argv[])
 {
 	for (int i=0; i<argc; i++)
-		scrPrintLine(argv[i]);
+	{
+		uioPrint(argv[i]);
+		uioPrintChar('\n');
+	}
+
 	return 0;
 }
 
@@ -182,13 +187,13 @@ static int Color(int argc, char *argv[])
 			else if (blStrCmp(argv[1], "highlight") == 0)
 				scrSetBackgroundColor(setColor);
 			else
-				scrPrintLine("Bad color target");
+				uioPrint("Bad color target\n");
 		else
-			scrPrintLine("Bad color");
+			uioPrint("Bad color\n");
 	}
 	else
 	{
-		scrPrintLine("bad arguments");
+		uioPrint("bad arguments\n");
 	}
 	return 0;
 }
@@ -197,12 +202,12 @@ static int Color(int argc, char *argv[])
 char buffer[80] = "";
 static int TestFloppy(int argc, char *argv[])
 {
-	scrPrintLine("Testing floppy drive initialization.");
+	uioPrint("Testing floppy drive initialization.\n");
 	drvStorageDevice floppy = fdGetDriver();
-	scrPrintLine("Testing floppy drive read.");
+	uioPrint("Testing floppy drive read.");
 	floppy.ReadSectors(floppy.Driver.State, 0, 1, (void*)0x500);
 
-	scrPrintLine("Checking values:");
+	uioPrint("Checking values:\n");
 
 	char *buffers[3] = {(char*)0x7C00, fdGetBuffer(), (char*)0x500};
 
@@ -212,11 +217,11 @@ static int TestFloppy(int argc, char *argv[])
 		char *limit = byte+0x18;
 		do
 		{
-			scrPrintHexByte(*byte++);
-			scrPrintChar(' ');
+			uioPrintHexByte(*byte++);
+			uioPrintChar(' ');
 		}
 		while(byte < limit);
-		scrBreakLine();
+		uioPrintChar('\n');
 	}
 	return 0;
 }
@@ -235,18 +240,16 @@ static int ShowHelp(int argc, char *argv[])
 
 	for (entry *candidate = CommandTable; candidate->command != 0; candidate++)
 	{
-		scrPrint(candidate->command);
+		uioPrint(candidate->command);
 		for (int i = maxLen + 2 - blStrLen(candidate->command); i != 0; i--)
-			scrPrintChar(' ');
+			uioPrintChar(' ');
 
-		scrPrint(" -- ");
-		scrPrint(candidate->help);
-		scrBreakLine();
+		uioPrint(" -- ");
+		uioPrint(candidate->help);
+		uioPrintChar('\n');
 	}
 	return 0;
 }
-
-#include "fat12.h"
 
 static int Dir(int argc, char *argv[])
 {
@@ -264,7 +267,7 @@ static int Load(int argc, char *argv[])
 {
 	if (argc != 2)
 	{
-		scrPrint("Specify file");
+		uioPrint("Specify file\n");
 		return 1;
 	}
 	drvStorageDevice floppy = fdGetDriver();

@@ -34,8 +34,11 @@
 #define BufferSize 76
 char Buffer[BufferSize];
 
-char *uioGetLine(void)
+const char *uioPrompt(const char *prompt)
 {
+	while (*prompt)
+		scrPutGlyph(*prompt++);
+
 	uint16_t eax;
 	char *edi = Buffer;
 	scrShowCursor();
@@ -49,7 +52,7 @@ char *uioGetLine(void)
 		case 0x0000:
 			if (edi - Buffer == BufferSize-1)
 				break;
-			scrPrintChar(eax);
+			scrPutGlyph(eax);
 			scrShowCursor();
 			*edi++ = (char)(eax&0x00FF);
 			break;
@@ -79,4 +82,61 @@ char *uioGetLine(void)
 			}
 		}
 	}
+}
+
+void uioPrintChar(const char c)
+{
+	switch (c)
+	{
+	case '\n':
+		scrBreakLine();
+		break;
+	case 0x7F:
+		scrDelete();
+		break;
+	default:
+		scrPutGlyph(c);
+	}
+}
+
+void uioPrint(const char *string)
+{
+	for (const char *p = string; *p; p++)
+		uioPrintChar(*p);
+}
+
+void uioPrintN(int length, const char *string)
+{
+	for (int i = 0; i < length; i++)
+		uioPrintChar(string[i]);
+}
+
+static void PrintHex(const int count, const int value)
+{
+	const unsigned char *v = (const unsigned char *)(&value);
+	for (int i = count-1; i >= 0; i--)
+	{
+		uioPrintChar((v[i] >> 4)  + (((v[i] >> 4)  > 9) ? 0x37 : 0x30));
+		uioPrintChar((v[i] & 0xF) + (((v[i] & 0xF) > 9) ? 0x37 : 0x30));
+	}
+}
+
+void uioPrintHexByte(uint8_t value)
+{
+	PrintHex(1, (int)value);
+}
+
+void uioPrintHexWord(uint16_t value)
+{
+	PrintHex(2, (int)value);
+}
+
+void uioPrintHexDWord(uint32_t value)
+{
+	PrintHex(4, value);
+}
+
+void uioPrintHexPointer(const void *value)
+{
+	PrintHex(4, (uint32_t)value);
 }

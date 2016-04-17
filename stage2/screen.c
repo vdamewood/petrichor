@@ -37,48 +37,7 @@ static volatile uint16_t *vmem = (uint16_t*) 0x000B8000;
 #define width 80
 #define height 25
 
-uint8_t scrCacheColor(void)
-{
-	return color;
-}
-
-void scrSetForgroundColor(const uint8_t newColor)
-{
-	color = (color & 0xF0) | (newColor & 0x0F);
-}
-
-void scrSetBackgroundColor(const uint8_t newColor)
-{
-	color = ((newColor<<4) & 0xF0) | (color & 0x0F);
-}
-
-void scrSetColor(const uint8_t newColor)
-{
-	color = newColor;
-}
-
-void scrClear(void)
-{
-	short fill = (color << 8);
-	for (int i = 0; i < (width*height); i++)
-		vmem[i] = fill;
-	cursor = 0;
-}
-
-void scrSetCursor(const uint16_t newPos)
-{
-	cursor = newPos;
-}
-
-void scrShowCursor(void)
-{
-    outb(0x3D4, 0x0F);
-    outb(0x3D5, cursor & 0xFF);
-    outb(0x3D4, 0x0E);
-    outb(0x3D5, cursor>>8);
-}
-
-void scrShift(void)
+void Scroll(void)
 {
 	for (int i = 0; i < width * (height-1); i++)
 		vmem[i] = vmem[i+width];
@@ -95,72 +54,17 @@ void scrBreakLine(void)
 	}
 	else
 	{
-		scrShift();
+		Scroll();
 		cursor = (height-1) * width;
 	}
-	scrShowCursor();
 }
 
-void scrPrint(const char *string)
+void scrClear(void)
 {
-	for (const char *p = string; *p; p++)
-	{
-		vmem[cursor++] = ((uint16_t)color << 8) | *p;
-		if (cursor > height*width)
-		{
-			scrShift();
-			cursor = (height-1) * width;
-		}
-	}
-}
-
-void scrPrintN(int length, const char *string)
-{
-	for (int i = 0; i < length; i++)
-	scrPrintChar(string[i]); /*{
-		vmem[cursor++] = ((uint16_t)color << 8) | string[i];
-		if (cursor > height*width)
-		{
-			scrShift();
-			cursor = (height-1) * width;
-		}
-	}*/
-}
-
-
-void scrPrintLine(const char *string)
-{
-	scrPrint(string);
-	scrBreakLine();
-
-}
-
-void scrPrintChar(const char c)
-{
-	if (c == '\n')
-	{
-		if (cursor < (height-1) * width)
-		{
-			cursor -= cursor % width;
-			cursor += width;
-		}
-		else
-		{
-			scrShift();
-			cursor = (height-1) * width;
-		}
-		scrShowCursor();
-	}
-	else
-	{
-		vmem[cursor++] = ((uint16_t)color << 8) | c;
-
-		if (cursor > height*width)
-		{
-			scrShift();
-			cursor = (height-1) * width;
-		}
-	}
+	short fill = (color << 8);
+	for (int i = 0; i < (width*height); i++)
+		vmem[i] = fill;
+	cursor = 0;
 }
 
 void scrDelete(void)
@@ -168,32 +72,66 @@ void scrDelete(void)
 	vmem[--cursor] &= 0xFF00;
 }
 
-static void scrPrintHex(const int count, const int value)
+void scrPutGlyph(const uint8_t c)
 {
-	const unsigned char *v = (const unsigned char *)(&value);
-	for (int i = count-1; i >= 0; i--)
+	vmem[cursor++] = ((uint16_t)color << 8) | c;
+
+	if (cursor > height*width)
 	{
-		scrPrintChar((v[i] >> 4)  + (((v[i] >> 4)  > 9) ? 0x37 : 0x30));
-		scrPrintChar((v[i] & 0xF) + (((v[i] & 0xF) > 9) ? 0x37 : 0x30));
+		Scroll();
+		cursor = (height-1) * width;
 	}
 }
 
-void scrPrintHexByte(uint8_t value)
+
+
+
+
+uint8_t scrGetColor(void)
 {
-	scrPrintHex(1, (int)value);
+	return color;
 }
 
-void scrPrintHexWord(uint16_t value)
+void scrSetColor(const uint8_t newColor)
 {
-	scrPrintHex(2, (int)value);
+	color = newColor;
 }
 
-void scrPrintHexDWord(uint32_t value)
+void scrSetForgroundColor(const uint8_t newColor)
 {
-	scrPrintHex(4, value);
+	color = (color & 0xF0) | (newColor & 0x0F);
 }
 
-void scrPrintHexPointer(const void *value)
+void scrSetBackgroundColor(const uint8_t newColor)
 {
-	scrPrintHex(4, (uint32_t)value);
+	color = ((newColor<<4) & 0xF0) | (color & 0x0F);
+}
+
+
+
+
+uint16_t scrGetCursorPosition(void)
+{
+	return cursor;
+}
+
+void scrSetCursor(const uint16_t newPos)
+{
+	cursor = newPos;
+}
+
+void scrShowCursor(void)
+{
+    outb(0x3D4, 0x0F);
+    outb(0x3D5, cursor & 0xFF);
+    outb(0x3D4, 0x0E);
+    outb(0x3D5, cursor>>8);
+}
+
+void scrHideCursor(void)
+{
+    //outb(0x3D4, 0x0F);
+    //outb(0x3D5, cursor & 0xFF);
+    //outb(0x3D4, 0x0E);
+    //outb(0x3D5, cursor>>8);
 }

@@ -46,8 +46,7 @@ void shLoop(void)
 
 	while(1)
 	{
-		scrPrint("?> ");
-		char *command = uioGetLine();
+		const char *command = uioPrompt("?> ");
 
 		int inChar = 0;
 		int outChar = 0;

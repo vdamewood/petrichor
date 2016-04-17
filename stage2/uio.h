@@ -30,6 +30,16 @@
 #ifndef UIO_H
 #define UIO_H
 
-char *uioGetLine(void);
+#include <stdint.h>
+
+const char *uioPrompt(const char *prompt);
+
+void  uioPrint(const char *string);
+void  uioPrintChar(const char c);
+void  uioPrintHexByte(uint8_t value);
+void  uioPrintHexWord(uint16_t value);
+void  uioPrintHexDWord(uint32_t value);
+void  uioPrintHexPointer(const void *value);
+void  uioPrintN(int length, const char *string);
 
 #endif /* UIO_H */

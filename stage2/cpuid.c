@@ -45,5 +45,6 @@ char *cpuidVendor()
 
 void cpuidShowVendor(void)
 {
-	scrPrintLine(cpuidVendor());
+	uioPrint(cpuidVendor());
+	uioPrintChar('\n');
 }

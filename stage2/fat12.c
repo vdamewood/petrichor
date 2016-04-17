@@ -29,7 +29,7 @@
 
 #include "fat12.h"
 #include "memory.h"
-#include "screen.h"
+#include "uio.h"
 #include "x86asm.h"
 
 #define AttrReadOnly  0x01
@@ -329,20 +329,20 @@ static DirectoryEntry *SeekFile(FileSystem *fs, const char *file)
 
 static void PrintEntry(DirectoryEntry *entry)
 {
-		uint8_t oldColor = scrCacheColor();
+		//uint8_t oldColor = scrCacheColor();
 
-		if (entry->Attr & AttrDirectory)
-			scrSetColor(scrBlue);
-		else if (entry->Attr & (AttrSystem|AttrHidden))
-			scrSetColor(scrRed);
+		//if (entry->Attr & AttrDirectory)
+		//	scrSetColor(scrBlue);
+		//else if (entry->Attr & (AttrSystem|AttrHidden))
+		//	scrSetColor(scrRed);
 
-		scrPrintN(11,entry->Name);
-		scrPrintChar(' ');
-		scrPrintHexByte(entry->Attr);
-		scrPrintChar(' ');
-		scrPrintHexDWord(entry->FileSize);
-		scrSetColor(oldColor);
-		scrBreakLine();
+		uioPrintN(11,entry->Name);
+		uioPrintChar(' ');
+		uioPrintHexByte(entry->Attr);
+		uioPrintChar(' ');
+		uioPrintHexDWord(entry->FileSize);
+		//uioSetColor(oldColor);
+		uioPrintChar('\n');
 }
 
 void fat12ShowDirectory(drvStorageDevice *device, const char *directory)
@@ -350,12 +350,13 @@ void fat12ShowDirectory(drvStorageDevice *device, const char *directory)
 	FileSystem *fs = fat12Initialize(device);
 	if (!fs)
 	{
-		scrPrint("Error loading file system.");
+		uioPrint("Error loading file system.\n");
 		return;
 	}
 
-	scrPrint("Directory: ");
-	scrPrintLine(directory);
+	uioPrint("Directory: ");
+	uioPrint(directory);
+	uioPrintChar('\n');
 
 	DirectoryEntry *BaseDir;
 	if (IsRootDirectory(directory))
@@ -371,7 +372,7 @@ void fat12ShowDirectory(drvStorageDevice *device, const char *directory)
 		}
 		else
 		{
-			scrPrint("Not a directory");
+			uioPrint("Not a directory.\n");
 			return;
 		}
 	}
@@ -392,7 +393,7 @@ void fat12LoadFile(drvStorageDevice *device, const char *filename, void *destina
 	FileSystem *fs = fat12Initialize(device);
 	if (!fs)
 	{
-		scrPrint("Error loading file system.");
+		uioPrint("Error loading file system.\n");
 		return;
 	}
 
@@ -407,7 +408,7 @@ void fat12LoadFile(drvStorageDevice *device, const char *filename, void *destina
 	}
 	else
 	{
-		scrPrintN(entry->FileSize, Buffer);
+		uioPrintN(entry->FileSize, Buffer);
 	}
 }
 

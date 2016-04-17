@@ -28,7 +28,7 @@
  */
 
 #include "acpi.h"
-#include "screen.h"
+#include "uio.h"
 #include "util.h"
 
 struct SdtHeader
@@ -71,11 +71,11 @@ struct Rsdp
 } __attribute__ ((__packed__));
 typedef struct Rsdp Rsdp;
 
-static char PointerSignature[] = "RSD PTR ";
-static char PointerHeader[] =    "Addr     Sig      Ch Vendor Rv RSDTAddr";
-static char TableHeader[] =      "Addr     Sig  Length   Rv Ch OEM    OEM Tbl  OEMRev   Crtr CrtrRev";
-static char PointerError[] =     "Error: RSDP not found";
-static char ShutdownFailed[] =   "Error: Shutdown failed.";
+static char PointerSignature[] = "RSD PTR \n";
+static char PointerHeader[] =    "Addr     Sig      Ch Vendor Rv RSDTAddr\n";
+static char TableHeader[] =      "Addr     Sig  Length   Rv Ch OEM    OEM Tbl  OEMRev   Crtr CrtrRev\n";
+static char PointerError[] =     "Error: RSDP not found\n";
+static char ShutdownFailed[] =   "Error: Shutdown failed.\n";
 static char FacpSignature[] =    "FACP";
 static Rsdp* PointerLocation = (void*)0;
 
@@ -95,68 +95,68 @@ void AcpiShowRsdp(void)
 	Rsdp *p;
 	if(!(p = GetPointer()))
 	{
-		scrPrintLine(PointerError);
+		uioPrint(PointerError);
 		return;
 	}
 
-	scrPrintLine(PointerHeader);
-	scrPrintHexDWord((int)p);
-	scrPrintChar(' ');
+	uioPrint(PointerHeader);
+	uioPrintHexDWord((int)p);
+	uioPrintChar(' ');
 
 	for (int i = 0; i < 8; i++)
-		scrPrintChar(p->signature[i]);
-	scrPrintChar(' ');
+		uioPrintChar(p->signature[i]);
+	uioPrintChar(' ');
 
-	scrPrintHexByte(p->checksum);
-	scrPrintChar(' ');
+	uioPrintHexByte(p->checksum);
+	uioPrintChar(' ');
 
 	for (int i = 0; i < 6; i++)
-		scrPrintChar(p->vendor[i]);
-	scrPrintChar(' ');
+		uioPrintChar(p->vendor[i]);
+	uioPrintChar(' ');
 
-	scrPrintHexByte(p->revision);
-	scrPrintChar(' ');
+	uioPrintHexByte(p->revision);
+	uioPrintChar(' ');
 
-	scrPrintHexDWord((int)p->rootSdt);
-	scrPrintChar(' ');
-	scrBreakLine();
+	uioPrintHexDWord((int)p->rootSdt);
+	uioPrintChar(' ');
+	uioPrintChar('\n');
 }
 
 static void ShowSdtHeader(SdtHeader *header)
 {
-	scrPrintHexDWord((int)header);
-	scrPrintChar(' ');
+	uioPrintHexDWord((int)header);
+	uioPrintChar(' ');
 
 	for (int i = 0; i < 4; i++)
-		scrPrintChar(header->signature[i]);
-	scrPrintChar(' ');
+		uioPrintChar(header->signature[i]);
+	uioPrintChar(' ');
 
-	scrPrintHexDWord(header->length);
-	scrPrintChar(' ');
+	uioPrintHexDWord(header->length);
+	uioPrintChar(' ');
 
-	scrPrintHexByte(header->revision);
-	scrPrintChar(' ');
+	uioPrintHexByte(header->revision);
+	uioPrintChar(' ');
 
-	scrPrintHexByte(header->checksum);
-	scrPrintChar(' ');
+	uioPrintHexByte(header->checksum);
+	uioPrintChar(' ');
 
 	for (int i = 0; i < 6; i++)
-		scrPrintChar(header->oem[i]);
-	scrPrintChar(' ');
+		uioPrintChar(header->oem[i]);
+	uioPrintChar(' ');
 
 	for (int i = 0; i < 8; i++)
-		scrPrintChar(header->oemTable[i]);
-	scrPrintChar(' ');
+		uioPrintChar(header->oemTable[i]);
+	uioPrintChar(' ');
 
-	scrPrintHexDWord(header->oemRevision);
-	scrPrintChar(' ');
+	uioPrintHexDWord(header->oemRevision);
+	uioPrintChar(' ');
 
 	for (int i = 0; i < 4; i++)
-		scrPrintChar(header->creator[i]);
-	scrPrintChar(' ');
+		uioPrintChar(header->creator[i]);
+	uioPrintChar(' ');
 
-	scrPrintHexDWord(header->creatorRevision);
-	scrBreakLine();
+	uioPrintHexDWord(header->creatorRevision);
+	uioPrintChar('\n');
 }
 
 void AcpiShowTables(void)
@@ -164,7 +164,7 @@ void AcpiShowTables(void)
 	Rsdp *p = GetPointer();
 	if(p)
 	{
-		scrPrintLine(TableHeader);
+		uioPrint(TableHeader);
 		ShowSdtHeader((SdtHeader *)p->rootSdt);
 
 		unsigned int size = (p->rootSdt->header.length - sizeof(SdtHeader)) / sizeof(SdtHeader*);
@@ -173,7 +173,7 @@ void AcpiShowTables(void)
 	}
 	else
 	{
-		scrPrintLine(PointerError);
+		uioPrint(PointerError);
 	}
 }
 
@@ -202,7 +202,7 @@ static unsigned int GetShutdownPort(void)
 void AcpiShowHeaders(void)
 {
 	AcpiShowRsdp();
-	scrBreakLine();
+	uioPrintChar('\n');
 	AcpiShowTables();
 }
 
@@ -212,5 +212,5 @@ void AcpiShutdown(void)
 	if (port)
 		asm volatile ( "outw %0, %1" : : "a"((unsigned short)0x2000), "d"((unsigned short)port) );
 	else
-		scrPrintLine(ShutdownFailed);
+		uioPrint(ShutdownFailed);
 }

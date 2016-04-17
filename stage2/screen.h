@@ -32,6 +32,13 @@
 
 #include <stdint.h>
 
+// Basics
+void scrBreakLine(void);
+void scrClear(void);
+void scrDelete(void);
+void scrPutGlyph(uint8_t);
+
+// Colors
 #define scrBlack  0x00
 #define scrBlue   0x01
 #define scrGreen  0x02
@@ -42,24 +49,15 @@
 #define scrWhite  0x07
 #define scrBright 0x08
 
-uint8_t scrCacheColor(void);
+uint8_t scrGetColor(void);
+void scrSetColor(uint8_t);
 void scrSetForgroundColor(uint8_t);
 void scrSetBackgroundColor(uint8_t);
-void scrSetColor(uint8_t);
 
-void scrClear(void);
-void scrSetCursor(uint16_t);
+// Cursor
+uint16_t scrGetCursorPosition(void);
+void scrSetCursorPostion(uint16_t);
 void scrShowCursor(void);
-void scrBreakLine(void);
-void scrDelete(void);
-
-void scrPrint(const char *);
-void scrPrintN(int length, const char *string);
-void scrPrintLine(const char *);
-void scrPrintChar(char);
-void scrPrintHexByte(uint8_t);
-void scrPrintHexWord(uint16_t);
-void scrPrintHexDWord(uint32_t);
-void scrPrintHexPointer(const void *);
+void scrHideCursor(void);
 
 #endif /* SCREEN_H */

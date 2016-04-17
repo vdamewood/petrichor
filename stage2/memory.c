@@ -27,7 +27,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "screen.h"
+#include "uio.h"
 #include "memory.h"
 
 char *StatusTable[] =
@@ -53,18 +53,18 @@ typedef struct entry entry;
 
 void memShowMap(void)
 {
-	scrPrintLine("Base     Size     Status");
+	uioPrint("Base     Size     Status\n");
 	for (
 		entry *i = (entry*)0x3308;
 		i < (entry*)(0x3308 + sizeof(entry) * (*((int *)0x3300)));
 		i++)
 	{
-		scrPrintHexDWord(i->base);
-		scrPrintChar(' ');
-		scrPrintHexDWord(i->length);
-		scrPrintChar(' ');
-		scrPrint(StatusTable[i->status]);
-		scrBreakLine();
+		uioPrintHexDWord(i->base);
+		uioPrintChar(' ');
+		uioPrintHexDWord(i->length);
+		uioPrintChar(' ');
+		uioPrint(StatusTable[i->status]);
+		uioPrintChar('\n');
 	}
 }
 
