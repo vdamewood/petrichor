@@ -31,6 +31,9 @@
 #include "x86asm.h"
 
 volatile static unsigned int clock = 0;
+volatile static uint8_t BiosLow = 0;
+volatile static uint8_t BiosHigh = 0;
+volatile static uint8_t BiosCached = 0;
 
 void tmrHandleInterrupt(void)
 {
@@ -41,8 +44,35 @@ void tmrHandleInterrupt(void)
 void tmrSetInterval(unsigned short count)
 {
 	asm("cli");
+
+	if (!BiosCached)
+	{
+		outb(0x43, 0x00);
+		BiosLow = inb(0x40);
+		BiosHigh = inb(0x40);
+		BiosCached = 0xFF;
+	}
+
 	outb(0x40, count&0xFF);
 	outb(0x40, count >> 8);
+
+	asm("sti");
+
+	uioPrintHexByte(BiosHigh);
+	uioPrintHexByte(BiosLow);
+	uioPrintChar('\n');
+}
+
+void tmpResetInterval(void)
+{
+	asm("cli");
+
+	if (BiosCached)
+	{
+		outb(0x40, BiosLow);
+		outb(0x40, BiosHigh);
+	}
+
 	asm("sti");
 }
 
