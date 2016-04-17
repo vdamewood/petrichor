@@ -30,12 +30,13 @@
 #include "shell.h"
 #include "screen.h"
 #include "timer.h"
+#include "uio.h"
 
 void Init32c(void)
 {
 	// This approximates 1000 ticks = 1 second.
-	tmrSetInterval(1193);
 	scrClear();
+	tmrSetInterval(1193);
 	uioPrint("Petrichor loaded.\n");
 	while (-1)
 		shLoop();

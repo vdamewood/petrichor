@@ -28,7 +28,7 @@
  */
 
 #include "cpuid.h"
-#include "screen.h"
+#include "uio.h"
 
 char vendor[13];
 
