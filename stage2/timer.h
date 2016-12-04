@@ -32,7 +32,7 @@
 
 void tmrHandleInterrupt(void);
 void tmrSetInterval(unsigned short count);
-void tmpResetInterval(void);
+void tmrResetInterval(void);
 int tmrTimeout(unsigned int ticks, int (*done)(void));
 void tmrWait(unsigned int ticks);
 

@@ -63,7 +63,7 @@ void tmrSetInterval(unsigned short count)
 	uioPrintChar('\n');
 }
 
-void tmpResetInterval(void)
+void tmrResetInterval(void)
 {
 	asm("cli");
 
