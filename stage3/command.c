@@ -34,6 +34,7 @@
 #include "cpuid.h"
 //#include "fat12.h"
 //#include "floppy.h"
+#include "mboot.h"
 #include "memory.h"
 #include "screen.h"
 #include "timer.h"
@@ -52,6 +53,7 @@ static int TestArgs(int, char *[]);
 static int Color(int, char *[]);
 //static int TestFloppy(int, char*[]);
 //static int Dir(int, char*[]);
+static int BootInfo(int, char *[]);
 
 struct entry
 {
@@ -75,6 +77,7 @@ entry CommandTable[] =
 //	{"floppy",   "test floppy drive",         TestFloppy},
 //	{"dir",      "Show a directory",          Dir},
 //	{"load",     "Load a file",               Load},
+	{"bootinfo", "Show Bootloader info",      BootInfo},
 	{0,          0,                           Stub}
 };
 
@@ -261,6 +264,150 @@ static int ShowHelp(int argc, char *argv[])
 	fat12ShowDirectory(&floppy, directory);
 	return 0;
 }*/
+
+
+static int BootInfo(int argc, char *argv[])
+{
+	uioPrint("EAX: ");
+	uioPrintHexDWord(SavedEax);
+	uioPrint("\n");
+	uioPrint("EBX: ");
+	uioPrintHexDWord(SavedEbx);
+	uioPrint("\n");
+
+	uioPrint("Flags: ");
+	uioPrintHexDWord(MbInfo.flags);
+	uioPrint("\n");
+
+	if (MbInfo.flags & MB_FLAG_MEMORY)
+	{
+		uioPrint("Memory: Lower: ");
+		uioPrintHexDWord(MbInfo.mem_lower);
+		uioPrint("k; Upper: ");
+		uioPrintHexDWord(MbInfo.mem_upper);
+		uioPrint("k\n");
+	}
+
+	if (MbInfo.flags & MB_FLAG_BOOTDEV)
+	{
+		uioPrint("Boot: ");
+		uioPrintHexByte((unsigned char)(MbInfo.boot_device));
+		uioPrint("(");
+		uioPrintHexByte((unsigned char)(MbInfo.boot_parts[2]));
+		uioPrint(":");
+		uioPrintHexByte((unsigned char)(MbInfo.boot_parts[1]));
+		uioPrint(":");
+		uioPrintHexByte((unsigned char)(MbInfo.boot_parts[0]));
+		uioPrint(")\n");
+	}
+
+	if (MbInfo.flags & MB_FLAG_COMMAND)
+	{
+		uioPrint("Command: ");
+		uioPrint(MbInfo.cmdline);
+		uioPrint("\n");
+	}
+
+	if (MbInfo.flags & MB_FLAG_BOOTMODS)
+	{
+		uioPrint("Booted Modules: ");
+		uioPrintHexDWord(MbInfo.mods_count);
+		uioPrint("\n");
+
+		for (unsigned int i = 0; i < MbInfo.mods_count; i++)
+		{
+			uioPrintHexDWord(i);
+			uioPrint(" ");
+			uioPrint(MbInfo.mods[i].string);
+			uioPrint("\n");
+		}
+
+	}
+
+	if (MbInfo.flags & MB_FLAG_AOUTIMG)
+	{
+		uioPrint("Bootloader passed a.out data, but this kernel doesn't support a.out.\n");
+	}
+
+	if (MbInfo.flags & MB_FLAG_ELFIMG)
+	{
+		uioPrint("ELF: ");
+		uioPrintHexDWord(MbInfo.Elf.num);
+		uioPrintHexDWord(MbInfo.Elf.size);
+		uioPrintHexDWord(MbInfo.Elf.addr);
+		uioPrintHexDWord(MbInfo.Elf.shndx);
+		uioPrint("\n");
+	}
+
+	if (MbInfo.flags & MB_FLAG_MMAP)
+	{
+		uioPrint("MMAP: Length: ");
+		uioPrintHexDWord(MbInfo.mmap_length);
+		uioPrint("; Address: ");
+		uioPrintHexDWord(MbInfo.mmap_addr);
+		uioPrint("\n");
+	}
+
+	if (MbInfo.flags & MB_FLAG_DRIVES)
+	{
+		uioPrint("drives_length: ");
+		uioPrintHexDWord(MbInfo.drives_length);
+		uioPrint("\n");
+
+		uioPrint("drives_addr: ");
+		uioPrintHexDWord(MbInfo.drives_addr);
+		uioPrint("\n");
+	}
+
+	if (MbInfo.flags & MB_FLAG_BIOSCONF)
+	{
+		uioPrint("config_table: ");
+		uioPrintHexDWord(MbInfo.config_table);
+		uioPrint("\n");
+	}
+
+	if (MbInfo.flags & MB_FLAG_BOOTLDR)
+	{
+		uioPrint("Bootloader: ");
+		uioPrint(MbInfo.boot_loader_name);
+		uioPrint("\n");
+	}
+
+	if (MbInfo.flags & MB_FLAG_APMTBL)
+	{
+		uioPrint("apm_table: ");
+		uioPrintHexDWord(MbInfo.apm_table);
+		uioPrint("\n");
+	}
+
+	if (MbInfo.flags & MB_FLAG_GRAPHICS)
+	{
+		uioPrint("vbe_control_info: ");
+		uioPrintHexDWord(MbInfo.vbe_control_info);
+		uioPrint("\n");
+
+		uioPrint("vbe_mode_info: ");
+		uioPrintHexDWord(MbInfo.vbe_mode_info);
+		uioPrint("\n");
+
+		uioPrint("vbe_mode: ");
+		uioPrintHexDWord(MbInfo.vbe_mode);
+		uioPrint("\n");
+
+		uioPrint("vbe_interface_seg: ");
+		uioPrintHexDWord(MbInfo.vbe_interface_seg);
+		uioPrint("\n");
+
+		uioPrint("vbe_interface_off: ");
+		uioPrintHexDWord(MbInfo.vbe_interface_off);
+		uioPrint("\n");
+
+		uioPrint("vbe_interface_len: ");
+		uioPrintHexDWord(MbInfo.vbe_interface_len);
+		uioPrint("\n");
+	}
+	return 0;
+}
 
 static int Stub(int argc, char *argv[])
 {

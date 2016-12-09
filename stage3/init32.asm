@@ -104,7 +104,8 @@ SECTION .text
 
 global Init32
 Init32:
-
+	mov [SavedEax], eax
+	mov [SavedEbx], ebx
 LoadGdt:
 	; We're already in protected mode, se we just have to load our own
 	; GDT
@@ -119,6 +120,11 @@ LoadGdt:
 	mov gs, ax
 	mov ss, ax
 
+	mov esi, ebx
+	mov edi, MbInfo
+	mov ecx, 22
+	rep movsd
+
 	; Setup the stack
 	mov esp, 0x90000
 	mov ebp, esp
@@ -129,7 +135,22 @@ JumpToC:
 
 
 section .bss
+
+global SavedEax
+SavedEax: resd 1
+
+global SavedEbx
+SavedEbx: resd 1
+
+global MbInfo
+MbInfo: resd 22
+
 IntrTable: resb IdtSize
+
+
+
+
+
 
 section .text
 
