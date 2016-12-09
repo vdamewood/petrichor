@@ -57,10 +57,6 @@ void tmrSetInterval(unsigned short count)
 	outb(0x40, count >> 8);
 
 	asm("sti");
-
-	uioPrintHexByte(BiosHigh);
-	uioPrintHexByte(BiosLow);
-	uioPrintChar('\n');
 }
 
 void tmrResetInterval(void)
