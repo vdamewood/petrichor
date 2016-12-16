@@ -1,8 +1,8 @@
 CC=clang
-CFLAGS=-ffreestanding -fno-builtin -nostdlib \
+CFLAGS=-g -ffreestanding -fno-builtin -nostdlib \
 	--target=i686-pc-none-elf -march=i686 -c
 ASM=nasm
-ASMFLAGS=-f elf
+ASMFLAGS=-f elf -g -F dwarf
 OBJECTS= \
 	mboot.o \
 	gdt.o \
@@ -22,7 +22,7 @@ OBJECTS= \
 all: stage3.bin
 
 stage3.bin: stage3.ld $(OBJECTS)
-	i686-elf-ld -s -T stage3.ld -o stage3.bin $(OBJECTS)
+	i686-elf-ld -T stage3.ld -o stage3.bin $(OBJECTS)
 
 mboot.o: mboot.asm
 	$(ASM) $(ASMFLAGS) -o $@ $<
