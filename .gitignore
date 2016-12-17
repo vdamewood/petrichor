@@ -2,4 +2,5 @@
 *.img
 *.o
 *.elf
+*.iso
 bochsout.txt
