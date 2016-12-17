@@ -16,7 +16,8 @@ OBJECTS= \
 	command.o \
 	util.o \
 	acpi.o \
-	cpuid.o
+	cpuid.o \
+	intr.o
 
 
 all: stage3.bin
@@ -28,6 +29,9 @@ mboot.o: mboot.asm
 	$(ASM) $(ASMFLAGS) -o $@ $<
 
 gdt.o: gdt.asm
+	$(ASM) $(ASMFLAGS) -o $@ $<
+
+intr.o: intr.asm
 	$(ASM) $(ASMFLAGS) -o $@ $<
 
 init32.o: init32.asm
