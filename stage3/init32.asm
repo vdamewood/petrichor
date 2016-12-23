@@ -43,6 +43,8 @@ Init32:
 	mov eax, GdtPointer
 	lgdt [eax]
 
+	jmp 0x08:.LoadCS
+.LoadCS:
 	mov eax, 0x10
 	mov ds, ax
 	mov es, ax
