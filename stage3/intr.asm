@@ -136,7 +136,7 @@ IntrIsrCommon:
 	%deftok IsrHexToken IsrHexString
 IntrIsr%[IsrHexToken]:
 		cli
-		%if (0)
+		%if (i = 8 || (i >= 10 && i <= 14) ||  i = 17 | i = 30)
 		%else
 			push 0
 		%endif
