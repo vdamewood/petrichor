@@ -1,4 +1,4 @@
-all: stage1/stage1.bin stage2/stage2.bin stage3/stage3.bin bootdisk.img
+all: stage1/stage1.bin stage2/stage2.bin stage3/stage3.bin bootdisk.img stage3.iso
 
 clean:
 	make -C stage1 clean
@@ -32,6 +32,9 @@ bootdisk.img: stage1/stage1.bin stage2/stage2.bin stage3/stage3.bin License.txt 
 	mmd -i bootdisk.img ::/STUFF/THINGS/BAR/QUUX
 	mmd -i bootdisk.img ::/STUFF/THINGS/BAZ
 
+stage3.iso: stage3/stage3.bin iso/boot/grub/grub.cfg
+	cp stage3/stage3.bin iso/stage3.bin
+	grub-mkrescue -o stage3.iso iso
 
 stage1/stage1.bin:
 	make -C stage1 stage1.bin
@@ -41,5 +44,6 @@ stage2/stage2.bin:
 
 stage3/stage3.bin:
 	make -C stage3 stage3.bin
+
 
 .PHONY: all clean distclean stage1/stage1.bin stage2/stage2.bin
