@@ -16,7 +16,7 @@ To build this project, you willl need:
 * GNU Mtools 4.0.17 (https://www.gnu.org/software/mtools/)
 
 Nasm and GNU Mtools may be built and installed in the standard manner for
-yoru system. GNU Binutils will have to be build for the i686-elf target.
+yoru system. GNU Binutils will have to be built for the i686-elf target.
 To build GNU Binutils in this manner, pass the option `--taget=i686-elf`
 when running its `configure` script. Make sure this custom build of GNU
 Binutils doesn't clobber your system's installation if you have a version
