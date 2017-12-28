@@ -38,7 +38,7 @@ int blStrCmp(const char *mem1, const char *mem2)
 		"\tnop"
 		: "=a"(rVal)
 		: "S"(mem1), "D"(mem2)
-		: "esi", "edi"
+		: /*"esi", "edi"*/
 	);
 	return rVal;
 }
